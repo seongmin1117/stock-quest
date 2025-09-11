@@ -1,0 +1,79 @@
+package com.stockquest.config;
+
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.distributed.proxy.ProxyManager;
+import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+
+import java.time.Duration;
+import java.util.function.Supplier;
+
+/**
+ * Rate Limiting 설정
+ * Bucket4j와 Redis를 활용한 분산 환경 Rate Limiting
+ */
+// @Configuration - Temporarily disabled due to bucket4j dependency
+@RequiredArgsConstructor
+public class RateLimitConfig {
+
+    private final LettuceConnectionFactory lettuceConnectionFactory;
+
+    @Bean
+    public ProxyManager<String> proxyManager() {
+        return LettuceBasedProxyManager.builderFor(lettuceConnectionFactory)
+                .withExpirationAfterWriteStrategy(Duration.ofMinutes(10))
+                .build();
+    }
+
+    /**
+     * API 호출 제한 설정
+     * - 기본: 분당 60회
+     * - 버스트: 초당 10회
+     */
+    @Bean("apiRateLimitConfig")
+    public Supplier<BucketConfiguration> apiRateLimitConfig() {
+        return () -> BucketConfiguration.builder()
+                .addLimit(limit -> limit.capacity(10).refillGreedy(10, Duration.ofSeconds(1))) // 초당 10회
+                .addLimit(limit -> limit.capacity(60).refillGreedy(60, Duration.ofMinutes(1))) // 분당 60회
+                .build();
+    }
+
+    /**
+     * 로그인 시도 제한 설정
+     * - 분당 5회 시도만 허용
+     */
+    @Bean("loginRateLimitConfig")
+    public Supplier<BucketConfiguration> loginRateLimitConfig() {
+        return () -> BucketConfiguration.builder()
+                .addLimit(limit -> limit.capacity(5).refillGreedy(5, Duration.ofMinutes(1))) // 분당 5회
+                .addLimit(limit -> limit.capacity(1).refillGreedy(1, Duration.ofSeconds(10))) // 10초당 1회
+                .build();
+    }
+
+    /**
+     * 회원가입 제한 설정
+     * - 시간당 3회만 허용
+     */
+    @Bean("signupRateLimitConfig")
+    public Supplier<BucketConfiguration> signupRateLimitConfig() {
+        return () -> BucketConfiguration.builder()
+                .addLimit(limit -> limit.capacity(3).refillGreedy(3, Duration.ofHours(1))) // 시간당 3회
+                .build();
+    }
+
+    /**
+     * 주문 생성 제한 설정
+     * - 분당 30회
+     */
+    @Bean("orderRateLimitConfig")
+    public Supplier<BucketConfiguration> orderRateLimitConfig() {
+        return () -> BucketConfiguration.builder()
+                .addLimit(limit -> limit.capacity(30).refillGreedy(30, Duration.ofMinutes(1))) // 분당 30회
+                .addLimit(limit -> limit.capacity(5).refillGreedy(5, Duration.ofSeconds(1))) // 초당 5회
+                .build();
+    }
+}

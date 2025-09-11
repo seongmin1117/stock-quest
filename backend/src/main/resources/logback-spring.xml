@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 변수 정의 -->
+    <property name="LOG_PATTERN" 
+        value="%d{HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n"/>
+    
+    <!-- JSON 패턴 (구조화된 로그) -->
+    <property name="JSON_PATTERN" 
+        value='{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}","level":"%level","thread":"%thread","logger":"%logger","traceId":"%X{traceId:-}","userId":"%X{userId:-}","clientIp":"%X{clientIp:-}","requestUri":"%X{requestUri:-}","httpMethod":"%X{httpMethod:-}","userAgent":"%X{userAgent:-}","message":"%msg","exception":"%ex"}%n'/>
+
+    <!-- 콘솔 출력 (개발 환경) -->
+    <springProfile name="!prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- 운영 환경 JSON 로그 -->
+    <springProfile name="prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+                    <timestampFormat>yyyy-MM-dd HH:mm:ss.SSS</timestampFormat>
+                    <timestampFormatTimezoneId>Asia/Seoul</timestampFormatTimezoneId>
+                    <appendLineSeparator>true</appendLineSeparator>
+                    <includeContextName>false</includeContextName>
+                    <includeException>true</includeException>
+                    <includeMdc>true</includeMdc>
+                </layout>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- 파일 출력 (운영 환경) -->
+    <springProfile name="prod">
+        <!-- 일반 로그 파일 -->
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/stockquest.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>logs/stockquest.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <maxFileSize>100MB</maxFileSize>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>10GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <!-- 에러 로그 파일 -->
+        <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/error.log</file>
+            <filter class="ch.qos.logback.classic.filter.LevelFilter">
+                <level>ERROR</level>
+                <onMatch>ACCEPT</onMatch>
+                <onMismatch>DENY</onMismatch>
+            </filter>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>logs/error.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <maxFileSize>50MB</maxFileSize>
+                <maxHistory>90</maxHistory>
+                <totalSizeCap>5GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <!-- 감사 로그 파일 (보안 관련 이벤트) -->
+        <appender name="AUDIT_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/audit.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>logs/audit.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <maxFileSize>50MB</maxFileSize>
+                <maxHistory>365</maxHistory> <!-- 1년 보관 -->
+                <totalSizeCap>20GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${JSON_PATTERN}</pattern>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- 로거 설정 -->
+    
+    <!-- 애플리케이션 로그 -->
+    <springProfile name="!prod">
+        <logger name="com.stockquest" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+    </springProfile>
+    
+    <springProfile name="prod">
+        <logger name="com.stockquest" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </logger>
+    </springProfile>
+    
+    <!-- 보안 감사 로그 -->
+    <springProfile name="!prod">
+        <logger name="AUDIT" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+    </springProfile>
+    
+    <springProfile name="prod">
+        <logger name="AUDIT" level="INFO" additivity="false">
+            <appender-ref ref="AUDIT_FILE"/>
+        </logger>
+    </springProfile>
+    
+    <!-- Spring Security 로그 -->
+    <logger name="org.springframework.security" level="WARN"/>
+    
+    <!-- SQL 로그 (개발 환경에서만) -->
+    <springProfile name="!prod">
+        <logger name="org.springframework.orm.jpa" level="DEBUG"/>
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+    </springProfile>
+    
+    <!-- HTTP 요청 로그 -->
+    <logger name="org.springframework.web.filter.CommonsRequestLoggingFilter" level="DEBUG"/>
+    
+    <!-- 외부 API 호출 로그 -->
+    <logger name="org.springframework.web.reactive.function.client" level="DEBUG"/>
+    
+    <!-- Redis 로그 -->
+    <logger name="org.springframework.data.redis" level="WARN"/>
+    
+    <!-- ROOT 로거 -->
+    <springProfile name="!prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+    
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </root>
+    </springProfile>
+</configuration>

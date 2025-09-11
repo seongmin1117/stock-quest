@@ -1,0 +1,64 @@
+package com.stockquest.config.health;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.actuator.health.Health;
+import org.springframework.boot.actuator.health.HealthIndicator;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+
+/**
+ * 외부 시장 데이터 API Health Indicator
+ * Yahoo Finance API의 응답 상태를 모니터링
+ */
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class MarketDataHealthIndicator implements HealthIndicator {
+
+    private final WebClient webClient;
+
+    @Override
+    public Health health() {
+        try {
+            // Yahoo Finance API 응답 테스트
+            String testSymbol = "AAPL";
+            String response = webClient.get()
+                    .uri("https://query1.finance.yahoo.com/v8/finance/chart/{symbol}", testSymbol)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(5))
+                    .onErrorResume(throwable -> {
+                        log.warn("Market data API health check failed: {}", throwable.getMessage());
+                        return Mono.just("ERROR");
+                    })
+                    .block();
+
+            if (response != null && !response.equals("ERROR") && response.contains("chart")) {
+                return Health.up()
+                        .withDetail("api", "Yahoo Finance")
+                        .withDetail("status", "Available")
+                        .withDetail("testSymbol", testSymbol)
+                        .withDetail("responseLength", response.length())
+                        .build();
+            } else {
+                return Health.down()
+                        .withDetail("api", "Yahoo Finance")
+                        .withDetail("status", "Unavailable")
+                        .withDetail("testSymbol", testSymbol)
+                        .withDetail("error", "Invalid response or timeout")
+                        .build();
+            }
+        } catch (Exception e) {
+            log.error("Market data health check error", e);
+            return Health.down()
+                    .withDetail("api", "Yahoo Finance")
+                    .withDetail("status", "Error")
+                    .withDetail("error", e.getMessage())
+                    .build();
+        }
+    }
+}

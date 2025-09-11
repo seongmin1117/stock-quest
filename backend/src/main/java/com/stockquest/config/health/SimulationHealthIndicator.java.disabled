@@ -1,0 +1,121 @@
+package com.stockquest.config.health;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.actuator.health.Health;
+import org.springframework.boot.actuator.health.HealthIndicator;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+
+import java.util.concurrent.TimeUnit;
+
+/**
+ * 시뮬레이션 시스템 Health Indicator
+ * 시뮬레이션 엔진의 상태와 성능을 모니터링
+ */
+@Component
+@RequiredArgsConstructor
+public class SimulationHealthIndicator implements HealthIndicator {
+
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisConnectionFactory redisConnectionFactory;
+
+    @Override
+    public Health health() {
+        try {
+            // Redis 연결 상태 체크
+            RedisConnection connection = redisConnectionFactory.getConnection();
+            if (connection == null || !connection.ping().equals("PONG")) {
+                return Health.down()
+                        .withDetail("component", "Simulation Engine")
+                        .withDetail("redis", "Connection failed")
+                        .build();
+            }
+            connection.close();
+
+            // 시뮬레이션 세션 수 체크
+            int activeSessions = getActiveSessionsCount();
+            
+            // Redis 메모리 사용량 체크
+            long memoryUsage = getRedisMemoryUsage();
+            
+            // 시뮬레이션 응답 시간 측정
+            long responseTime = measureRedisResponseTime();
+            
+            Health.Builder healthBuilder = Health.up()
+                    .withDetail("component", "Simulation Engine")
+                    .withDetail("activeSessions", activeSessions)
+                    .withDetail("redisMemoryUsage", formatBytes(memoryUsage))
+                    .withDetail("redisResponseTime", responseTime + "ms");
+
+            // 임계값 체크
+            if (activeSessions > 1000) {
+                healthBuilder.withDetail("warning", "High number of active sessions");
+            }
+            
+            if (responseTime > 100) {
+                healthBuilder.withDetail("warning", "High Redis response time");
+            }
+            
+            if (memoryUsage > 500 * 1024 * 1024) { // 500MB 이상
+                healthBuilder.withDetail("warning", "High Redis memory usage");
+            }
+
+            return healthBuilder.build();
+            
+        } catch (Exception e) {
+            return Health.down()
+                    .withDetail("component", "Simulation Engine")
+                    .withDetail("error", e.getMessage())
+                    .build();
+        }
+    }
+
+    private int getActiveSessionsCount() {
+        try {
+            // 활성 세션 키 패턴으로 검색
+            return redisTemplate.keys("simulation:session:*").size();
+        } catch (Exception e) {
+            return -1; // 에러 표시
+        }
+    }
+
+    private long getRedisMemoryUsage() {
+        try {
+            RedisConnection connection = redisConnectionFactory.getConnection();
+            String info = new String(connection.info("memory"));
+            connection.close();
+            
+            // used_memory 값 추출
+            String[] lines = info.split("\r\n");
+            for (String line : lines) {
+                if (line.startsWith("used_memory:")) {
+                    return Long.parseLong(line.split(":")[1]);
+                }
+            }
+            return 0;
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    private long measureRedisResponseTime() {
+        try {
+            long startTime = System.currentTimeMillis();
+            redisTemplate.opsForValue().set("health:test", "test", 1, TimeUnit.SECONDS);
+            redisTemplate.delete("health:test");
+            return System.currentTimeMillis() - startTime;
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    private String formatBytes(long bytes) {
+        if (bytes < 0) return "Unknown";
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024) + " KB";
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)) + " MB";
+        return (bytes / (1024 * 1024 * 1024)) + " GB";
+    }
+}

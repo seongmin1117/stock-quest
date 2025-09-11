@@ -1,0 +1,275 @@
+# 성능 최적화 전용 설정
+# Database, Redis, Thread Pool 등 리소스 최적화
+
+# 데이터베이스 성능 설정
+spring:
+  datasource:
+    # HikariCP 최적화 설정
+    hikari:
+      # Connection Pool 크기
+      minimum-idle: 10        # 최소 유지 연결 수
+      maximum-pool-size: 50   # 최대 연결 수
+      idle-timeout: 300000    # 유휴 연결 타임아웃 (5분)
+      max-lifetime: 1200000   # 연결 최대 생명주기 (20분)
+      connection-timeout: 20000 # 연결 타임아웃 (20초)
+      
+      # 성능 최적화
+      leak-detection-threshold: 60000  # 연결 누수 감지 (1분)
+      validation-timeout: 5000         # 검증 타임아웃 (5초)
+      
+      # Connection Test Query (MySQL 최적화)
+      connection-test-query: "SELECT 1"
+      
+      # Pool 이름 설정
+      pool-name: "StockQuestHikariCP"
+      
+      # 추가 성능 설정
+      register-mbeans: true    # JMX MBean 등록 (모니터링용)
+      
+      # HikariCP 고급 설정
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+        useLocalSessionState: true
+        rewriteBatchedStatements: true
+        cacheResultSetMetadata: true
+        cacheServerConfiguration: true
+        elideSetAutoCommits: true
+        maintainTimeStats: false
+        
+  # JPA/Hibernate 성능 설정
+  jpa:
+    properties:
+      hibernate:
+        # 배치 처리 최적화
+        jdbc:
+          batch_size: 25
+          batch_versioned_data: true
+          fetch_size: 50
+        
+        # 쿼리 최적화
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false  # 운영 환경에서는 false
+        
+        # 캐시 설정
+        cache:
+          use_second_level_cache: false
+          use_query_cache: false
+            
+        # Connection 관리
+        connection:
+          handling_mode: DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION
+          
+  # Redis 성능 설정
+  data:
+    redis:
+      # Connection Pool 설정
+      lettuce:
+        pool:
+          max-active: 20      # 최대 활성 연결
+          max-idle: 10        # 최대 유휴 연결
+          min-idle: 2         # 최소 유휴 연결
+          max-wait: 2000ms    # 최대 대기 시간
+        # Cluster 설정 (필요시)
+        cluster:
+          refresh:
+            adaptive: true
+            period: 30s
+      # 타임아웃 설정
+      timeout: 2000ms
+      connect-timeout: 2000ms
+      
+      # 키 만료 정책
+      database: 0
+      
+# 비동기 처리 성능 설정
+app:
+  async:
+    # 기본 Thread Pool
+    core-pool-size: ${ASYNC_CORE_POOL_SIZE:10}
+    max-pool-size: ${ASYNC_MAX_POOL_SIZE:50}
+    queue-capacity: ${ASYNC_QUEUE_CAPACITY:100}
+    keep-alive-seconds: 60
+    
+    # Thread Pool별 세부 설정
+    simulation:
+      core-pool-size: ${SIMULATION_CORE_POOL:4}
+      max-pool-size: ${SIMULATION_MAX_POOL:8}
+      queue-capacity: 200
+      
+    market-data:
+      core-pool-size: 5
+      max-pool-size: 20
+      queue-capacity: 50
+      
+    notification:
+      core-pool-size: 3
+      max-pool-size: 10
+      queue-capacity: 30
+      
+    leaderboard:
+      core-pool-size: 2
+      max-pool-size: 5
+      queue-capacity: 20
+      
+# 캐시 성능 설정
+cache:
+  redis:
+    time-to-live: 3600s  # 기본 TTL
+    cache-null-values: false
+    key-prefix: "stockquest:"
+    
+    # 캐시별 TTL 설정
+    ttl:
+      latest-price: 30s
+      market-status: 60s
+      daily-candles: 300s
+      leaderboard: 300s
+      user-profile: 1800s
+      challenge-list: 3600s
+      
+  # 캐시 통계
+  statistics:
+    enabled: false  # 운영 환경에서는 false
+    
+# 외부 API 성능 설정
+yahoo-finance:
+  timeout: 5000
+  connection-timeout: 3000
+  read-timeout: 5000
+  max-connections: 20
+  max-connections-per-route: 10
+  
+  # Connection Pool 설정
+  pool:
+    max-total: 50
+    default-max-per-route: 10
+    connection-request-timeout: 3000
+    
+  # Rate Limiting
+  rate-limit:
+    requests-per-second: 1
+    burst-capacity: 5
+    
+# 시뮬레이션 성능 설정
+stockquest:
+  simulation:
+    # 배치 처리 크기
+    batch-size: ${SIMULATION_BATCH_SIZE:50}
+    
+    # Thread Pool 설정
+    thread-pool-size: ${SIMULATION_THREADS:4}
+    
+    # 처리 간격
+    tick-interval: 10000  # 10초
+    
+    # 성능 최적화
+    enable-parallel-processing: true
+    max-concurrent-sessions: 1000
+    session-timeout-minutes: 480  # 8시간
+    
+    # 메모리 관리
+    max-memory-usage-mb: 512
+    gc-threshold: 0.8
+    
+# JVM 성능 튜닝 가이드 (참고용)
+# -Xms2g -Xmx4g
+# -XX:+UseG1GC
+# -XX:G1HeapRegionSize=16m
+# -XX:+UseCompressedOops
+# -XX:+DisableExplicitGC
+# -XX:+AlwaysPreTouch
+
+# 모니터링 설정
+management:
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    web:
+      server:
+        request:
+          autotime:
+            enabled: true
+            percentiles: 0.5,0.9,0.95,0.99
+            
+# 로그 성능 설정
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    # 성능에 영향을 주는 로거들 레벨 조정
+    com.zaxxer.hikari: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type: WARN
+    org.springframework.cache: WARN
+    
+---
+# 개발 환경 성능 설정
+spring:
+  config:
+    activate:
+      on-profile: dev
+      
+  datasource:
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      
+  jpa:
+    properties:
+      hibernate:
+        generate_statistics: true  # 개발 환경에서는 통계 수집
+        
+app:
+  async:
+    core-pool-size: 5
+    max-pool-size: 20
+    
+cache:
+  statistics:
+    enabled: true  # 개발 환경에서는 통계 활성화
+    
+logging:
+  level:
+    com.stockquest: DEBUG
+    org.hibernate.SQL: DEBUG
+    
+---
+# 운영 환경 성능 설정  
+spring:
+  config:
+    activate:
+      on-profile: prod
+      
+  datasource:
+    hikari:
+      minimum-idle: 15
+      maximum-pool-size: 100
+      leak-detection-threshold: 60000
+      
+  data:
+    redis:
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          
+app:
+  async:
+    core-pool-size: 20
+    max-pool-size: 100
+    
+stockquest:
+  simulation:
+    batch-size: 100
+    thread-pool-size: 8
+    max-concurrent-sessions: 5000
+    
+logging:
+  level:
+    com.stockquest: INFO
+    root: WARN

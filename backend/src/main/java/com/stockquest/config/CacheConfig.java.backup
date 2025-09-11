@@ -1,0 +1,97 @@
+package com.stockquest.config;
+
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Redis 캐싱 설정
+ * Market Data에 대한 캐싱 전략 구현
+ */
+@Slf4j
+@Configuration
+@EnableCaching
+public class CacheConfig {
+    
+    @Value("${spring.cache.redis.time-to-live:300000}") // 기본 5분
+    private long defaultTtlMs;
+    
+    /**
+     * Redis 기반 Cache Manager 설정
+     */
+    @Bean
+    public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        log.info("Redis Cache Manager 설정 시작");
+        
+        // ObjectMapper 설정 (LocalDate, LocalDateTime 지원)
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.activateDefaultTyping(
+            objectMapper.getPolymorphicTypeValidator(),
+            ObjectMapper.DefaultTyping.NON_FINAL,
+            JsonTypeInfo.As.PROPERTY
+        );
+        
+        // JSON 직렬화 설정
+        GenericJackson2JsonRedisSerializer jsonSerializer = 
+            new GenericJackson2JsonRedisSerializer(objectMapper);
+        
+        // 기본 캐시 설정
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMillis(defaultTtlMs))
+            .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+            .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
+            .disableCachingNullValues();
+        
+        // 캐시별 개별 설정
+        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
+        
+        // 일봉 데이터 캐시 (1시간)
+        cacheConfigurations.put("dailyCandles", defaultConfig
+            .entryTtl(Duration.ofHours(1)));
+        
+        // 최신 가격 캐시 (1분)
+        cacheConfigurations.put("latestPrice", defaultConfig
+            .entryTtl(Duration.ofMinutes(1)));
+        
+        // 시장 데이터 캐시 (5분)
+        cacheConfigurations.put("marketData", defaultConfig
+            .entryTtl(Duration.ofMinutes(5)));
+        
+        // 티커 목록 캐시 (1시간)
+        cacheConfigurations.put("availableTickers", defaultConfig
+            .entryTtl(Duration.ofHours(1)));
+        
+        // 사용자 세션 캐시 (30분)
+        cacheConfigurations.put("userSession", defaultConfig
+            .entryTtl(Duration.ofMinutes(30)));
+        
+        RedisCacheManager cacheManager = RedisCacheManager.builder(connectionFactory)
+            .cacheDefaults(defaultConfig)
+            .withInitialCacheConfigurations(cacheConfigurations)
+            .transactionAware()
+            .build();
+        
+        log.info("Redis Cache Manager 설정 완료 - 기본 TTL: {}ms, 캐시 개수: {}", 
+                defaultTtlMs, cacheConfigurations.size());
+        
+        return cacheManager;
+    }
+}

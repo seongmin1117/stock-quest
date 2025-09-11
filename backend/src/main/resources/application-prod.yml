@@ -1,0 +1,160 @@
+# ===================================================================
+# 운영 환경 설정 (application-prod.yml)
+# 보안, 성능, 안정성 최적화
+# ===================================================================
+
+spring:
+  # 데이터베이스 설정 - 운영 환경 최적화
+  datasource:
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/stockquest?serverTimezone=UTC&characterEncoding=UTF-8&useUnicode=true&useSSL=true&requireSSL=true&verifyServerCertificate=true&autoReconnect=true&failOverReadOnly=false&maxReconnects=3&initialTimeout=1&connectTimeout=20000&socketTimeout=60000}
+    username: ${DATABASE_USERNAME:stockquest}
+    password: ${DATABASE_PASSWORD:stockquest123}
+    
+    # HikariCP 운영 환경 최적화
+    hikari:
+      pool-name: "StockQuest-Prod-HikariCP"
+      minimum-idle: 15
+      maximum-pool-size: 100
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+      validation-timeout: 5000
+      connection-test-query: "SELECT 1"
+      
+      # 운영 환경 MySQL Driver 최적화
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 500
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+        useLocalSessionState: true
+        rewriteBatchedStatements: true
+        cacheResultSetMetadata: true
+        cacheServerConfiguration: true
+        elideSetAutoCommits: true
+        maintainTimeStats: false
+        useConfigs: maxPerformance
+
+  # JPA/Hibernate 운영 설정
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+        generate_statistics: false
+        order_inserts: true
+        order_updates: true
+        jdbc:
+          batch_size: 50
+          fetch_size: 100
+          lob:
+            non_contextual_creation: true
+        connection:
+          handling_mode: DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION
+
+  # Redis 운영 환경 설정
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+      timeout: 3000ms
+      connect-timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 5
+          max-wait: 3000ms
+        cluster:
+          refresh:
+            adaptive: true
+            period: 30s
+
+  # 캐시 운영 설정
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600s  # 1시간
+
+# JWT 운영 설정
+jwt:
+  secret: ${JWT_SECRET:stockquest-jwt-secret-key-for-production}
+
+# 로깅 설정 - 운영 환경
+logging:
+  level:
+    root: WARN
+    com.stockquest: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    com.zaxxer.hikari: WARN
+  file:
+    name: logs/stockquest.log
+    max-size: 100MB
+    max-history: 30
+    total-size-cap: 3GB
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n"
+
+# Actuator 운영 환경 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+        exclude: env,loggers,shutdown,configprops,beans,threaddump,heapdump
+  endpoint:
+    health:
+      show-details: when-authorized
+    env:
+      show-values: never
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+
+# 애플리케이션 운영 설정
+app:
+  environment: production
+
+# 운영용 비동기 처리 설정
+async:
+  core-pool-size: 20
+  max-pool-size: 100
+  queue-capacity: 200
+
+# 운영용 캐시 통계 비활성화 (성능 향상)
+cache:
+  statistics:
+    enabled: false
+
+# 운영용 외부 API 설정
+yahoo-finance:
+  timeout: 5000
+  connection-timeout: 3000
+  read-timeout: 5000
+  max-connections: 50
+  max-connections-per-route: 20
+
+# 운영용 시뮬레이션 설정
+stockquest:
+  simulation:
+    batch-size: 100
+    thread-pool-size: 8
+    max-concurrent-sessions: 5000
+    enable-auto-completion: true
+    progress-log-interval: 20
+
+# 운영 환경 보안 강화
+server:
+  error:
+    include-stacktrace: never
+    include-exception: false
+    include-message: never
+  compression:
+    enabled: true
+  http2:
+    enabled: true
