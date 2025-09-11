@@ -18,6 +18,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+// Market Data DTOs
+import com.stockquest.domain.marketdata.*;
+
 /**
  * Real-Time Market Data Service
  * 실시간 시장 데이터 서비스

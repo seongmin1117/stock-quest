@@ -60,6 +60,9 @@ dependencies {
     // External API Client
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     
+    // WebSocket Support
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

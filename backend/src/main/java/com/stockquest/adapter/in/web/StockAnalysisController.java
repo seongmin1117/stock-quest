@@ -22,6 +22,8 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 종합 주식 분석 REST API Controller
@@ -257,11 +259,6 @@ public class StockAnalysisController {
 }
 
 // Additional DTOs for comparison
-import lombok.Builder;
-import lombok.Data;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 @Data
 @Builder
 class StockComparisonResult {
