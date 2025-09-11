@@ -74,44 +74,34 @@ jobs:
       with:
         node-version: '18'
         
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
-        
-    - name: Get pnpm store directory
-      shell: bash
-      run: |
-        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-        
-    - name: Setup pnpm cache
+    - name: Setup npm cache
       uses: actions/cache@v3
       with:
-        path: ${{ env.STORE_PATH }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
-          ${{ runner.os }}-pnpm-store-
+          ${{ runner.os }}-node-
           
     - name: Install dependencies
       run: |
         cd frontend
-        pnpm install --frozen-lockfile
+        npm ci
         
     - name: Run ESLint
       run: |
         cd frontend
-        pnpm lint:report || true
+        npm run lint || true
       continue-on-error: true
       
     - name: Run TypeScript Check
       run: |
         cd frontend
-        pnpm type-check
+        npm run type-check
         
     - name: Run Tests with Coverage
       run: |
         cd frontend
-        pnpm test:coverage
+        npm run test -- --coverage
         
     - name: Upload Frontend Coverage
       uses: codecov/codecov-action@v3
