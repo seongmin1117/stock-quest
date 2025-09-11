@@ -8,16 +8,45 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 import javax.sql.DataSource;
+import java.sql.SQLException;
 
 /**
- * Database performance optimization configuration
- * HikariCP connection pool tuning for high-performance trading operations
+ * Database performance optimization configuration for StockQuest trading operations.
+ * 
+ * <p>This configuration provides profile-specific HikariCP connection pool optimizations
+ * to handle high-frequency portfolio calculations and real-time trading operations.
+ * 
+ * <p>Performance targets:
+ * <ul>
+ *   <li>Production: Support 1000+ concurrent portfolio calculations</li>
+ *   <li>Portfolio query response time: &lt; 100ms for 95th percentile</li>
+ *   <li>Leaderboard calculation: &lt; 2000ms for full refresh</li>
+ * </ul>
+ * 
+ * @author StockQuest Performance Team
+ * @since 1.0
+ * @see com.stockquest.domain.portfolio.port.PortfolioRepository
  */
 @Configuration
 public class DatabasePerformanceConfig {
     
     /**
-     * Production-optimized database connection pool
+     * Production-optimized database connection pool with aggressive performance tuning.
+     * 
+     * <p>Configured for high-load trading operations with optimized connection pooling,
+     * prepared statement caching, and MySQL-specific performance enhancements.
+     * 
+     * <p>Key optimizations:
+     * <ul>
+     *   <li>50 max connections for concurrent portfolio calculations</li>
+     *   <li>500 prepared statement cache size for complex queries</li>
+     *   <li>Batch statement rewriting for bulk operations</li>
+     *   <li>Connection leak detection for reliability</li>
+     * </ul>
+     * 
+     * @return Fully configured HikariDataSource for production environment
+     * @throws SQLException if database connection cannot be established
+     * @see HikariConfig
      */
     @Bean
     @Profile("prod")
@@ -55,7 +84,21 @@ public class DatabasePerformanceConfig {
     }
     
     /**
-     * Development-optimized database connection pool
+     * Development-optimized database connection pool for local development.
+     * 
+     * <p>Provides balanced performance settings suitable for development environments
+     * with reduced resource usage while maintaining reasonable performance.
+     * 
+     * <p>Configuration highlights:
+     * <ul>
+     *   <li>10 max connections for moderate concurrent testing</li>
+     *   <li>100 prepared statement cache for common queries</li>
+     *   <li>Extended timeouts for debugging sessions</li>
+     *   <li>Development-friendly connection lifecycle</li>
+     * </ul>
+     * 
+     * @return HikariDataSource configured for development environment
+     * @throws SQLException if database connection cannot be established
      */
     @Bean
     @Profile({"dev", "local"})
@@ -79,7 +122,21 @@ public class DatabasePerformanceConfig {
     }
     
     /**
-     * Test-optimized database connection pool
+     * Test-optimized database connection pool for unit and integration testing.
+     * 
+     * <p>Minimal configuration designed for fast test execution with quick startup
+     * times and reduced resource consumption during test runs.
+     * 
+     * <p>Test-specific optimizations:
+     * <ul>
+     *   <li>5 max connections for test isolation</li>
+     *   <li>Minimal cache sizes for fast startup</li>
+     *   <li>Short connection lifetimes for test cleanup</li>
+     *   <li>Disabled prepared statement caching for simplicity</li>
+     * </ul>
+     * 
+     * @return Lightweight HikariDataSource for test environment
+     * @throws SQLException if test database connection fails
      */
     @Bean
     @Profile("test")
