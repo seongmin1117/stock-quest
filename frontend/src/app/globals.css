@@ -4,10 +4,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* Layout */
+  /* Layout - Mobile-first responsive values */
   --max-width: 1440px;
   --border-radius: 8px;
   --border-radius-sm: 4px;
+  
+  /* Mobile-specific sizing */
+  --mobile-padding: 16px;
+  --mobile-gap: 12px;
+  --mobile-button-height: 48px; /* Touch-friendly button size */
+  --mobile-input-height: 44px; /* iOS guidelines minimum */
+  
+  /* Responsive breakpoints (matching Tailwind) */
+  --breakpoint-sm: 640px;   /* Phones landscape */
+  --breakpoint-md: 768px;   /* Tablets */  
+  --breakpoint-lg: 1024px;  /* Laptops */
+  --breakpoint-xl: 1280px;  /* Desktops */
   
   /* Colors - Professional Trading Theme */
   --bg-primary: #0A0E18;       /* Main background */
