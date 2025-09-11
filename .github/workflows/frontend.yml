@@ -27,44 +27,33 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
-        run_install: false
-    
-    - name: Get pnpm store directory
-      shell: bash
-      run: |
-        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-    
-    - name: Setup pnpm cache
+    - name: Setup npm cache
       uses: actions/cache@v3
       with:
-        path: ${{ env.STORE_PATH }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
-          ${{ runner.os }}-pnpm-store-
+          ${{ runner.os }}-node-
     
     - name: Install dependencies
       run: |
         cd frontend
-        pnpm install --frozen-lockfile
+        npm ci
     
     - name: Run linter
       run: |
         cd frontend
-        pnpm lint
+        npm run lint
     
     - name: Run type check
       run: |
         cd frontend
-        pnpm type-check
+        npm run type-check
     
     - name: Run tests
       run: |
         cd frontend
-        pnpm test --coverage
+        npm run test --coverage
       env:
         CI: true
     
@@ -77,7 +66,7 @@ jobs:
     - name: Build application
       run: |
         cd frontend
-        pnpm build
+        npm run build
       env:
         NEXT_PUBLIC_API_BASE_URL: ${{ secrets.API_BASE_URL || 'http://localhost:8080' }}
         NEXT_PUBLIC_MOCK_API: false
@@ -100,25 +89,20 @@ jobs:
       with:
         node-version: '18'
     
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
-    
     - name: Install dependencies
       run: |
         cd frontend
-        pnpm install --frozen-lockfile
+        npm ci
     
     - name: Install Playwright browsers
       run: |
         cd frontend
-        pnpm exec playwright install --with-deps
+        npx playwright install --with-deps
     
     - name: Run E2E tests
       run: |
         cd frontend
-        pnpm test:e2e
+        npm run test:e2e
       env:
         CI: true
         NEXT_PUBLIC_MOCK_API: true
@@ -143,20 +127,15 @@ jobs:
       with:
         node-version: '18'
     
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
-    
     - name: Install dependencies
       run: |
         cd frontend
-        pnpm install --frozen-lockfile
+        npm ci
     
     - name: Build application
       run: |
         cd frontend
-        pnpm build
+        npm run build
       env:
         NEXT_PUBLIC_MOCK_API: true
     
