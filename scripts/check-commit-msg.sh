@@ -82,11 +82,13 @@ if ! echo "$SUBJECT" | grep -qE "$CONVENTIONAL_PATTERN"; then
     echo "  ci:       🔄 changes to CI configuration files and scripts"
     echo "  revert:   ⏪ revert previous commit"
     echo ""
-    echo -e "${BLUE}Example valid messages (영어+한국어 혼용):${NC}"
-    echo "  feat(auth): add JWT token validation 기능"
-    echo "  fix(portfolio): 주식 price calculation error 수정"
+    echo -e "${BLUE}Example valid messages (영어+한국어 자연스러운 혼용):${NC}"
+    echo "  feat(auth): JWT token validation 기능 추가"
+    echo "  fix(portfolio): stock price calculation 오류 수정"
     echo "  docs(api): authentication endpoint 문서 업데이트"
-    echo "  refactor(domain): user entity 구조 simplify"
+    echo "  refactor(domain): user entity 구조를 단순화"
+    echo "  feat(frontend): responsive design 적용한 dashboard"
+    echo "  chore(deps): React를 18.3.0 버전으로 업데이트"
     echo ""
     exit 1
 fi
@@ -190,20 +192,28 @@ if [ -n "$BODY" ]; then
     done
 fi
 
+# Check for English+Korean mixing encouragement
+if ! echo "$DESCRIPTION" | grep -q "[가-힣]"; then
+    echo -e "${YELLOW}💡 Tip: Consider mixing Korean with English for natural expression${NC}"
+    echo "   Example: '$SUBJECT' → '$(echo "$SUBJECT" | sed 's/add /추가한 /g' | sed 's/fix /수정한 /g' | sed 's/update /업데이트한 /g')"
+    echo "   Or: Natural mixing like 'JWT validation 기능 추가', 'responsive design 적용'"
+    echo ""
+fi
+
 # Check for common StockQuest patterns
 if echo "$TYPE" | grep -q "feat" && echo "$DESCRIPTION" | grep -qiE "(implement|add|create).*api"; then
     echo -e "${GREEN}💡 Feature detected: API implementation${NC}"
-    echo "   Consider including: endpoint specification, request/response examples"
+    echo "   Consider: 'API endpoint 구현' or 'REST API 기능 추가'"
 fi
 
 if echo "$TYPE" | grep -q "feat" && echo "$DESCRIPTION" | grep -qiE "(component|ui|page)"; then
     echo -e "${GREEN}💡 Feature detected: UI component${NC}"
-    echo "   Consider including: responsive design, accessibility notes"
+    echo "   Consider: 'responsive component 구현' or 'UI 컴포넌트 추가'"
 fi
 
 if echo "$TYPE" | grep -q "fix" && echo "$DESCRIPTION" | grep -qiE "(security|auth|vulnerability)"; then
     echo -e "${GREEN}🔒 Security fix detected${NC}"
-    echo "   Consider including: security impact assessment"
+    echo "   Consider: 'security 취약점 수정' or 'authentication 이슈 해결'"
 fi
 
 echo -e "${GREEN}✅ Commit message format is valid${NC}"

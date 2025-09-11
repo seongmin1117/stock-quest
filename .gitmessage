@@ -53,10 +53,12 @@
 # - Breaking Changes: BREAKING CHANGE: <description>
 # - Co-authored-by: Name <email>
 
-# Examples (영어+한국어 혼용):
-# feat(domain/user): add email validation 기능
-# fix(adapter/web): 인증 error 처리 개선
-# docs(readme): 설치 guide 업데이트
-# test(domain/order): order validation 테스트 추가
-# refactor(app/auth): JWT validation logic 분리
-# chore(deps): Spring Boot 3.2.0으로 업데이트
+# Examples (영어+한국어 자연스러운 혼용):
+# feat(domain/user): email validation 기능 추가
+# fix(adapter/web): authentication error 처리 로직 개선
+# docs(readme): installation guide 문서 업데이트  
+# test(domain/order): order validation 테스트 케이스 추가
+# refactor(app/auth): JWT validation 로직 분리 및 개선
+# chore(deps): Spring Boot를 3.2.0 버전으로 업데이트
+# feat(frontend): responsive design 적용한 dashboard 컴포넌트
+# fix(backend): database connection pool 설정 이슈 해결

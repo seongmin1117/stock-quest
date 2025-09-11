@@ -20,6 +20,7 @@
 - 변경 이유와 영향을 명확히 설명
 - 코드를 보지 않고도 변경사항 이해 가능
 - 미래의 개발자(자신 포함)를 위한 문서
+- **영어+한국어 자연스러운 혼용 권장** (예: "JWT authentication 기능 추가")
 
 ## 🏗️ 커밋 메시지 구조
 
@@ -33,18 +34,18 @@
 ```
 
 ### 1. Type (필수)
-| Type | 설명 | 예시 |
+| Type | 설명 | 예시 (영어+한국어 자연스러운 혼용) |
 |------|------|------|
-| `feat` | 새로운 기능 추가 | `feat(domain/user): add email validation` |
-| `fix` | 버그 수정 | `fix(adapter/web): handle null pointer exception` |
-| `docs` | 문서 수정 | `docs(readme): update API documentation` |
-| `style` | 코드 스타일 변경 | `style(domain/order): fix indentation` |
-| `refactor` | 리팩토링 | `refactor(app/auth): extract token validation` |
-| `test` | 테스트 추가/수정 | `test(domain/user): add validation tests` |
-| `chore` | 빌드/설정 변경 | `chore(deps): update spring boot version` |
-| `perf` | 성능 개선 | `perf(app/portfolio): optimize calculation` |
-| `ci` | CI/CD 설정 | `ci(github): add automated testing` |
-| `revert` | 커밋 되돌리기 | `revert: feat(domain/user): add email validation` |
+| `feat` | 새로운 기능 추가 | `feat(domain/user): email validation 기능 추가` |
+| `fix` | 버그 수정 | `fix(adapter/web): null pointer exception 처리 개선` |
+| `docs` | 문서 수정 | `docs(readme): API documentation 업데이트` |
+| `style` | 코드 스타일 변경 | `style(domain/order): code formatting 정리` |
+| `refactor` | 리팩토링 | `refactor(app/auth): token validation 로직 분리` |
+| `test` | 테스트 추가/수정 | `test(domain/user): validation 테스트 케이스 추가` |
+| `chore` | 빌드/설정 변경 | `chore(deps): Spring Boot 버전 업데이트` |
+| `perf` | 성능 개선 | `perf(app/portfolio): calculation 알고리즘 최적화` |
+| `ci` | CI/CD 설정 | `ci(github): automated testing 워크플로우 추가` |
+| `revert` | 커밋 되돌리기 | `revert: feat(domain/user): email validation 기능 추가` |
 
 ### 2. Scope (선택사항, 권장)
 
