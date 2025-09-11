@@ -1,0 +1,199 @@
+name: ✨ 기능 요청
+description: StockQuest에 새로운 기능을 제안해주세요
+title: "✨ [Feature]: "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ✨ 새로운 기능을 제안해주셔서 감사합니다!
+        
+        StockQuest를 더 나은 투자 교육 플랫폼으로 만들기 위한 귀하의 아이디어를 기대합니다.
+        
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: 🎯 기능 설명
+      description: 제안하시는 기능에 대해 명확하고 간결하게 설명해주세요.
+      placeholder: "예: 포트폴리오 백테스팅 기능을 통해 과거 데이터로 투자 전략을 검증할 수 있게 해주세요."
+    validations:
+      required: true
+      
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: 🤔 해결하려는 문제
+      description: 이 기능이 어떤 문제를 해결하는지 설명해주세요.
+      placeholder: |
+        현재 사용자는 자신의 투자 전략이 과거에 어떤 성과를 냈을지 알 수 없습니다.
+        이로 인해 전략을 검증하고 개선하기 어려운 상황입니다.
+    validations:
+      required: true
+      
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: 💡 제안하는 해결책
+      description: 이 문제를 어떻게 해결할 수 있는지 구체적으로 설명해주세요.
+      placeholder: |
+        1. 사용자가 투자 전략을 정의할 수 있는 인터페이스 제공
+        2. 선택한 기간의 과거 데이터로 전략 실행 시뮬레이션
+        3. 결과를 차트와 수익률 지표로 시각화
+        4. 벤치마크(시장 지수)와의 비교 분석
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: feature-category
+    attributes:
+      label: 🏷️ 기능 카테고리
+      description: 제안하는 기능이 속하는 카테고리를 선택해주세요.
+      options:
+        - 📊 데이터 분석 및 시각화
+        - 🔄 거래 및 시뮬레이션
+        - 📈 포트폴리오 관리
+        - 🎯 챌린지 시스템
+        - 👥 소셜 및 커뮤니티
+        - 🔔 알림 및 모니터링
+        - 🎨 UI/UX 개선
+        - 🔐 보안 및 인증
+        - 📱 모바일 대응
+        - 🤖 AI/ML 기능
+        - 🔧 개발자 도구
+        - 📚 교육 콘텐츠
+        - 기타
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🚀 우선순위
+      description: 이 기능의 중요도를 평가해주세요.
+      options:
+        - 🔴 Critical (핵심 비즈니스 가치)
+        - 🟠 High (사용자 경험 크게 향상)
+        - 🟡 Medium (유용한 추가 기능)
+        - 🟢 Low (Nice to have)
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: 👤 대상 사용자
+      description: 이 기능의 주요 대상 사용자를 선택해주세요.
+      options:
+        - 🆕 초보 투자자
+        - 📈 중급 투자자
+        - 💼 고급 투자자
+        - 👨‍🏫 교육자/강사
+        - 🏢 기관 사용자
+        - 👩‍💻 개발자
+        - 모든 사용자
+    validations:
+      required: true
+      
+  - type: textarea
+    id: user-stories
+    attributes:
+      label: 📖 사용자 스토리
+      description: "사용자 입장에서 이 기능이 어떻게 사용될지 시나리오를 작성해주세요."
+      placeholder: |
+        **As a** 투자 초보자
+        **I want** 내 투자 전략을 과거 데이터로 테스트해보고 싶다
+        **So that** 실제 투자 전에 전략의 유효성을 검증할 수 있다
+        
+        **사용 시나리오:**
+        1. 사용자가 '백테스팅' 메뉴에 접근
+        2. 투자 종목과 매수/매도 규칙 설정
+        3. 테스트 기간 선택 (예: 2020-2023)
+        4. 시뮬레이션 실행 후 결과 확인
+        5. 다양한 전략 비교 및 최적화
+        
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ 수용 기준
+      description: 이 기능이 완성되었다고 판단할 수 있는 구체적인 기준을 작성해주세요.
+      placeholder: |
+        - [ ] 사용자가 투자 전략을 정의할 수 있는 폼 제공
+        - [ ] 선택한 기간의 과거 데이터로 시뮬레이션 실행
+        - [ ] 결과를 차트로 시각화 (손익 곡선, 누적 수익률)
+        - [ ] 주요 지표 표시 (총 수익률, 샤프 비율, 최대 손실)
+        - [ ] 시장 지수와 비교 분석 기능
+        - [ ] 백테스팅 결과 저장 및 비교 기능
+        - [ ] 모바일에서도 정상 동작
+        - [ ] 10초 이내에 결과 표시 (성능 요구사항)
+        
+  - type: textarea
+    id: technical-considerations
+    attributes:
+      label: 🔧 기술적 고려사항
+      description: 구현 시 고려해야 할 기술적 측면이 있다면 제안해주세요.
+      placeholder: |
+        - 백엔드: 대용량 과거 데이터 처리 최적화 필요
+        - 프론트엔드: 차트 라이브러리 (Recharts 활용)
+        - 데이터베이스: 과거 가격 데이터 인덱싱 전략
+        - 캐싱: 자주 사용되는 백테스팅 결과 캐시
+        - 성능: 복잡한 계산의 비동기 처리
+        
+  - type: textarea
+    id: mockups-wireframes
+    attributes:
+      label: 🎨 목업 또는 와이어프레임
+      description: UI/UX와 관련된 기능이라면 간단한 스케치나 참고 이미지를 첨부해주세요.
+      placeholder: |
+        이미지를 드래그 앤 드롭하거나 붙여넣기 하세요.
+        또는 참고할 만한 다른 서비스의 URL을 제공해주세요.
+        
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 대안 및 비교
+      description: 고려해본 다른 해결책이나 유사한 기능을 제공하는 서비스가 있다면 언급해주세요.
+      placeholder: |
+        - TradingView의 백테스팅 기능 (참고용)
+        - Portfolio Visualizer (벤치마크)
+        - 간단한 수익률 계산기 (최소 기능)
+        
+  - type: textarea
+    id: business-value
+    attributes:
+      label: 💰 비즈니스 가치
+      description: 이 기능이 StockQuest에 어떤 비즈니스 가치를 제공하는지 설명해주세요.
+      placeholder: |
+        - 사용자 참여도 증가 (예상: +30% 세션 시간)
+        - 교육적 가치 향상 (전략 검증 학습)
+        - 프리미엄 기능으로 수익화 가능성
+        - 경쟁 서비스 대비 차별화 포인트
+        
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 추가 정보
+      description: 기능 제안과 관련된 추가 정보나 참고 자료가 있다면 제공해주세요.
+      placeholder: |
+        - 관련 논문이나 연구 자료
+        - 유사 기능을 제공하는 다른 플랫폼
+        - 사용자 피드백이나 요청 사례
+        - 구현 일정에 대한 희망사항
+        
+  - type: checkboxes
+    id: submission-checklist
+    attributes:
+      label: ✅ 제출 전 체크리스트
+      description: 기능 제안을 제출하기 전에 다음 사항을 확인해주세요.
+      options:
+        - label: 기존 이슈에 유사한 기능 요청이 없는지 검색했습니다.
+          required: true
+        - label: StockQuest의 목표와 방향성에 부합하는 기능입니다.
+          required: true
+        - label: 구체적이고 실행 가능한 제안을 작성했습니다.
+          required: true
+        - label: 사용자 가치와 비즈니스 가치를 명확히 했습니다.
+          required: true
+        - label: 기술적 실현 가능성을 고려했습니다.
+          required: true

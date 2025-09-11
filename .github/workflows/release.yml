@@ -1,0 +1,333 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+    
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        
+    - name: Cache pnpm modules
+      uses: actions/cache@v3
+      with:
+        path: ~/.pnpm-store
+        key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+    
+    - name: Build Backend
+      run: |
+        cd backend
+        chmod +x gradlew
+        ./gradlew clean build -x test
+        
+    - name: Build Frontend
+      run: |
+        cd frontend
+        pnpm install --frozen-lockfile
+        pnpm build
+        
+    - name: Create JAR artifact
+      run: |
+        mkdir -p artifacts
+        cp backend/build/libs/*.jar artifacts/
+        
+    - name: Create Frontend build artifact
+      run: |
+        cd frontend
+        tar -czf ../artifacts/frontend-build.tar.gz .next/
+        
+    - name: Extract version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+        echo "VERSION_NUMBER=${VERSION#v}" >> $GITHUB_OUTPUT
+        
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get previous tag
+        PREVIOUS_TAG=$(git tag -l --sort=-version:refname | grep -v "^${{ steps.version.outputs.VERSION }}$" | head -n 1)
+        
+        if [ -z "$PREVIOUS_TAG" ]; then
+          PREVIOUS_TAG=$(git rev-list --max-parents=0 HEAD)
+        fi
+        
+        echo "Previous tag: $PREVIOUS_TAG"
+        echo "Current tag: ${{ steps.version.outputs.VERSION }}"
+        
+        # Generate changelog
+        cat > CHANGELOG.md << 'EOF'
+        ## 🚀 StockQuest ${{ steps.version.outputs.VERSION }}
+        
+        ### 📋 Changes in this release
+        
+        EOF
+        
+        # Get commits between tags
+        git log --pretty=format:"- %s" $PREVIOUS_TAG..${{ steps.version.outputs.VERSION }} | \
+          sed 's/^- feat/- ✨ feat/g' | \
+          sed 's/^- fix/- 🐛 fix/g' | \
+          sed 's/^- docs/- 📝 docs/g' | \
+          sed 's/^- test/- ✅ test/g' | \
+          sed 's/^- refactor/- ♻️ refactor/g' | \
+          sed 's/^- perf/- ⚡ perf/g' | \
+          sed 's/^- chore/- 🔧 chore/g' >> CHANGELOG.md
+        
+        cat >> CHANGELOG.md << 'EOF'
+        
+        ### 🛠️ Technical Details
+        
+        - **Backend**: Spring Boot 3.5.0 + Java 21
+        - **Frontend**: Next.js 14 + React 18 + TypeScript
+        - **Database**: MySQL 8.0 + Redis 7
+        - **Architecture**: Hexagonal Architecture + Feature-Sliced Design
+        
+        ### 📦 Installation
+        
+        #### Quick Start (Docker)
+        ```bash
+        wget https://github.com/seongmin1117/stock-quest/releases/download/${{ steps.version.outputs.VERSION }}/docker-compose.yml
+        docker-compose up -d
+        ```
+        
+        #### Manual Installation
+        1. Download the JAR file from the assets below
+        2. Download the frontend build archive
+        3. Follow the README.md instructions
+        
+        ### 🔄 Upgrade Guide
+        
+        If upgrading from a previous version:
+        1. Stop the current application
+        2. Backup your database
+        3. Replace the JAR file with the new version
+        4. Run database migrations: `java -jar stockquest.jar --spring.profiles.active=migrate`
+        5. Start the new version
+        
+        ### ⚠️ Breaking Changes
+        
+        EOF
+        
+        # Check for breaking changes in commit messages
+        if git log --grep="BREAKING CHANGE" $PREVIOUS_TAG..${{ steps.version.outputs.VERSION }} --pretty=format:"- %s" | grep -q "BREAKING CHANGE"; then
+          echo "**This release contains breaking changes!**" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          git log --grep="BREAKING CHANGE" $PREVIOUS_TAG..${{ steps.version.outputs.VERSION }} --pretty=format:"- %s" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+        else
+          echo "None in this release." >> CHANGELOG.md
+        fi
+        
+        cat >> CHANGELOG.md << 'EOF'
+        
+        ### 📊 Stats
+        
+        EOF
+        
+        # Add some stats
+        COMMITS=$(git rev-list --count $PREVIOUS_TAG..${{ steps.version.outputs.VERSION }})
+        FILES_CHANGED=$(git diff --name-only $PREVIOUS_TAG..${{ steps.version.outputs.VERSION }} | wc -l)
+        
+        echo "- **Commits**: $COMMITS" >> CHANGELOG.md
+        echo "- **Files Changed**: $FILES_CHANGED" >> CHANGELOG.md
+        echo "- **Contributors**: $(git shortlog -sn $PREVIOUS_TAG..${{ steps.version.outputs.VERSION }} | wc -l)" >> CHANGELOG.md
+        
+        cat >> CHANGELOG.md << 'EOF'
+        
+        ### 🙏 Contributors
+        
+        Thank you to everyone who contributed to this release!
+        
+        EOF
+        
+        git shortlog -sn $PREVIOUS_TAG..${{ steps.version.outputs.VERSION }} | sed 's/^[[:space:]]*[0-9]*[[:space:]]*/- /' >> CHANGELOG.md
+        
+        echo "CHANGELOG_PATH=CHANGELOG.md" >> $GITHUB_OUTPUT
+        
+    - name: Create Docker Compose for release
+      run: |
+        cat > artifacts/docker-compose.yml << 'EOF'
+        version: '3.8'
+        
+        services:
+          backend:
+            image: ghcr.io/seongmin1117/stock-quest-backend:${{ steps.version.outputs.VERSION }}
+            ports:
+              - "8080:8080"
+            environment:
+              - SPRING_PROFILES_ACTIVE=docker
+              - DB_HOST=mysql
+              - DB_PORT=3306
+              - DB_NAME=stockquest
+              - DB_USERNAME=stockquest
+              - DB_PASSWORD=stockquest123
+              - REDIS_HOST=redis
+              - REDIS_PORT=6379
+              - JWT_SECRET=your-production-secret-key-change-this
+            depends_on:
+              mysql:
+                condition: service_healthy
+              redis:
+                condition: service_started
+            networks:
+              - stockquest-network
+        
+          frontend:
+            image: ghcr.io/seongmin1117/stock-quest-frontend:${{ steps.version.outputs.VERSION }}
+            ports:
+              - "3000:3000"
+            environment:
+              - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+            depends_on:
+              - backend
+            networks:
+              - stockquest-network
+        
+          mysql:
+            image: mysql:8.0
+            environment:
+              - MYSQL_ROOT_PASSWORD=rootpassword123
+              - MYSQL_DATABASE=stockquest
+              - MYSQL_USER=stockquest
+              - MYSQL_PASSWORD=stockquest123
+            volumes:
+              - mysql_data:/var/lib/mysql
+            healthcheck:
+              test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+              timeout: 20s
+              retries: 10
+            networks:
+              - stockquest-network
+        
+          redis:
+            image: redis:7-alpine
+            volumes:
+              - redis_data:/data
+            networks:
+              - stockquest-network
+        
+        volumes:
+          mysql_data:
+          redis_data:
+        
+        networks:
+          stockquest-network:
+            driver: bridge
+        EOF
+        
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        release_name: StockQuest ${{ steps.version.outputs.VERSION }}
+        body_path: ${{ steps.changelog.outputs.CHANGELOG_PATH }}
+        draft: false
+        prerelease: ${{ contains(steps.version.outputs.VERSION, 'alpha') || contains(steps.version.outputs.VERSION, 'beta') || contains(steps.version.outputs.VERSION, 'rc') }}
+        
+    - name: Upload JAR Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/backend-0.0.1-SNAPSHOT.jar
+        asset_name: stockquest-backend-${{ steps.version.outputs.VERSION_NUMBER }}.jar
+        asset_content_type: application/java-archive
+        
+    - name: Upload Frontend Build
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/frontend-build.tar.gz
+        asset_name: stockquest-frontend-${{ steps.version.outputs.VERSION_NUMBER }}.tar.gz
+        asset_content_type: application/gzip
+        
+    - name: Upload Docker Compose
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/docker-compose.yml
+        asset_name: docker-compose.yml
+        asset_content_type: text/yaml
+        
+    - name: Build and Push Docker Images
+      if: "!contains(steps.version.outputs.VERSION, 'alpha')"
+      run: |
+        echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        
+        # Build and push backend image
+        cd backend
+        docker build -t ghcr.io/seongmin1117/stock-quest-backend:${{ steps.version.outputs.VERSION }} .
+        docker build -t ghcr.io/seongmin1117/stock-quest-backend:latest .
+        docker push ghcr.io/seongmin1117/stock-quest-backend:${{ steps.version.outputs.VERSION }}
+        docker push ghcr.io/seongmin1117/stock-quest-backend:latest
+        
+        # Build and push frontend image
+        cd ../frontend
+        docker build -t ghcr.io/seongmin1117/stock-quest-frontend:${{ steps.version.outputs.VERSION }} .
+        docker build -t ghcr.io/seongmin1117/stock-quest-frontend:latest .
+        docker push ghcr.io/seongmin1117/stock-quest-frontend:${{ steps.version.outputs.VERSION }}
+        docker push ghcr.io/seongmin1117/stock-quest-frontend:latest
+        
+    - name: Update README with latest release
+      if: "!contains(steps.version.outputs.VERSION, 'alpha') && !contains(steps.version.outputs.VERSION, 'beta')"
+      run: |
+        # Update version badge in README.md
+        sed -i 's/v[0-9]*\.[0-9]*\.[0-9]*/'"${{ steps.version.outputs.VERSION }}"'/g' README.md
+        
+        # Commit and push the changes
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add README.md
+        git commit -m "docs: update README with release ${{ steps.version.outputs.VERSION }}" || exit 0
+        git push origin HEAD:main
+        
+    - name: Post-release notifications
+      run: |
+        echo "🎉 Release ${{ steps.version.outputs.VERSION }} created successfully!"
+        echo "📦 Assets uploaded:"
+        echo "  - Backend JAR"
+        echo "  - Frontend Build"
+        echo "  - Docker Compose"
+        
+        if [ "${{ contains(steps.version.outputs.VERSION, 'alpha') }}" == "false" ]; then
+          echo "🐳 Docker images pushed to GitHub Container Registry"
+        fi
