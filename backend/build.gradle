@@ -60,6 +60,9 @@ dependencies {
     // External API Client
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     
+    // Netty DNS Native for macOS - improves DNS resolution performance
+    runtimeOnly 'io.netty:netty-resolver-dns-native-macos:4.1.115.Final:osx-aarch_64'
+    
     // WebSocket Support
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     
