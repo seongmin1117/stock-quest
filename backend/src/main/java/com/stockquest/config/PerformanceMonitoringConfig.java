@@ -2,7 +2,7 @@ package com.stockquest.config;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import org.springframework.boot.actuator.metrics.cache.CacheMetricsRegistrar;
+// // import org.springframework.boot.actuator.metrics.cache.CacheMetricsRegistrar;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -136,22 +136,22 @@ public class PerformanceMonitoringConfig {
      * 
      * @return CacheMetricsRegistrar for automatic cache metrics collection
      */
-    @Bean
-    public CacheMetricsRegistrar cacheMetricsRegistrar() {
-        CacheMetricsRegistrar registrar = new CacheMetricsRegistrar(meterRegistry);
-        
-        // Register all cache regions for monitoring
-        if (cacheManager != null) {
-            cacheManager.getCacheNames().forEach(cacheName -> {
-                org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
-                if (cache != null) {
-                    registrar.bindCacheToRegistry(cache, "stockquest.cache");
-                }
-            });
-        }
-        
-        return registrar;
-    }
+    // @Bean
+    // public CacheMetricsRegistrar cacheMetricsRegistrar() {
+    //     CacheMetricsRegistrar registrar = new CacheMetricsRegistrar(meterRegistry);
+    //     
+    //     // Register all cache regions for monitoring
+    //     if (cacheManager != null) {
+    //         cacheManager.getCacheNames().forEach(cacheName -> {
+    //             org.springframework.cache.Cache cache = cacheManager.getCache(cacheName);
+    //             if (cache != null) {
+    //                 registrar.bindCacheToRegistry(cache, "stockquest.cache");
+    //             }
+    //         });
+    //     }
+    //     
+    //     return registrar;
+    // }
 
     /**
      * Database connection pool monitoring setup.

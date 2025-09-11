@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
  * 챌린지 스케줄 도메인 엔티티
@@ -24,7 +23,7 @@ public class ChallengeSchedule {
     private LocalDateTime deactivationDate;
     private String timezone;
     private Boolean isActive;
-    private Map<String, Object> metadata;   // Additional scheduling metadata
+    private String metadata;   // Additional scheduling metadata as JSON string
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
