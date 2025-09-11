@@ -4,7 +4,10 @@ import com.stockquest.adapter.in.web.dto.*;
 import com.stockquest.domain.portfolio.PortfolioPosition;
 import com.stockquest.domain.portfolio.port.PortfolioRepository;
 import com.stockquest.domain.session.ChallengeSession;
-import com.stockquest.domain.session.port.SessionRepository;
+import com.stockquest.domain.session.port.ChallengeSessionRepository;
+import com.stockquest.application.market.MarketDataService;
+import com.stockquest.domain.portfolio.*;
+import com.stockquest.application.analytics.RiskCalculationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -33,7 +36,7 @@ import java.util.stream.Collectors;
 public class PortfolioAnalyticsService {
 
     private final PortfolioRepository portfolioRepository;
-    private final SessionRepository sessionRepository;
+    private final ChallengeSessionRepository challengeSessionRepository;
     private final MarketDataService marketDataService;
     private final RiskCalculationService riskCalculationService;
 
@@ -49,7 +52,7 @@ public class PortfolioAnalyticsService {
         log.info("포트폴리오 종합 분석 시작 - sessionId: {}, timeframe: {}", sessionId, timeframe);
         
         // 세션 및 포지션 정보 조회
-        ChallengeSession session = sessionRepository.findById(sessionId)
+        ChallengeSession session = challengeSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("세션을 찾을 수 없습니다: " + sessionId));
                 
         List<PortfolioPosition> positions = portfolioRepository.findBySessionId(sessionId);

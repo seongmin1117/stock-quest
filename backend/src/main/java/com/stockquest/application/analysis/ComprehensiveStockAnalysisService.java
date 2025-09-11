@@ -2,7 +2,6 @@ package com.stockquest.application.analysis;
 
 import com.stockquest.application.marketdata.RealTimeMarketDataService;
 import com.stockquest.application.strategy.TradingStrategyEngine;
-import com.stockquest.domain.stock.Stock;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
