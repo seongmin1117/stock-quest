@@ -1,0 +1,1 @@
+export { useErrorHandling, useQueryErrorHandling } from './useErrorHandling';
