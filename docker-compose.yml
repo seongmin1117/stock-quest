@@ -1,0 +1,84 @@
+services:
+  # MySQL 데이터베이스
+  mysql:
+    image: mysql:8.0
+    container_name: stockquest-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: stockquest
+      MYSQL_USER: stockquest
+      MYSQL_PASSWORD: stockquest123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/src/main/resources/db/init:/docker-entrypoint-initdb.d
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+09:00
+    networks:
+      - stockquest-network
+
+  # Redis 캐시
+  redis:
+    image: redis:7-alpine
+    container_name: stockquest-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - stockquest-network
+
+  # Spring Boot 백엔드 (개발 시 선택적 실행)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stockquest-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/stockquest?serverTimezone=UTC&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: stockquest
+      SPRING_DATASOURCE_PASSWORD: stockquest123
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - stockquest-network
+    profiles:
+      - backend  # docker-compose --profile backend up으로 실행
+
+  # Next.js 프론트엔드 (개발 시 선택적 실행)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: stockquest-frontend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - stockquest-network
+    profiles:
+      - frontend  # docker-compose --profile frontend up으로 실행
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  stockquest-network:
+    driver: bridge
