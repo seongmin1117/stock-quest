@@ -14,6 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 /**
  * 챌린지 세션(거래) 관련 REST API 컨트롤러
@@ -31,7 +34,7 @@ public class SessionController {
     @GetMapping("/{sessionId}")
     @Operation(summary = "세션 상세 조회", description = "챌린지 세션의 상세 정보를 조회합니다")
     public ResponseEntity<SessionDetailResponse> getSessionDetail(
-            @PathVariable Long sessionId,
+            @PathVariable @NotNull @Positive Long sessionId,
             @AuthenticationPrincipal UserDetails userDetails) {
         
         Long userId = getUserId(userDetails);
@@ -44,8 +47,8 @@ public class SessionController {
     @PostMapping("/{sessionId}/orders")
     @Operation(summary = "주문 실행", description = "챌린지 세션에서 주문을 실행합니다")
     public ResponseEntity<PlaceOrderResponse> placeOrder(
-            @PathVariable Long sessionId,
-            @RequestBody PlaceOrderRequest request,
+            @PathVariable @NotNull @Positive Long sessionId,
+            @Valid @RequestBody PlaceOrderRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         
         Long userId = getUserId(userDetails);
@@ -65,7 +68,7 @@ public class SessionController {
     @PostMapping("/{sessionId}/close")
     @Operation(summary = "챌린지 종료", description = "챌린지 세션을 종료하고 결과를 확인합니다")
     public ResponseEntity<CloseChallengeResponse> closeChallenge(
-            @PathVariable Long sessionId,
+            @PathVariable @NotNull @Positive Long sessionId,
             @AuthenticationPrincipal UserDetails userDetails) {
         
         Long userId = getUserId(userDetails);

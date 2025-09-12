@@ -30,11 +30,13 @@ public class ExecutionAnalyticsService {
     private final Map<String, ExecutionMetrics> dailyMetrics = new ConcurrentHashMap<>();
     private final Map<String, List<Trade>> executionHistory = new ConcurrentHashMap<>();
     private final Map<String, BestExecutionReport> dailyReports = new ConcurrentHashMap<>();
+    private final NotificationService notificationService;
     
-    // Dependencies would be injected
-    // private final TradeRepository tradeRepository;
-    // private final MarketDataService marketDataService;
-    // private final NotificationService notificationService;
+    // Monitoring thresholds
+    private static final BigDecimal EXECUTION_DELAY_THRESHOLD = BigDecimal.valueOf(500); // 500ms
+    private static final BigDecimal MARKET_IMPACT_THRESHOLD = BigDecimal.valueOf(0.005); // 0.5%
+    private static final BigDecimal QUALITY_DEGRADATION_THRESHOLD = BigDecimal.valueOf(0.8); // 80%
+    private static final BigDecimal COMPLIANCE_THRESHOLD = BigDecimal.valueOf(0.95); // 95%
     
     /**
      * 거래 실행 품질 분석
@@ -192,8 +194,8 @@ public class ExecutionAnalyticsService {
             
             log.info("일일 베스트 실행 리포트 생성 완료: {}", date);
             
-            // TODO: 알림 발송
-            // notificationService.sendBestExecutionReport(report);
+            // 베스트 실행 리포트 알림 발송
+            sendBestExecutionReportNotification(report);
             
             return report;
         });
@@ -434,23 +436,234 @@ public class ExecutionAnalyticsService {
     // Monitoring methods
     
     private void checkRecentTradeQuality() {
-        // TODO: 최근 거래 품질 검사 로직
+        log.debug("최근 거래 품질 검사 수행");
+        
+        try {
+            LocalDateTime cutoffTime = LocalDateTime.now().minusHours(1);
+            
+            // 최근 1시간 거래 조회
+            List<Trade> recentTrades = executionHistory.values().stream()
+                .flatMap(List::stream)
+                .filter(trade -> trade.getTradeTime().isAfter(cutoffTime))
+                .collect(Collectors.toList());
+            
+            if (recentTrades.isEmpty()) {
+                return;
+            }
+            
+            // 거래 품질 점수 계산 (실행 효율성 기반)
+            double averageQuality = recentTrades.stream()
+                .mapToDouble(trade -> {
+                    ExecutionQualityMetrics metrics = trade.getExecutionMetrics();
+                    if (metrics != null && metrics.getExecutionEfficiency() != null) {
+                        return metrics.getExecutionEfficiency().doubleValue() / 100.0; // 0-1 스케일로 변환
+                    }
+                    return 0.8; // 기본값
+                })
+                .average()
+                .orElse(0.8);
+            
+            // 품질 저하 감지
+            if (averageQuality < QUALITY_DEGRADATION_THRESHOLD.doubleValue()) {
+                ExecutionAlert alert = ExecutionAlert.builder()
+                    .alertType(ExecutionAlertType.QUALITY_DEGRADATION)
+                    .severity("HIGH")
+                    .message(String.format("거래 품질 저하 감지: 평균 품질 %.2f%% (임계값: %.1f%%)", 
+                        averageQuality * 100, QUALITY_DEGRADATION_THRESHOLD.doubleValue() * 100))
+                    .affectedTrades(recentTrades.size())
+                    .timestamp(LocalDateTime.now())
+                    .build();
+                
+                sendExecutionAlert(alert);
+            }
+            
+        } catch (Exception e) {
+            log.error("거래 품질 검사 중 오류 발생", e);
+        }
     }
     
     private void monitorExecutionDelays() {
-        // TODO: 실행 지연 모니터링 로직
+        log.debug("실행 지연 모니터링 수행");
+        
+        try {
+            LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(30);
+            
+            // 최근 30분 거래 중 지연이 발생한 거래 조회 (실행 속도 기반)
+            List<Trade> delayedTrades = executionHistory.values().stream()
+                .flatMap(List::stream)
+                .filter(trade -> trade.getTradeTime().isAfter(cutoffTime))
+                .filter(trade -> {
+                    ExecutionQualityMetrics metrics = trade.getExecutionMetrics();
+                    if (metrics != null && metrics.getExecutionSpeed() != null) {
+                        return metrics.getExecutionSpeed() > EXECUTION_DELAY_THRESHOLD.longValue();
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+            
+            if (!delayedTrades.isEmpty()) {
+                double averageDelay = delayedTrades.stream()
+                    .mapToLong(trade -> {
+                        ExecutionQualityMetrics metrics = trade.getExecutionMetrics();
+                        return metrics != null && metrics.getExecutionSpeed() != null ? 
+                            metrics.getExecutionSpeed() : 0L;
+                    })
+                    .average()
+                    .orElse(0.0);
+                
+                ExecutionAlert alert = ExecutionAlert.builder()
+                    .alertType(ExecutionAlertType.EXECUTION_DELAY)
+                    .severity("MEDIUM")
+                    .message(String.format("실행 지연 감지: %d건 거래, 평균 지연 %.0fms (임계값: %dms)", 
+                        delayedTrades.size(), averageDelay, EXECUTION_DELAY_THRESHOLD.longValue()))
+                    .affectedTrades(delayedTrades.size())
+                    .timestamp(LocalDateTime.now())
+                    .build();
+                
+                sendExecutionAlert(alert);
+            }
+            
+        } catch (Exception e) {
+            log.error("실행 지연 모니터링 중 오류 발생", e);
+        }
     }
     
     private void checkMarketImpactThresholds() {
-        // TODO: 시장 영향 임계값 검사 로직
+        log.debug("시장 영향 임계값 검사 수행");
+        
+        try {
+            LocalDateTime cutoffTime = LocalDateTime.now().minusHours(2);
+            
+            // 최근 2시간 거래 중 시장 영향이 높은 거래 조회
+            List<Trade> highImpactTrades = executionHistory.values().stream()
+                .flatMap(List::stream)
+                .filter(trade -> trade.getTradeTime().isAfter(cutoffTime))
+                .filter(trade -> {
+                    ExecutionQualityMetrics metrics = trade.getExecutionMetrics();
+                    if (metrics != null && metrics.getMarketImpact() != null) {
+                        return metrics.getMarketImpact().abs().compareTo(MARKET_IMPACT_THRESHOLD) > 0;
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+            
+            if (!highImpactTrades.isEmpty()) {
+                BigDecimal totalImpact = highImpactTrades.stream()
+                    .map(trade -> trade.getExecutionMetrics().getMarketImpact().abs())
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal averageImpact = totalImpact.divide(BigDecimal.valueOf(highImpactTrades.size()), 4, RoundingMode.HALF_UP);
+                
+                ExecutionAlert alert = ExecutionAlert.builder()
+                    .alertType(ExecutionAlertType.HIGH_MARKET_IMPACT)
+                    .severity("HIGH")
+                    .message(String.format("높은 시장 영향 감지: %d건 거래, 평균 시장영향 %.2f%% (임계값: %.1f%%)", 
+                        highImpactTrades.size(), 
+                        averageImpact.multiply(BigDecimal.valueOf(100)).doubleValue(),
+                        MARKET_IMPACT_THRESHOLD.multiply(BigDecimal.valueOf(100)).doubleValue()))
+                    .affectedTrades(highImpactTrades.size())
+                    .timestamp(LocalDateTime.now())
+                    .build();
+                
+                sendExecutionAlert(alert);
+            }
+            
+        } catch (Exception e) {
+            log.error("시장 영향 임계값 검사 중 오류 발생", e);
+        }
     }
     
     private void monitorAlgorithmPerformance() {
-        // TODO: 알고리즘 성과 모니터링 로직
+        log.debug("알고리즘 성과 모니터링 수행");
+        
+        try {
+            LocalDateTime cutoffTime = LocalDateTime.now().minusHours(4);
+            String today = LocalDate.now().toString();
+            
+            // 오늘의 알고리즘별 성과 분석
+            Map<String, BigDecimal> algorithmPerformance = rankAlgorithmPerformance(today);
+            
+            // 성과 저하 알고리즘 감지
+            List<String> underperformingAlgos = algorithmPerformance.entrySet().stream()
+                .filter(entry -> entry.getValue().compareTo(BigDecimal.valueOf(70)) < 0) // 70% 미만
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+            
+            if (!underperformingAlgos.isEmpty()) {
+                ExecutionAlert alert = ExecutionAlert.builder()
+                    .alertType(ExecutionAlertType.ALGORITHM_UNDERPERFORMANCE)
+                    .severity("MEDIUM")
+                    .message(String.format("알고리즘 성과 저하 감지: %s (성과: %s)", 
+                        String.join(", ", underperformingAlgos),
+                        underperformingAlgos.stream()
+                            .map(algo -> algo + "=" + algorithmPerformance.get(algo) + "%")
+                            .collect(Collectors.joining(", "))))
+                    .affectedTrades(0) // 알고리즘 전체 영향
+                    .timestamp(LocalDateTime.now())
+                    .build();
+                
+                sendExecutionAlert(alert);
+            }
+            
+            // 최고 성과 알고리즘 정보 로깅
+            algorithmPerformance.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .ifPresent(entry -> log.info("최고 성과 알고리즘: {} ({}%)", 
+                    entry.getKey(), entry.getValue()));
+            
+        } catch (Exception e) {
+            log.error("알고리즘 성과 모니터링 중 오류 발생", e);
+        }
     }
     
     private void monitorRegulatoryCompliance() {
-        // TODO: 규제 준수 모니터링 로직
+        log.debug("규제 준수 모니터링 수행");
+        
+        try {
+            String today = LocalDate.now().toString();
+            ExecutionMetrics todayMetrics = dailyMetrics.get(today);
+            
+            if (todayMetrics == null) {
+                return;
+            }
+            
+            // 베스트 실행 준수율 확인
+            BigDecimal complianceRate = calculateBestExecutionComplianceRate(todayMetrics);
+            
+            if (complianceRate.compareTo(COMPLIANCE_THRESHOLD) < 0) {
+                ExecutionAlert alert = ExecutionAlert.builder()
+                    .alertType(ExecutionAlertType.COMPLIANCE_BREACH)
+                    .severity("HIGH")
+                    .message(String.format("베스트 실행 준수율 미달: %.1f%% (임계값: %.1f%%)", 
+                        complianceRate.doubleValue(), 
+                        COMPLIANCE_THRESHOLD.multiply(BigDecimal.valueOf(100)).doubleValue()))
+                    .affectedTrades(todayMetrics.getTotalTrades())
+                    .timestamp(LocalDateTime.now())
+                    .build();
+                
+                sendExecutionAlert(alert);
+            }
+            
+            // 추가 규제 준수 체크
+            checkTradeReporting(todayMetrics);
+            checkPositionLimits(todayMetrics);
+            
+        } catch (Exception e) {
+            log.error("규제 준수 모니터링 중 오류 발생", e);
+        }
+    }
+    
+    private void checkTradeReporting(ExecutionMetrics metrics) {
+        // 거래 보고 준수 확인 (단순화된 구현)
+        if (metrics.getTotalTrades() > 0 && metrics.getReportingCompliance().compareTo(COMPLIANCE_THRESHOLD) < 0) {
+            log.warn("거래 보고 준수율 저하: {}%", metrics.getReportingCompliance().multiply(BigDecimal.valueOf(100)));
+        }
+    }
+    
+    private void checkPositionLimits(ExecutionMetrics metrics) {
+        // 포지션 한도 준수 확인 (단순화된 구현)
+        if (metrics.getPositionLimitCompliance().compareTo(COMPLIANCE_THRESHOLD) < 0) {
+            log.warn("포지션 한도 준수율 저하: {}%", metrics.getPositionLimitCompliance().multiply(BigDecimal.valueOf(100)));
+        }
     }
     
     // Report generation methods
@@ -698,6 +911,164 @@ public class ExecutionAnalyticsService {
         
         public BigDecimal getMaxDrawdown() {
             return BigDecimal.valueOf(0.03); // 3% 임시 값
+        }
+        
+        public BigDecimal getReportingCompliance() {
+            return BigDecimal.valueOf(0.98); // 98% 임시 값
+        }
+        
+        public BigDecimal getPositionLimitCompliance() {
+            return BigDecimal.valueOf(0.97); // 97% 임시 값
+        }
+    }
+    
+    // ========================= Notification Helper Methods =========================
+    
+    /**
+     * 베스트 실행 리포트 알림 발송
+     */
+    private void sendBestExecutionReportNotification(BestExecutionReport report) {
+        try {
+            log.info("베스트 실행 리포트 알림 발송: {}", report.getReportDate());
+            
+            // 리포트를 RiskAlert 형태로 변환하여 기존 NotificationService 활용
+            com.stockquest.domain.risk.RiskAlert reportAlert = convertToRiskAlert(report);
+            
+            // 이메일과 슬랙으로 알림 발송
+            notificationService.sendNotification(reportAlert, 
+                com.stockquest.domain.risk.RiskAlert.AlertConfiguration.NotificationChannel.EMAIL);
+            notificationService.sendNotification(reportAlert, 
+                com.stockquest.domain.risk.RiskAlert.AlertConfiguration.NotificationChannel.SLACK);
+                
+        } catch (Exception e) {
+            log.error("베스트 실행 리포트 알림 발송 실패", e);
+        }
+    }
+    
+    /**
+     * 실행 알림 발송
+     */
+    private void sendExecutionAlert(ExecutionAlert alert) {
+        try {
+            log.warn("실행 알림 발송: {} - {}", alert.getAlertType(), alert.getMessage());
+            
+            // ExecutionAlert를 RiskAlert로 변환
+            com.stockquest.domain.risk.RiskAlert riskAlert = convertExecutionAlertToRiskAlert(alert);
+            
+            // 심각도에 따라 다른 채널로 알림 발송
+            switch (alert.getSeverity()) {
+                case "HIGH":
+                    // 높은 심각도: 이메일, 슬랙, SMS
+                    notificationService.sendNotification(riskAlert, 
+                        com.stockquest.domain.risk.RiskAlert.AlertConfiguration.NotificationChannel.EMAIL);
+                    notificationService.sendNotification(riskAlert, 
+                        com.stockquest.domain.risk.RiskAlert.AlertConfiguration.NotificationChannel.SLACK);
+                    notificationService.sendNotification(riskAlert, 
+                        com.stockquest.domain.risk.RiskAlert.AlertConfiguration.NotificationChannel.SMS);
+                    break;
+                case "MEDIUM":
+                    // 중간 심각도: 이메일, 슬랙
+                    notificationService.sendNotification(riskAlert, 
+                        com.stockquest.domain.risk.RiskAlert.AlertConfiguration.NotificationChannel.EMAIL);
+                    notificationService.sendNotification(riskAlert, 
+                        com.stockquest.domain.risk.RiskAlert.AlertConfiguration.NotificationChannel.SLACK);
+                    break;
+                default:
+                    // 낮은 심각도: 인앱 알림만
+                    notificationService.sendNotification(riskAlert, 
+                        com.stockquest.domain.risk.RiskAlert.AlertConfiguration.NotificationChannel.IN_APP);
+            }
+            
+        } catch (Exception e) {
+            log.error("실행 알림 발송 실패: {}", alert.getAlertType(), e);
+        }
+    }
+    
+    /**
+     * BestExecutionReport를 RiskAlert로 변환
+     */
+    private com.stockquest.domain.risk.RiskAlert convertToRiskAlert(BestExecutionReport report) {
+        return com.stockquest.domain.risk.RiskAlert.builder()
+            .alertId("EXECUTION_REPORT_" + report.getReportDate())
+            .alertType(com.stockquest.domain.risk.RiskAlert.AlertType.MODEL_DEGRADATION)
+            .severity(com.stockquest.domain.risk.RiskAlert.AlertSeverity.INFO)
+            .title("일일 베스트 실행 리포트")
+            .message(String.format("날짜: %s, 총 거래: %d건, 평균 슬리피지: %.4f", 
+                report.getReportDate(), report.getTotalTrades(), report.getAverageSlippage()))
+            .createdAt(LocalDateTime.now())
+            .build();
+    }
+    
+    /**
+     * ExecutionAlert를 RiskAlert로 변환
+     */
+    private com.stockquest.domain.risk.RiskAlert convertExecutionAlertToRiskAlert(ExecutionAlert alert) {
+        com.stockquest.domain.risk.RiskAlert.AlertSeverity severity = switch (alert.getSeverity()) {
+            case "HIGH" -> com.stockquest.domain.risk.RiskAlert.AlertSeverity.CRITICAL;
+            case "MEDIUM" -> com.stockquest.domain.risk.RiskAlert.AlertSeverity.HIGH;
+            default -> com.stockquest.domain.risk.RiskAlert.AlertSeverity.MEDIUM;
+        };
+        
+        com.stockquest.domain.risk.RiskAlert.AlertType alertType = mapExecutionAlertToRiskAlertType(alert.getAlertType());
+        
+        return com.stockquest.domain.risk.RiskAlert.builder()
+            .alertId("EXECUTION_" + alert.getAlertType() + "_" + System.currentTimeMillis())
+            .alertType(alertType)
+            .severity(severity)
+            .title("실행 품질 알림")
+            .message(alert.getMessage())
+            .createdAt(alert.getTimestamp())
+            .build();
+    }
+    
+    /**
+     * ExecutionAlertType을 RiskAlert.AlertType으로 매핑
+     */
+    private com.stockquest.domain.risk.RiskAlert.AlertType mapExecutionAlertToRiskAlertType(ExecutionAlertType executionAlertType) {
+        return switch (executionAlertType) {
+            case QUALITY_DEGRADATION -> com.stockquest.domain.risk.RiskAlert.AlertType.MODEL_DEGRADATION;
+            case EXECUTION_DELAY -> com.stockquest.domain.risk.RiskAlert.AlertType.LIQUIDITY_SHORTAGE;
+            case HIGH_MARKET_IMPACT -> com.stockquest.domain.risk.RiskAlert.AlertType.VOLATILITY_SURGE;
+            case ALGORITHM_UNDERPERFORMANCE -> com.stockquest.domain.risk.RiskAlert.AlertType.MODEL_DEGRADATION;
+            case COMPLIANCE_BREACH -> com.stockquest.domain.risk.RiskAlert.AlertType.COMPLIANCE_VIOLATION;
+        };
+    }
+    
+    // ========================= Execution Alert DTOs =========================
+    
+    /**
+     * 실행 알림 DTO
+     */
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class ExecutionAlert {
+        private ExecutionAlertType alertType;
+        private String severity; // HIGH, MEDIUM, LOW
+        private String message;
+        private Integer affectedTrades;
+        private LocalDateTime timestamp;
+    }
+    
+    /**
+     * 실행 알림 유형
+     */
+    public enum ExecutionAlertType {
+        QUALITY_DEGRADATION("거래 품질 저하"),
+        EXECUTION_DELAY("실행 지연"),
+        HIGH_MARKET_IMPACT("높은 시장 영향"),
+        ALGORITHM_UNDERPERFORMANCE("알고리즘 성과 저하"),
+        COMPLIANCE_BREACH("규제 준수 위반");
+        
+        private final String description;
+        
+        ExecutionAlertType(String description) {
+            this.description = description;
+        }
+        
+        public String getDescription() {
+            return description;
         }
     }
 }

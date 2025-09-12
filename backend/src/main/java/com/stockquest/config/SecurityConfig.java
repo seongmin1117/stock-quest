@@ -56,7 +56,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             
-            // 보안 헤더 설정
+            // 보안 헤더 설정 (강화)
             .headers(headers -> headers
                 .frameOptions(frameOptionsConfig -> frameOptionsConfig.deny())
                 .contentTypeOptions(contentTypeOptionsConfig -> {})
@@ -67,6 +67,38 @@ public class SecurityConfig {
                 )
                 .referrerPolicy(referrerPolicyConfig -> 
                     referrerPolicyConfig.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                // 추가 보안 헤더들
+                .addHeaderWriter((request, response) -> {
+                    // Content Security Policy
+                    response.setHeader("Content-Security-Policy", 
+                        "default-src 'self'; " +
+                        "script-src 'self' 'unsafe-eval'; " +
+                        "style-src 'self' 'unsafe-inline'; " +
+                        "img-src 'self' data: https:; " +
+                        "connect-src 'self'; " +
+                        "font-src 'self'; " +
+                        "object-src 'none'; " +
+                        "base-uri 'self'; " +
+                        "form-action 'self'");
+                    
+                    // Permission Policy (Feature Policy 후속)
+                    response.setHeader("Permissions-Policy", 
+                        "camera=(), microphone=(), geolocation=(), payment=()");
+                    
+                    // X-XSS-Protection (추가 XSS 보호)
+                    response.setHeader("X-XSS-Protection", "1; mode=block");
+                    
+                    // X-Permitted-Cross-Domain-Policies
+                    response.setHeader("X-Permitted-Cross-Domain-Policies", "none");
+                    
+                    // Cache-Control for sensitive pages
+                    if (request.getRequestURI().contains("/api/auth/") ||
+                        request.getRequestURI().contains("/api/admin/")) {
+                        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+                        response.setHeader("Pragma", "no-cache");
+                        response.setHeader("Expires", "0");
+                    }
+                })
             )
             
             // 인증/인가 설정
