@@ -263,13 +263,10 @@ public class RealTimePositionManagementService {
             
             log.info("포지션 종료: {} - Reason: {}", positionId, reason);
             
+            // 포지션 종료 처리
             position.setStatus(PositionStatus.CLOSED);
             position.setCloseDate(LocalDate.now());
             position.setLastUpdatedAt(LocalDateTime.now());
-            
-            // 실현 손익으로 전환
-            position.setRealizedPnL(position.getUnrealizedPnL());
-            position.setUnrealizedPnL(BigDecimal.ZERO);
             
             // 포지션 이벤트 추가
             addPositionEvent(position, PositionEventType.POSITION_CLOSED, 
@@ -299,7 +296,7 @@ public class RealTimePositionManagementService {
             .status(PositionStatus.OPEN)
             .openDate(LocalDate.now())
             .lastUpdatedAt(LocalDateTime.now())
-            .positionEvents(new ArrayList<>())
+            // .positionEvents(new ArrayList<>()) // 임시 제거
             .build();
     }
     

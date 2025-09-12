@@ -47,6 +47,16 @@ public class Position {
     private String assetName;
     
     /**
+     * 포지션 종료일
+     */
+    private LocalDate closeDate;
+    
+    /**
+     * 포지션 오픈일  
+     */
+    private LocalDate openDate;
+    
+    /**
      * 자산 유형
      */
     private AssetType assetType;

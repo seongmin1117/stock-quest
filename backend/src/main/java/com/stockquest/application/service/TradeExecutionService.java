@@ -109,16 +109,22 @@ public class TradeExecutionService {
         }
         
         try {
-            switch (order.getExecutionAlgorithm()) {
-                case MARKET -> executeMarketOrder(order, context);
-                case LIMIT -> executeLimitOrder(order, context);
-                case TWAP -> executeTWAP(order, context);
-                case VWAP -> executeVWAP(order, context);
-                case IMPLEMENTATION_SHORTFALL -> executeIS(order, context);
-                case PARTICIPATION_RATE -> executePOV(order, context);
-                case ICEBERG -> executeIceberg(order, context);
-                case SMART_ORDER_ROUTING -> executeSOR(order, context);
-                default -> executeSimpleOrder(order, context);
+            // 먼저 기본 주문 타입에 따라 처리
+            if (order.getOrderType() == Order.OrderType.MARKET) {
+                executeMarketOrder(order, context);
+            } else if (order.getOrderType() == Order.OrderType.LIMIT) {
+                executeLimitOrder(order, context);
+            } else {
+                // 알고리즘 주문의 경우 ExecutionAlgorithm에 따라 처리
+                switch (order.getExecutionAlgorithm()) {
+                    case TWAP -> executeTWAP(order, context);
+                    case VWAP -> executeVWAP(order, context);
+                    case IMPLEMENTATION_SHORTFALL -> executeIS(order, context);
+                    case PARTICIPATION_RATE -> executePOV(order, context);
+                    case ICEBERG -> executeIceberg(order, context);
+                    case SMART_ORDER_ROUTING -> executeSOR(order, context);
+                    default -> executeSimpleOrder(order, context);
+                }
             }
         } catch (Exception e) {
             log.error("주문 실행 중 오류 발생: {} - {}", order.getOrderId(), e.getMessage(), e);
