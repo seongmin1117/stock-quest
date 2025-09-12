@@ -1,21 +1,20 @@
 package com.stockquest.application.auth.port.in;
 
 /**
- * 로그인 유스케이스 (입력 포트)
+ * 토큰 갱신 유스케이스 (입력 포트)
  */
-public interface LoginUseCase {
+public interface RefreshTokenUseCase {
     
     /**
-     * 사용자 인증 및 토큰 발급
+     * 리프레시 토큰을 이용한 액세스 토큰 갱신
      */
-    LoginResult login(LoginCommand command);
+    RefreshTokenResult refreshToken(RefreshTokenCommand command);
     
-    record LoginCommand(
-        String email,
-        String password
+    record RefreshTokenCommand(
+        String refreshToken
     ) {}
     
-    record LoginResult(
+    record RefreshTokenResult(
         String accessToken,
         String refreshToken,
         Long userId,

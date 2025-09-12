@@ -2,6 +2,8 @@ package com.stockquest.application.auth;
 
 import com.stockquest.adapter.out.security.JwtTokenProvider;
 import com.stockquest.application.auth.port.in.LoginUseCase;
+import com.stockquest.domain.auth.RefreshToken;
+import com.stockquest.domain.auth.TokenPair;
 import com.stockquest.domain.user.User;
 import com.stockquest.domain.user.port.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class LoginService implements LoginUseCase {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenService refreshTokenService;
     
     @Override
     public LoginResult login(LoginCommand command) {
@@ -32,15 +35,20 @@ public class LoginService implements LoginUseCase {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
         
-        // JWT 토큰 생성
-        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
+        // JWT 토큰 쌍 생성
+        TokenPair tokenPair = jwtTokenProvider.createTokenPair(user.getId(), user.getEmail());
+        
+        // 리프레시 토큰 저장
+        refreshTokenService.createAndSaveRefreshToken(user.getId(), tokenPair.getRefreshToken());
         
         return new LoginResult(
-                accessToken,
+                tokenPair.getAccessToken(),
+                tokenPair.getRefreshToken(),
                 user.getId(),
                 user.getEmail(),
                 user.getNickname(),
-                jwtTokenProvider.getExpiration(accessToken),
+                tokenPair.getAccessTokenExpiresAt(),
+                tokenPair.getRefreshTokenExpiresAt(),
                 "로그인 성공"
         );
     }
