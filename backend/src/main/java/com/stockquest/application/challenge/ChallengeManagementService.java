@@ -6,6 +6,7 @@ import com.stockquest.application.port.out.ChallengePort;
 import com.stockquest.application.port.out.ChallengeCategoryPort;
 import com.stockquest.application.port.out.ChallengeTemplatePort;
 import com.stockquest.application.port.out.MarketPeriodPort;
+import com.stockquest.application.auth.AuthorizationService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,15 +28,18 @@ public class ChallengeManagementService {
     private final ChallengeCategoryPort categoryPort;
     private final ChallengeTemplatePort templatePort;
     private final MarketPeriodPort marketPeriodPort;
+    private final AuthorizationService authorizationService;
 
     public ChallengeManagementService(ChallengePort challengePort,
                                     ChallengeCategoryPort categoryPort,
                                     ChallengeTemplatePort templatePort,
-                                    MarketPeriodPort marketPeriodPort) {
+                                    MarketPeriodPort marketPeriodPort,
+                                    AuthorizationService authorizationService) {
         this.challengePort = challengePort;
         this.categoryPort = categoryPort;
         this.templatePort = templatePort;
         this.marketPeriodPort = marketPeriodPort;
+        this.authorizationService = authorizationService;
     }
 
     /**
@@ -334,9 +338,8 @@ public class ChallengeManagementService {
     }
 
     private boolean canModifyChallenge(Challenge challenge, Long userId) {
-        // 생성자이거나 관리자인 경우 수정 가능
-        return challenge.getCreatedBy().equals(userId);
-        // TODO: 관리자 권한 확인 로직 추가
+        // AuthorizationService를 통해 권한 검증
+        return authorizationService.canModifyChallenge(userId, challenge.getCreatedBy());
     }
 
     private void validateChallengeForActivation(Challenge challenge) {

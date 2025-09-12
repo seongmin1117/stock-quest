@@ -8,8 +8,14 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import com.stockquest.application.challenge.GetChallengesService;
+import com.stockquest.application.leaderboard.GetLeaderboardService;
+import com.stockquest.application.marketdata.GetMarketDataService;
+import com.stockquest.domain.challenge.ChallengeStatus;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -21,15 +27,14 @@ public class CacheWarmupService {
     
     private static final Logger logger = LoggerFactory.getLogger(CacheWarmupService.class);
     
-    // Note: 실제 서비스들은 나중에 주입받을 예정
-    // @Autowired
-    // private ChallengeService challengeService;
+    @Autowired(required = false)
+    private GetChallengesService challengesService;
     
-    // @Autowired
-    // private MarketDataService marketDataService;
+    @Autowired(required = false)
+    private GetMarketDataService marketDataService;
     
-    // @Autowired
-    // private LeaderboardService leaderboardService;
+    @Autowired(required = false)
+    private GetLeaderboardService leaderboardService;
     
     /**
      * 애플리케이션 시작 시 캐시 워밍업
@@ -83,15 +88,18 @@ public class CacheWarmupService {
             try {
                 logger.debug("Warming up challenge data...");
                 
-                // TODO: 실제 구현 시 주석 해제
                 // 활성 챌린지 목록 캐싱
-                // challengeService.getActiveChallenges();
-                
-                // 인기 챌린지 상세 정보 캐싱
-                // List<Long> popularChallengeIds = challengeService.getPopularChallengeIds();
-                // for (Long challengeId : popularChallengeIds) {
-                //     challengeService.getChallengeDetail(challengeId);
-                // }
+                if (challengesService != null) {
+                    challengesService.getActiveChallenges();
+                    
+                    // 인기 챌린지 상세 정보 캐싱 (상위 10개)
+                    List<Long> popularChallengeIds = challengesService.getPopularChallengeIds(10);
+                    for (Long challengeId : popularChallengeIds) {
+                        challengesService.getChallengeDetail(challengeId);
+                    }
+                } else {
+                    logger.debug("ChallengesService not available, skipping challenge warmup");
+                }
                 
                 logger.debug("Challenge data warmup completed");
             } catch (Exception e) {
@@ -110,13 +118,19 @@ public class CacheWarmupService {
             try {
                 logger.debug("Warming up market data...");
                 
-                // TODO: 실제 구현 시 주석 해제
                 // 주요 종목 최신 가격 캐싱
-                // String[] majorTickers = {"AAPL", "GOOGL", "MSFT", "TSLA", "AMZN"};
-                // for (String ticker : majorTickers) {
-                //     marketDataService.getLatestPrice(ticker);
-                //     marketDataService.getDailyCandles(ticker, LocalDate.now().minusDays(30), LocalDate.now());
-                // }
+                if (marketDataService != null) {
+                    String[] majorTickers = {"AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", "META", "NVDA", "JPM", "V", "JNJ"};
+                    LocalDate endDate = LocalDate.now();
+                    LocalDate startDate = endDate.minusDays(30);
+                    
+                    for (String ticker : majorTickers) {
+                        marketDataService.getLatestPrice(ticker);
+                        marketDataService.getDailyCandles(ticker, startDate, endDate);
+                    }
+                } else {
+                    logger.debug("MarketDataService not available, skipping market data warmup");
+                }
                 
                 logger.debug("Market data warmup completed");
             } catch (Exception e) {
@@ -135,12 +149,15 @@ public class CacheWarmupService {
             try {
                 logger.debug("Warming up leaderboard data...");
                 
-                // TODO: 실제 구현 시 주석 해제
                 // 활성 챌린지들의 리더보드 캐싱
-                // List<Long> activeChallengeIds = challengeService.getActiveChallengeIds();
-                // for (Long challengeId : activeChallengeIds) {
-                //     leaderboardService.getLeaderboard(challengeId, 50); // 상위 50명
-                // }
+                if (leaderboardService != null && challengesService != null) {
+                    List<Long> activeChallengeIds = challengesService.getActiveChallengeIds();
+                    for (Long challengeId : activeChallengeIds) {
+                        leaderboardService.getLeaderboard(challengeId, 0, 50); // 상위 50명
+                    }
+                } else {
+                    logger.debug("LeaderboardService or ChallengesService not available, skipping leaderboard warmup");
+                }
                 
                 logger.debug("Leaderboard data warmup completed");
             } catch (Exception e) {
@@ -159,15 +176,15 @@ public class CacheWarmupService {
             try {
                 logger.debug("Warming up critical data...");
                 
-                // TODO: 실제 구현 시 주석 해제
-                // 시스템 설정 캐싱
-                // systemConfigService.getActiveConfigs();
-                
-                // 현재 활성 세션 통계
-                // sessionService.getActiveSessionStats();
+                // 현재 활성 챌린지 수 캐싱
+                if (challengesService != null) {
+                    challengesService.getActiveChallengeCount();
+                }
                 
                 // 최근 24시간 거래량 Top 종목
-                // marketDataService.getTopVolumeStocks(24);
+                if (marketDataService != null) {
+                    marketDataService.getTopVolumeStocks(24);
+                }
                 
                 logger.debug("Critical data warmup completed");
             } catch (Exception e) {
@@ -187,15 +204,15 @@ public class CacheWarmupService {
         try {
             switch (cacheType.toLowerCase()) {
                 case "challenge":
-                    // TODO: 챌린지 캐시 무효화 및 재워밍업
+                    // 챌린지 캐시 무효화 및 재워밍업
                     warmupChallengeData().join();
                     break;
                 case "market":
-                    // TODO: 마켓 데이터 캐시 무효화 및 재워밍업
+                    // 마켓 데이터 캐시 무효화 및 재워밍업
                     warmupMarketData().join();
                     break;
                 case "leaderboard":
-                    // TODO: 리더보드 캐시 무효화 및 재워밍업
+                    // 리더보드 캐시 무효화 및 재워밍업
                     warmupLeaderboardData().join();
                     break;
                 default:

@@ -143,7 +143,7 @@ public class RealTimeRiskAssessmentService {
             .initialValue(portfolio.getTotalValue())
             .riskFreeRate(new BigDecimal("0.02")) // 2% 무위험 수익률
             .rebalancingFrequency(21) // 월별 리밸런싱
-            .randomSeed(random.getSeed())
+            .randomSeed(System.currentTimeMillis())
             .parallelThreads(Runtime.getRuntime().availableProcessors())
             .samplePathCount(100) // 샘플 경로 저장 개수
             .build();

@@ -1,6 +1,7 @@
 package com.stockquest.application.leaderboard;
 
 import com.stockquest.application.leaderboard.port.in.GetLeaderboardUseCase;
+import com.stockquest.application.leaderboard.port.in.GetLeaderboardUseCase.GetLeaderboardQuery;
 import com.stockquest.domain.leaderboard.LeaderboardEntry;
 import com.stockquest.domain.leaderboard.port.LeaderboardRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,5 +29,13 @@ public class GetLeaderboardService implements GetLeaderboardUseCase {
         } else {
             return leaderboardRepository.findByChallengeIdOrderByReturnPercentageDesc(query.challengeId());
         }
+    }
+    
+    /**
+     * 캐시 워밍업용 리더보드 조회 (offset, limit 지원)
+     */
+    @Cacheable(value = "leaderboard", key = "#challengeId + '_' + #offset + '_' + #limit")
+    public List<LeaderboardEntry> getLeaderboard(Long challengeId, int offset, int limit) {
+        return leaderboardRepository.findTopNByChallengeId(challengeId, limit);
     }
 }

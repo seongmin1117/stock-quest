@@ -21,6 +21,7 @@ public class User {
     private String email;
     private String passwordHash;
     private String nickname;
+    private Role role;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
@@ -32,6 +33,7 @@ public class User {
         this.email = email;
         this.passwordHash = passwordHash;
         this.nickname = nickname;
+        this.role = Role.USER; // 기본적으로 일반 사용자로 설정
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -68,4 +70,21 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
     
+    /**
+     * 관리자 권한 여부 확인
+     */
+    public boolean isAdmin() {
+        return role != null && role.isAdmin();
+    }
+    
+    /**
+     * 사용자 권한 변경 (관리자만 가능)
+     */
+    public void changeRole(Role newRole) {
+        if (newRole == null) {
+            throw new IllegalArgumentException("권한은 필수입니다");
+        }
+        this.role = newRole;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

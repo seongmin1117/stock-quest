@@ -68,8 +68,8 @@ dependencies {
     
     // AI & Analytics - Phase 7 Advanced Features
     implementation 'org.apache.commons:commons-math3:3.6.1'              // Monte Carlo simulations
-    implementation 'com.github.haifengl:smile-core:3.0.2'                // Machine learning algorithms
-    implementation 'com.github.haifengl:smile-math:3.0.2'                // Mathematical functions
+    // implementation 'com.github.haifengl:smile-core:3.1.1'              // Machine learning algorithms (fallback mode)
+    // implementation 'com.github.haifengl:smile-data:3.1.1'              // Data processing (fallback mode)
     implementation 'org.springframework.boot:spring-boot-starter-cache'   // Advanced caching
     implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'        // High-performance caching
     implementation 'io.projectreactor:reactor-tools'                     // Reactor debugging tools
