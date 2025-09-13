@@ -35,11 +35,11 @@ public class TradeExecutionService {
 
     private final Map<String, Order> executionQueue = new ConcurrentHashMap<>();
     private final Map<String, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
+    private final RealTimeMarketDataService realTimeMarketDataService;
     
-    // Dependencies would be injected
+    // Additional dependencies (commented for now)
     // private final OrderManagementService orderManagementService;
     // private final MarketDataService marketDataService;
-    // private final RealTimeMarketDataService realTimeMarketDataService;
     
     /**
      * 주문 실행 스케줄링
@@ -453,17 +453,63 @@ public class TradeExecutionService {
     
     private void handleExecutionError(Order order, ExecutionContext context, Exception e) {
         log.error("실행 오류 처리: {} - {}", order.getOrderId(), e.getMessage());
-        // TODO: 오류 처리 로직
+        
+        try {
+            // 부분 실행된 거래가 있다면 기록
+            if (context.getTradeCount() > 0) {
+                log.warn("부분 실행됨: {} - {} 거래 완료, 남은 수량: {}", 
+                    order.getOrderId(), context.getTradeCount(), context.getRemainingQuantity());
+            }
+            
+            // 실행 대기열에서 제거
+            executionQueue.remove(order.getOrderId());
+            
+            // 간단한 재시도 로직 (재시도 가능한 오류의 경우)
+            if (isRetryableError(e)) {
+                log.info("재시도 가능한 오류 감지: {} - 5초 후 재시도 스케줄링", order.getOrderId());
+                
+                // 5초 후 재시도 스케줄링
+                CompletableFuture.delayedExecutor(5, java.util.concurrent.TimeUnit.SECONDS)
+                    .execute(() -> {
+                        log.info("주문 재시도 실행: {}", order.getOrderId());
+                        executionQueue.put(order.getOrderId(), order);
+                    });
+            } else {
+                log.error("복구 불가능한 오류: {} - 주문 처리 중단", order.getOrderId());
+            }
+            
+        } catch (Exception innerException) {
+            log.error("오류 처리 중 추가 오류 발생: {}", innerException.getMessage());
+        }
+    }
+    
+    private boolean isRetryableError(Exception e) {
+        // 재시도 가능한 오류 타입 확인
+        String message = e.getMessage();
+        return e instanceof java.util.concurrent.TimeoutException ||
+               e instanceof java.net.ConnectException ||
+               (message != null && (message.contains("timeout") || 
+                                   message.contains("connection") || 
+                                   message.contains("temporary")));
     }
     
     private BigDecimal getCurrentMarketPrice(String symbol) {
-        // TODO: Real-time market data service integration
-        return BigDecimal.valueOf(100.0); // Mock price
+        try {
+            return realTimeMarketDataService.getCurrentMarketData(symbol).getPrice();
+        } catch (Exception e) {
+            log.warn("실시간 시장 가격 조회 실패: {} - 기본값 사용", symbol, e);
+            return BigDecimal.valueOf(100.0); // Fallback price
+        }
     }
     
     private BigDecimal getCurrentMarketVolume(String symbol) {
-        // TODO: Real-time market data service integration
-        return BigDecimal.valueOf(10000); // Mock volume
+        try {
+            Long volume = realTimeMarketDataService.getCurrentMarketData(symbol).getVolume();
+            return volume != null ? BigDecimal.valueOf(volume) : BigDecimal.valueOf(10000);
+        } catch (Exception e) {
+            log.warn("실시간 시장 볼륨 조회 실패: {} - 기본값 사용", symbol, e);
+            return BigDecimal.valueOf(10000); // Fallback volume
+        }
     }
     
     private MarketConditions getCurrentMarketConditions(String symbol) {
@@ -488,7 +534,43 @@ public class TradeExecutionService {
     }
     
     private void calculateTradeCommissionAndTax(Trade trade) {
-        // TODO: 수수료 및 세금 계산 로직
+        try {
+            BigDecimal tradeValue = trade.getPrice().multiply(trade.getQuantity());
+            
+            // 거래 수수료 계산 (0.1% 기본, 최소 $1)
+            BigDecimal commissionRate = BigDecimal.valueOf(0.001); // 0.1%
+            BigDecimal calculatedCommission = tradeValue.multiply(commissionRate);
+            BigDecimal minCommission = BigDecimal.valueOf(1.00);
+            BigDecimal commission = calculatedCommission.max(minCommission);
+            
+            // 거래 세금 계산 (매도시에만 적용, 0.05%)
+            BigDecimal tax = BigDecimal.ZERO;
+            if (trade.getSide() == TradeSide.SELL) {
+                BigDecimal taxRate = BigDecimal.valueOf(0.0005); // 0.05%
+                tax = tradeValue.multiply(taxRate);
+            }
+            
+            // SEC fee 계산 (매도시, 매우 작은 비율)
+            BigDecimal secFee = BigDecimal.ZERO;
+            if (trade.getSide() == TradeSide.SELL) {
+                BigDecimal secRate = BigDecimal.valueOf(0.0000231); // SEC rate
+                secFee = tradeValue.multiply(secRate);
+            }
+            
+            // 총 비용 계산
+            BigDecimal totalCosts = commission.add(tax).add(secFee);
+            
+            // 거래 비용 정보 로깅 (실제 구현에서는 Trade 엔티티에 비용 필드 추가 필요)
+            log.debug("거래 비용 계산 완료: {} - Commission: {}, Tax: {}, SEC Fee: {}, Total: {}", 
+                trade.getTradeId(), commission, tax, secFee, totalCosts);
+            
+            log.info("거래 {} - 가격: {}, 수량: {}, 수수료: {}, 세금: {}, 총 비용: {}", 
+                trade.getTradeId(), trade.getPrice(), trade.getQuantity(), 
+                commission, tax, totalCosts);
+                
+        } catch (Exception e) {
+            log.error("수수료/세금 계산 실패: {} - {}", trade.getTradeId(), e.getMessage());
+        }
     }
     
     private void updateVWAP(ExecutionContext context, Trade trade) {

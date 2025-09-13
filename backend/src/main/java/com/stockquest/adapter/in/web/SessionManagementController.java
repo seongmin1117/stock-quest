@@ -8,7 +8,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 import java.util.List;
 import java.util.Map;
@@ -27,9 +31,10 @@ public class SessionManagementController {
     private final SessionManagementService sessionManagementService;
     
     @GetMapping("/users/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "사용자 세션 히스토리 조회", description = "특정 사용자의 모든 세션 참여 이력을 조회합니다")
     public ResponseEntity<List<SessionStatusInfo>> getUserSessionHistory(
-            @Parameter(description = "사용자 ID") @PathVariable Long userId) {
+            @Parameter(description = "사용자 ID") @PathVariable @NotNull @Positive Long userId) {
         
         log.info("사용자 세션 히스토리 조회 요청: userId={}", userId);
         var history = sessionManagementService.getUserSessionHistory(userId);
@@ -37,9 +42,10 @@ public class SessionManagementController {
     }
     
     @GetMapping("/{sessionId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "세션 상태 조회", description = "특정 세션의 상태 정보를 조회합니다")
     public ResponseEntity<SessionStatusInfo> getSessionStatus(
-            @Parameter(description = "세션 ID") @PathVariable Long sessionId) {
+            @Parameter(description = "세션 ID") @PathVariable @NotNull @Positive Long sessionId) {
         
         log.info("세션 상태 조회 요청: sessionId={}", sessionId);
         return sessionManagementService.getSessionStatus(sessionId)

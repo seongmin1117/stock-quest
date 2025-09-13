@@ -33,10 +33,10 @@ public class RealTimePositionManagementService {
     private final Map<String, Position> positions = new ConcurrentHashMap<>();
     private final Map<String, List<Position>> portfolioPositions = new ConcurrentHashMap<>();
     private final Map<String, List<Position>> userPositions = new ConcurrentHashMap<>();
+    private final RealTimeMarketDataService realTimeMarketDataService;
     
-    // Dependencies would be injected
+    // Additional dependencies (commented for now)
     // private final PositionRepository positionRepository;
-    // private final RealTimeMarketDataService marketDataService;
     // private final RiskManagementService riskService;
     
     /**
@@ -424,8 +424,13 @@ public class RealTimePositionManagementService {
     // Market data simulation
     
     private BigDecimal getCurrentMarketPrice(String symbol) {
-        // TODO: Real-time market data service integration
-        return BigDecimal.valueOf(100.0 + (Math.random() - 0.5) * 10); // Mock price with volatility
+        try {
+            return realTimeMarketDataService.getCurrentMarketData(symbol).getPrice();
+        } catch (Exception e) {
+            log.warn("실시간 시장 가격 조회 실패: {} - 시뮬레이션 가격 사용", symbol, e);
+            // Fallback to simulated price with volatility
+            return BigDecimal.valueOf(100.0 + (Math.random() - 0.5) * 10);
+        }
     }
     
     // Risk calculations (simplified implementations)

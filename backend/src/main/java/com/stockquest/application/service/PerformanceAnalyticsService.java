@@ -1,5 +1,11 @@
 package com.stockquest.application.service;
 
+import com.stockquest.application.service.analytics.AttributionAnalysisService;
+import com.stockquest.application.service.analytics.BenchmarkAnalysisService;
+import com.stockquest.application.service.analytics.RiskAnalysisService;
+import com.stockquest.application.service.analytics.ScenarioAnalysisService;
+import com.stockquest.application.service.analytics.TimeSeriesAnalysisService;
+import com.stockquest.application.service.analytics.TradingAnalysisService;
 import com.stockquest.domain.backtesting.BacktestResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +31,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PerformanceAnalyticsService {
     
+    private final RiskAnalysisService riskAnalysisService;
+    private final TradingAnalysisService tradingAnalysisService;
+    private final TimeSeriesAnalysisService timeSeriesAnalysisService;
+    private final AttributionAnalysisService attributionAnalysisService;
+    private final BenchmarkAnalysisService benchmarkAnalysisService;
+    private final ScenarioAnalysisService scenarioAnalysisService;
+    
     /**
      * 종합 성과 분석 수행
      */
@@ -36,12 +49,12 @@ public class PerformanceAnalyticsService {
                 .backtestId(backtestResult.getBacktestId())
                 .analysisTimestamp(LocalDateTime.now())
                 .basicMetrics(extractBasicMetrics(backtestResult))
-                .riskAnalysis(performRiskAnalysis(backtestResult))
-                .attributionAnalysis(performAttributionAnalysis(backtestResult))
-                .tradingAnalysis(performTradingAnalysis(backtestResult))
-                .timeSeriesAnalysis(performTimeSeriesAnalysis(backtestResult))
-                .benchmarkAnalysis(performBenchmarkAnalysis(backtestResult))
-                .scenarioAnalysis(performScenarioAnalysis(backtestResult))
+                .riskAnalysis(riskAnalysisService.performRiskAnalysis(backtestResult))
+                .attributionAnalysis(attributionAnalysisService.performAttributionAnalysis(backtestResult))
+                .tradingAnalysis(tradingAnalysisService.performTradingAnalysis(backtestResult))
+                .timeSeriesAnalysis(timeSeriesAnalysisService.performTimeSeriesAnalysis(backtestResult))
+                .benchmarkAnalysis(benchmarkAnalysisService.performBenchmarkAnalysis(backtestResult))
+                .scenarioAnalysis(scenarioAnalysisService.performScenarioAnalysis(backtestResult))
                 .qualityScores(calculateQualityScores(backtestResult))
                 .recommendations(generateRecommendations(backtestResult))
                 .build();
@@ -782,12 +795,12 @@ public class PerformanceAnalyticsService {
         private String backtestId;
         private LocalDateTime analysisTimestamp;
         private BasicPerformanceMetrics basicMetrics;
-        private RiskAnalysis riskAnalysis;
-        private AttributionAnalysis attributionAnalysis;
-        private TradingAnalysis tradingAnalysis;
-        private TimeSeriesAnalysis timeSeriesAnalysis;
-        private BenchmarkAnalysis benchmarkAnalysis;
-        private ScenarioAnalysis scenarioAnalysis;
+        private RiskAnalysisService.RiskAnalysis riskAnalysis;
+        private AttributionAnalysisService.AttributionAnalysis attributionAnalysis;
+        private TradingAnalysisService.TradingAnalysis tradingAnalysis;
+        private TimeSeriesAnalysisService.TimeSeriesAnalysis timeSeriesAnalysis;
+        private BenchmarkAnalysisService.BenchmarkAnalysis benchmarkAnalysis;
+        private ScenarioAnalysisService.ScenarioAnalysis scenarioAnalysis;
         private QualityScores qualityScores;
         private List<PerformanceRecommendation> recommendations;
         
@@ -799,24 +812,24 @@ public class PerformanceAnalyticsService {
             private String backtestId;
             private LocalDateTime analysisTimestamp;
             private BasicPerformanceMetrics basicMetrics;
-            private RiskAnalysis riskAnalysis;
-            private AttributionAnalysis attributionAnalysis;
-            private TradingAnalysis tradingAnalysis;
-            private TimeSeriesAnalysis timeSeriesAnalysis;
-            private BenchmarkAnalysis benchmarkAnalysis;
-            private ScenarioAnalysis scenarioAnalysis;
+            private RiskAnalysisService.RiskAnalysis riskAnalysis;
+            private AttributionAnalysisService.AttributionAnalysis attributionAnalysis;
+            private TradingAnalysisService.TradingAnalysis tradingAnalysis;
+            private TimeSeriesAnalysisService.TimeSeriesAnalysis timeSeriesAnalysis;
+            private BenchmarkAnalysisService.BenchmarkAnalysis benchmarkAnalysis;
+            private ScenarioAnalysisService.ScenarioAnalysis scenarioAnalysis;
             private QualityScores qualityScores;
             private List<PerformanceRecommendation> recommendations;
             
             public ComprehensivePerformanceAnalysisBuilder backtestId(String backtestId) { this.backtestId = backtestId; return this; }
             public ComprehensivePerformanceAnalysisBuilder analysisTimestamp(LocalDateTime analysisTimestamp) { this.analysisTimestamp = analysisTimestamp; return this; }
             public ComprehensivePerformanceAnalysisBuilder basicMetrics(BasicPerformanceMetrics basicMetrics) { this.basicMetrics = basicMetrics; return this; }
-            public ComprehensivePerformanceAnalysisBuilder riskAnalysis(RiskAnalysis riskAnalysis) { this.riskAnalysis = riskAnalysis; return this; }
-            public ComprehensivePerformanceAnalysisBuilder attributionAnalysis(AttributionAnalysis attributionAnalysis) { this.attributionAnalysis = attributionAnalysis; return this; }
-            public ComprehensivePerformanceAnalysisBuilder tradingAnalysis(TradingAnalysis tradingAnalysis) { this.tradingAnalysis = tradingAnalysis; return this; }
-            public ComprehensivePerformanceAnalysisBuilder timeSeriesAnalysis(TimeSeriesAnalysis timeSeriesAnalysis) { this.timeSeriesAnalysis = timeSeriesAnalysis; return this; }
-            public ComprehensivePerformanceAnalysisBuilder benchmarkAnalysis(BenchmarkAnalysis benchmarkAnalysis) { this.benchmarkAnalysis = benchmarkAnalysis; return this; }
-            public ComprehensivePerformanceAnalysisBuilder scenarioAnalysis(ScenarioAnalysis scenarioAnalysis) { this.scenarioAnalysis = scenarioAnalysis; return this; }
+            public ComprehensivePerformanceAnalysisBuilder riskAnalysis(RiskAnalysisService.RiskAnalysis riskAnalysis) { this.riskAnalysis = riskAnalysis; return this; }
+            public ComprehensivePerformanceAnalysisBuilder attributionAnalysis(AttributionAnalysisService.AttributionAnalysis attributionAnalysis) { this.attributionAnalysis = attributionAnalysis; return this; }
+            public ComprehensivePerformanceAnalysisBuilder tradingAnalysis(TradingAnalysisService.TradingAnalysis tradingAnalysis) { this.tradingAnalysis = tradingAnalysis; return this; }
+            public ComprehensivePerformanceAnalysisBuilder timeSeriesAnalysis(TimeSeriesAnalysisService.TimeSeriesAnalysis timeSeriesAnalysis) { this.timeSeriesAnalysis = timeSeriesAnalysis; return this; }
+            public ComprehensivePerformanceAnalysisBuilder benchmarkAnalysis(BenchmarkAnalysisService.BenchmarkAnalysis benchmarkAnalysis) { this.benchmarkAnalysis = benchmarkAnalysis; return this; }
+            public ComprehensivePerformanceAnalysisBuilder scenarioAnalysis(ScenarioAnalysisService.ScenarioAnalysis scenarioAnalysis) { this.scenarioAnalysis = scenarioAnalysis; return this; }
             public ComprehensivePerformanceAnalysisBuilder qualityScores(QualityScores qualityScores) { this.qualityScores = qualityScores; return this; }
             public ComprehensivePerformanceAnalysisBuilder recommendations(List<PerformanceRecommendation> recommendations) { this.recommendations = recommendations; return this; }
             
@@ -841,12 +854,12 @@ public class PerformanceAnalyticsService {
         public String getBacktestId() { return backtestId; }
         public LocalDateTime getAnalysisTimestamp() { return analysisTimestamp; }
         public BasicPerformanceMetrics getBasicMetrics() { return basicMetrics; }
-        public RiskAnalysis getRiskAnalysis() { return riskAnalysis; }
-        public AttributionAnalysis getAttributionAnalysis() { return attributionAnalysis; }
-        public TradingAnalysis getTradingAnalysis() { return tradingAnalysis; }
-        public TimeSeriesAnalysis getTimeSeriesAnalysis() { return timeSeriesAnalysis; }
-        public BenchmarkAnalysis getBenchmarkAnalysis() { return benchmarkAnalysis; }
-        public ScenarioAnalysis getScenarioAnalysis() { return scenarioAnalysis; }
+        public RiskAnalysisService.RiskAnalysis getRiskAnalysis() { return riskAnalysis; }
+        public AttributionAnalysisService.AttributionAnalysis getAttributionAnalysis() { return attributionAnalysis; }
+        public TradingAnalysisService.TradingAnalysis getTradingAnalysis() { return tradingAnalysis; }
+        public TimeSeriesAnalysisService.TimeSeriesAnalysis getTimeSeriesAnalysis() { return timeSeriesAnalysis; }
+        public BenchmarkAnalysisService.BenchmarkAnalysis getBenchmarkAnalysis() { return benchmarkAnalysis; }
+        public ScenarioAnalysisService.ScenarioAnalysis getScenarioAnalysis() { return scenarioAnalysis; }
         public QualityScores getQualityScores() { return qualityScores; }
         public List<PerformanceRecommendation> getRecommendations() { return recommendations; }
     }

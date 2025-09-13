@@ -102,6 +102,8 @@ management:
 # 애플리케이션 개발 설정
 app:
   environment: development
+  mail:
+    enabled: false
 
 # 개발용 비동기 처리 설정
 async:
@@ -124,3 +126,4 @@ stockquest:
     batch-size: 10  # 개발용 작은 배치 크기
     thread-pool-size: 2
     max-concurrent-sessions: 100
+

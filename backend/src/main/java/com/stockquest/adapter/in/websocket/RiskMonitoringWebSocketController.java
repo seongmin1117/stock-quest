@@ -354,7 +354,6 @@ public class RiskMonitoringWebSocketController extends TextWebSocketHandler {
     /**
      * 주기적으로 리스크 상태 업데이트 브로드캐스트 (5분마다)
      */
-    @Scheduled(fixedRate = 300000) // 5분
     public void broadcastRiskStatusUpdate() {
         if (!activeSessions.isEmpty()) {
             try {

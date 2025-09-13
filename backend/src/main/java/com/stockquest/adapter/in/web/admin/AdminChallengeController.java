@@ -7,6 +7,7 @@ import com.stockquest.domain.challenge.ChallengeStatus;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -18,6 +19,7 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("/api/admin/challenges")
+@PreAuthorize("hasRole('ADMIN')")
 @CrossOrigin(origins = "*")
 public class AdminChallengeController {
 

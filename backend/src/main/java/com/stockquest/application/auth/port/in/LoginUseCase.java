@@ -17,10 +17,12 @@ public interface LoginUseCase {
     
     record LoginResult(
         String accessToken,
+        String refreshToken,
         Long userId,
         String email,
         String nickname,
-        java.time.LocalDateTime expiresAt,
+        java.time.LocalDateTime accessTokenExpiresAt,
+        java.time.LocalDateTime refreshTokenExpiresAt,
         String message
     ) {}
 }

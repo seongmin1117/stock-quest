@@ -36,4 +36,64 @@ public record ErrorResponse(
     
     @Schema(description = "유효성 검사 에러 상세 정보")
     Map<String, String> validationErrors
-) {}
+) {
+    
+    /**
+     * 간단한 에러 응답 생성용 빌더
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+    
+    /**
+     * ErrorResponse 빌더 클래스
+     */
+    public static class Builder {
+        private LocalDateTime timestamp = LocalDateTime.now();
+        private int status;
+        private String error;
+        private String message;
+        private String path;
+        private String traceId;
+        private Map<String, String> validationErrors;
+        
+        public Builder timestamp(LocalDateTime timestamp) {
+            this.timestamp = timestamp;
+            return this;
+        }
+        
+        public Builder status(int status) {
+            this.status = status;
+            return this;
+        }
+        
+        public Builder error(String error) {
+            this.error = error;
+            return this;
+        }
+        
+        public Builder message(String message) {
+            this.message = message;
+            return this;
+        }
+        
+        public Builder path(String path) {
+            this.path = path;
+            return this;
+        }
+        
+        public Builder traceId(String traceId) {
+            this.traceId = traceId;
+            return this;
+        }
+        
+        public Builder validationErrors(Map<String, String> validationErrors) {
+            this.validationErrors = validationErrors;
+            return this;
+        }
+        
+        public ErrorResponse build() {
+            return new ErrorResponse(timestamp, status, error, message, path, traceId, validationErrors);
+        }
+    }
+}

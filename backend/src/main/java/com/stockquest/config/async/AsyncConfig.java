@@ -16,7 +16,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * 성능 최적화를 위한 Thread Pool 구성
  */
 @Configuration
-@EnableAsync
+@EnableAsync(proxyTargetClass = true)
 @EnableScheduling
 public class AsyncConfig implements AsyncConfigurer {
     
