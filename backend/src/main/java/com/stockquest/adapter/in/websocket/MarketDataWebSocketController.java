@@ -1,7 +1,7 @@
 package com.stockquest.adapter.in.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.stockquest.application.service.MarketDataService;
+import com.stockquest.application.service.StockMarketDataService;
 import com.stockquest.application.service.RealTimeMarketDataService;
 import com.stockquest.domain.stock.Stock;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @RequiredArgsConstructor
 public class MarketDataWebSocketController implements WebSocketHandler {
     
-    private final MarketDataService marketDataService;
+    private final StockMarketDataService marketDataService;
     private final RealTimeMarketDataService realTimeMarketDataService;
     private final ObjectMapper objectMapper;
     
