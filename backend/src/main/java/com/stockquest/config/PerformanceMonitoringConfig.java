@@ -2,6 +2,7 @@ package com.stockquest.config;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import lombok.extern.slf4j.Slf4j;
 // // import org.springframework.boot.actuator.metrics.cache.CacheMetricsRegistrar;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
@@ -42,6 +43,7 @@ import java.util.concurrent.TimeUnit;
  * @see io.micrometer.core.instrument.MeterRegistry
  * @see org.springframework.boot.actuator.metrics.cache.CacheMetricsRegistrar
  */
+@Slf4j
 @Configuration
 public class PerformanceMonitoringConfig {
 
@@ -186,13 +188,13 @@ public class PerformanceMonitoringConfig {
         validateCacheConfiguration();
         
         // Log performance monitoring setup
-        System.out.println("=== StockQuest Performance Monitoring Initialized ===");
-        System.out.println("Portfolio calculation target: < " + PORTFOLIO_CALCULATION_THRESHOLD.toMillis() + "ms");
-        System.out.println("Leaderboard calculation target: < " + LEADERBOARD_CALCULATION_THRESHOLD.toMillis() + "ms");
-        System.out.println("Database query target (95th percentile): < " + DATABASE_QUERY_THRESHOLD.toMillis() + "ms");
-        System.out.println("Cache hit rate target: > " + (MIN_CACHE_HIT_RATE * 100) + "%");
-        System.out.println("Metrics endpoint: /actuator/metrics");
-        System.out.println("======================================================");
+        log.info("=== StockQuest Performance Monitoring Initialized ===");
+        log.info("Portfolio calculation target: < {}ms", PORTFOLIO_CALCULATION_THRESHOLD.toMillis());
+        log.info("Leaderboard calculation target: < {}ms", LEADERBOARD_CALCULATION_THRESHOLD.toMillis());
+        log.info("Database query target (95th percentile): < {}ms", DATABASE_QUERY_THRESHOLD.toMillis());
+        log.info("Cache hit rate target: > {}%", MIN_CACHE_HIT_RATE * 100);
+        log.info("Metrics endpoint: /actuator/metrics");
+        log.info("======================================================");
     }
 
     /**
@@ -214,16 +216,16 @@ public class PerformanceMonitoringConfig {
                 Duration queryTime = Duration.between(start, Instant.now());
                 
                 if (queryTime.compareTo(DATABASE_QUERY_THRESHOLD) > 0) {
-                    System.err.println("WARNING: Database query exceeded threshold: " + 
-                        queryTime.toMillis() + "ms > " + DATABASE_QUERY_THRESHOLD.toMillis() + "ms");
+                    log.warn("Database query exceeded threshold: {}ms > {}ms", 
+                        queryTime.toMillis(), DATABASE_QUERY_THRESHOLD.toMillis());
                 } else {
-                    System.out.println("Database performance validation passed: " + 
-                        queryTime.toMillis() + "ms (Tables: " + tableCount + ")");
+                    log.info("Database performance validation passed: {}ms (Tables: {})", 
+                        queryTime.toMillis(), tableCount);
                 }
             }
             
         } catch (Exception e) {
-            System.err.println("Database performance validation failed: " + e.getMessage());
+            log.error("Database performance validation failed: {}", e.getMessage());
         } finally {
             sample.stop(portfolioQueryTimer());
         }
@@ -234,7 +236,7 @@ public class PerformanceMonitoringConfig {
      */
     private void validateCacheConfiguration() {
         if (cacheManager != null) {
-            System.out.println("Cache regions configured: " + cacheManager.getCacheNames());
+            log.info("Cache regions configured: {}", cacheManager.getCacheNames());
             
             // Test basic cache functionality
             cacheManager.getCacheNames().forEach(cacheName -> {
@@ -245,9 +247,9 @@ public class PerformanceMonitoringConfig {
                     org.springframework.cache.Cache.ValueWrapper value = cache.get("test-key");
                     
                     if (value != null && "test-value".equals(value.get())) {
-                        System.out.println("Cache validation passed for region: " + cacheName);
+                        log.info("Cache validation passed for region: {}", cacheName);
                     } else {
-                        System.err.println("WARNING: Cache validation failed for region: " + cacheName);
+                        log.warn("Cache validation failed for region: {}", cacheName);
                     }
                     
                     // Clean up test data
