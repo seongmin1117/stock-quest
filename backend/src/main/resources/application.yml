@@ -43,8 +43,13 @@ jwt:
 springdoc:
   api-docs:
     path: /api-docs
+    enabled: true
   swagger-ui:
     path: /swagger-ui.html
+    enabled: true
+    config-url: /api-docs/swagger-config
+    url: /api-docs
+  show-actuator: true
 
 # Actuator 설정
 management:

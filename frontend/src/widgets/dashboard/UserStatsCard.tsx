@@ -16,7 +16,7 @@ import {
   Timeline,
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/shared/lib/auth';
+import { useAuth } from '@/shared/lib/auth/auth-store';
 
 interface UserStats {
   totalChallengesParticipated: number;

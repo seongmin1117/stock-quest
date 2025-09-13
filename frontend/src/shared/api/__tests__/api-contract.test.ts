@@ -88,37 +88,37 @@ describe('API Contract Tests', () => {
   });
 
   describe('AuthResponse 타입 계약', () => {
-    it('should handle signup response (without token)', () => {
+    it('should handle signup response (without access token)', () => {
       const signupResponse: AuthResponse = {
-        user: {
-          id: 1,
-          email: 'test@example.com',
-          nickname: '테스트사용자',
-        },
-        token: undefined, // 회원가입 시 토큰 없음
+        userId: 1,
+        email: 'test@example.com',
+        nickname: '테스트사용자',
+        accessToken: undefined, // 회원가입 시 토큰 없을 수 있음
+        refreshToken: undefined,
       };
 
-      expect(signupResponse.user?.id).toBe(1);
-      expect(signupResponse.user?.email).toBe('test@example.com');
-      expect(signupResponse.user?.nickname).toBe('테스트사용자');
-      expect(signupResponse.token).toBeUndefined();
+      expect(signupResponse.userId).toBe(1);
+      expect(signupResponse.email).toBe('test@example.com');
+      expect(signupResponse.nickname).toBe('테스트사용자');
+      expect(signupResponse.accessToken).toBeUndefined();
     });
 
-    it('should handle login response (with token)', () => {
+    it('should handle login response (with tokens)', () => {
       const loginResponse: AuthResponse = {
-        user: {
-          id: 1,
-          email: 'test@example.com',
-          nickname: '테스트사용자',
-        },
-        token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        userId: 1,
+        email: 'test@example.com',
+        nickname: '테스트사용자',
+        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        accessTokenExpiresAt: '2024-01-15T12:00:00Z',
+        refreshTokenExpiresAt: '2024-02-15T12:00:00Z',
       };
 
-      expect(loginResponse.token).toBeTruthy();
-      expect(typeof loginResponse.token).toBe('string');
-      expect(loginResponse.user?.id).toBe(1);
-      expect(loginResponse.user?.email).toBe('test@example.com');
-      expect(loginResponse.user?.nickname).toBe('테스트사용자');
+      expect(loginResponse.accessToken).toBeTruthy();
+      expect(typeof loginResponse.accessToken).toBe('string');
+      expect(loginResponse.userId).toBe(1);
+      expect(loginResponse.email).toBe('test@example.com');
+      expect(loginResponse.nickname).toBe('테스트사용자');
     });
   });
 

@@ -1,4 +1,4 @@
-package com.stockquest.adapter.websocket;
+package com.stockquest.adapter.in.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stockquest.domain.backtesting.BacktestResult;

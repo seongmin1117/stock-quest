@@ -11,8 +11,12 @@ import com.stockquest.domain.execution.Trade.TradeStatus;
 import com.stockquest.domain.execution.Trade.ExecutionVenue;
 import com.stockquest.domain.execution.Trade.ExecutionQualityMetrics;
 import com.stockquest.domain.execution.Trade.MarketConditions;
+import com.stockquest.application.event.TradeExecutedEvent;
+import com.stockquest.application.event.OrderScheduledEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -36,15 +40,24 @@ public class TradeExecutionService {
     private final Map<String, Order> executionQueue = new ConcurrentHashMap<>();
     private final Map<String, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
     private final RealTimeMarketDataService realTimeMarketDataService;
+    private final ApplicationEventPublisher eventPublisher;
     
     // Additional dependencies (commented for now)
-    // private final OrderManagementService orderManagementService;
     // private final MarketDataService marketDataService;
     
     /**
+     * 주문 실행 스케줄링 이벤트 리스너
+     */
+    @EventListener
+    @Async
+    public void handleOrderScheduled(OrderScheduledEvent event) {
+        scheduleExecution(event.getOrder());
+    }
+
+    /**
      * 주문 실행 스케줄링
      */
-    public void scheduleExecution(Order order) {
+    private void scheduleExecution(Order order) {
         log.info("주문 실행 스케줄링: {} - Algorithm: {}", 
             order.getOrderId(), order.getExecutionAlgorithm().getShortName());
         
@@ -332,9 +345,9 @@ public class TradeExecutionService {
         
         // 실행 컨텍스트 업데이트
         updateExecutionContext(context, trade);
-        
-        // Order Management Service에 체결 통보
-        // orderManagementService.processTradeFill(trade.getOrderId(), trade);
+
+        // 체결 이벤트 발행
+        eventPublisher.publishEvent(new TradeExecutedEvent(this, trade.getOrderId(), trade));
     }
     
     /**

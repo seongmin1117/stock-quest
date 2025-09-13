@@ -29,7 +29,7 @@ import {
   Security,
   Language,
 } from '@mui/icons-material';
-import { useAuth } from '@/shared/lib/auth';
+import { useAuth, useAuthActions } from '@/shared/lib/auth/auth-store';
 
 interface UserProfile {
   email: string;
@@ -49,7 +49,8 @@ interface UserProfile {
  * 개인 정보 수정 및 설정 관리
  */
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { logout } = useAuthActions();
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [editMode, setEditMode] = React.useState(false);
   const [editedNickname, setEditedNickname] = React.useState('');

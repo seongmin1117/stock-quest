@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { AuthProvider } from '@/shared/lib/auth';
+import AuthGuard from '@/shared/lib/auth/AuthGuard';
 import { Providers } from './providers';
 import { Navbar } from '@/shared/components/Navigation';
 import './globals.css';
@@ -51,10 +51,10 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <Providers>
-          <AuthProvider>
+          <AuthGuard>
             <Navbar />
             {children}
-          </AuthProvider>
+          </AuthGuard>
         </Providers>
       </body>
     </html>
