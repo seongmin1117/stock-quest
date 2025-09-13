@@ -105,7 +105,7 @@ export default function CommunityPage() {
                   <InputLabel sx={{ color: '#78828A' }}>챌린지 선택</InputLabel>
                   <Select
                     value={selectedChallenge}
-                    onChange={(e) => setSelectedChallenge(e.target.value)}
+                    onChange={(e) => setSelectedChallenge(e.target.value === '' ? '' : Number(e.target.value))}
                     sx={{
                       color: '#FFFFFF',
                       '& .MuiOutlinedInput-notchedOutline': {

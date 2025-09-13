@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class VaRCalculationService {
     
-    private final MarketDataService marketDataService;
+    private final StockMarketDataService stockMarketDataService;
     private final PortfolioService portfolioService;
     private final RiskAlertService riskAlertService;
     
@@ -443,7 +443,7 @@ public class VaRCalculationService {
     
     private List<Stock> getMarketDataForPortfolio(Portfolio portfolio, Integer days) {
         // MarketDataService를 통해 포트폴리오의 모든 자산에 대한 시장 데이터 조회
-        return marketDataService.getHistoricalData(
+        return stockMarketDataService.getHistoricalData(
             portfolio.getHoldings().stream()
                 .map(holding -> holding.getSymbol())
                 .collect(Collectors.toList()),

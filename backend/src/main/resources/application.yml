@@ -14,7 +14,7 @@ spring:
   # JPA 설정
   jpa:
     hibernate:
-      ddl-auto: create-drop  # 개발용 - 테이블 자동 생성
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:create-drop}  # 개발용 - 테이블 자동 생성, 프로덕션에서는 validate 사용
     show-sql: false
     open-in-view: false  # 성능 최적화 및 예기치 않은 지연 로딩 방지
     properties:
@@ -36,15 +36,20 @@ spring:
 
 # JWT 설정
 jwt:
-  secret: stockquest-jwt-secret-key-for-development-only
-  expiration: 86400000  # 24시간 (밀리초)
+  secret: ${JWT_SECRET:stockquest-jwt-secret-key-for-development-only}
+  expiration: ${JWT_EXPIRATION:86400000}  # 24시간 (밀리초)
 
 # API 문서 설정
 springdoc:
   api-docs:
     path: /api-docs
+    enabled: true
   swagger-ui:
     path: /swagger-ui.html
+    enabled: true
+    config-url: /api-docs/swagger-config
+    url: /api-docs
+  show-actuator: true
 
 # Actuator 설정
 management:

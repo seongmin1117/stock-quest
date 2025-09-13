@@ -32,7 +32,7 @@ import {
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/shared/lib/auth';
+import { useAuth, useAuthActions } from '@/shared/lib/auth/auth-store';
 
 interface NavbarProps {
   position?: 'fixed' | 'static' | 'sticky' | 'absolute' | 'relative';
@@ -46,7 +46,8 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const { logout } = useAuthActions();
   
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -59,8 +60,8 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
     setAnchorEl(null);
   };
 
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    logout();
     handleUserMenuClose();
     router.push('/');
   };
@@ -76,7 +77,7 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
     { label: '커뮤니티', icon: <People />, href: '/community' },
   ];
 
-  const authItems = user
+  const authItems = isAuthenticated
     ? [
         { label: '대시보드', icon: <Dashboard />, href: '/dashboard' },
         { label: '프로필', icon: <Person />, href: '/profile' },
@@ -93,7 +94,7 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
         <Typography variant="h6" sx={{ color: '#2196F3', fontWeight: 'bold' }}>
           StockQuest
         </Typography>
-        {user && (
+        {isAuthenticated && user && (
           <Typography variant="body2" sx={{ color: '#78828A', mt: 1 }}>
             {user.nickname}님 환영합니다
           </Typography>
@@ -151,7 +152,7 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
           </ListItem>
         ))}
 
-        {user && (
+        {isAuthenticated && user && (
           <ListItem 
             onClick={() => {
               handleLogout();
@@ -235,7 +236,7 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
           {/* 사용자 메뉴 (데스크톱) */}
           {!isMobile && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {user ? (
+              {isAuthenticated ? (
                 <>
                   <Button
                     component={Link}
@@ -265,7 +266,7 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
                         fontWeight: 'bold',
                       }}
                     >
-                      {user.nickname?.charAt(0)?.toUpperCase() || 'U'}
+                      {user?.nickname?.charAt(0)?.toUpperCase() || 'U'}
                     </Avatar>
                   </IconButton>
 

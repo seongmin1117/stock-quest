@@ -15,8 +15,9 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '@/shared/lib/auth';
+import { useAuthActions } from '@/shared/lib/auth/auth-store';
 import { useRouter } from 'next/navigation';
+import apiClient from '@/shared/api/api-client';
 
 // 로그인 폼 검증 스키마
 const loginSchema = z.object({
@@ -30,10 +31,10 @@ type LoginForm = z.infer<typeof loginSchema>;
  * 로그인 페이지
  */
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, setLoading, setError } = useAuthActions();
   const router = useRouter();
-  const [error, setError] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(false);
+  const [localError, setLocalError] = React.useState<string | null>(null);
+  const [localLoading, setLocalLoading] = React.useState(false);
 
   const {
     register,
@@ -45,37 +46,38 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
+      setLocalLoading(true);
+      setLocalError(null);
       setLoading(true);
-      setError(null);
 
-      // API 호출 (실제 구현 시 생성된 훅 사용)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      // 새로운 API 클라이언트 사용
+      const response = await apiClient.post('/api/auth/login', data);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '로그인에 실패했습니다');
+      // 응답 데이터에서 필요한 정보 추출 (백엔드 스키마에 맞춤)
+      const authResponse = response.data;
+
+      if (!authResponse.accessToken) {
+        throw new Error('토큰을 받지 못했습니다');
       }
 
-      const result = await response.json();
-      
-      // 인증 상태 업데이트
-      login(result.token, {
-        id: result.userId,
-        email: result.email,
-        nickname: result.nickname,
-      });
+      // 새로운 인증 스토어로 로그인 처리
+      login(authResponse);
 
-      // 챌린지 페이지로 이동
-      router.push('/challenges');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '로그인에 실패했습니다');
+      // 리다이렉트 URL이 있으면 해당 URL로, 없으면 챌린지 페이지로
+      const redirectUrl = authResponse.redirectUrl || '/challenges';
+      router.push(redirectUrl);
+
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message ||
+                          err?.message ||
+                          '이메일 또는 비밀번호가 일치하지 않습니다';
+
+      setLocalError(errorMessage);
+      setError(errorMessage);
+
+      console.error('로그인 오류:', err);
     } finally {
+      setLocalLoading(false);
       setLoading(false);
     }
   };
@@ -99,9 +101,9 @@ export default function LoginPage() {
             StockQuest 계정으로 로그인하세요
           </Typography>
 
-          {error && (
+          {localError && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
+              {localError}
             </Alert>
           )}
 
@@ -140,9 +142,9 @@ export default function LoginPage() {
               variant="contained"
               size="large"
               sx={{ mt: 3, mb: 2 }}
-              disabled={loading}
+              disabled={localLoading}
             >
-              {loading ? '로그인 중...' : '로그인'}
+              {localLoading ? '로그인 중...' : '로그인'}
             </Button>
 
             <Box textAlign="center">
@@ -157,8 +159,8 @@ export default function LoginPage() {
             <Alert severity="info" sx={{ mt: 2 }}>
               <Typography variant="body2">
                 <strong>테스트 계정:</strong><br />
-                이메일: test@example.com<br />
-                비밀번호: password123
+                이메일: test1234@test.com<br />
+                비밀번호: Test1234!
               </Typography>
             </Alert>
           )}

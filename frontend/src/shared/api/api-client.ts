@@ -6,7 +6,7 @@ import axios, {
   InternalAxiosRequestConfig,
   AxiosHeaders,
 } from 'axios';
-import { useAuthStore } from '@/shared/lib/auth';
+import { useAuthStore } from '@/shared/lib/auth/auth-store';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
@@ -19,9 +19,8 @@ const axiosInstance = axios.create({
 // 요청 인터셉터
 axiosInstance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-      const state = useAuthStore.getState();
-      // 타입 안전한 토큰 참조
-      const token = state.token;
+      // v2 store의 getAccessToken 메서드 사용
+      const token = useAuthStore.getState().getAccessToken();
 
       // 디버그 로그 (개발 중에만)
       if (process.env.NODE_ENV !== 'production') {
@@ -43,13 +42,10 @@ axiosInstance.interceptors.response.use(
     (error) => {
       if (error?.response?.status === 401) {
         // 인증 실패 시 자동 로그아웃
-        const { logout } = useAuthStore.getState();
-        if (logout) {
-          logout();
-          // 로그인 페이지로 리디렉션
-          if (typeof window !== 'undefined') {
-            window.location.href = '/auth/login';
-          }
+        useAuthStore.getState().logout();
+        // 로그인 페이지로 리디렉션
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/login';
         }
       }
       return Promise.reject(error);

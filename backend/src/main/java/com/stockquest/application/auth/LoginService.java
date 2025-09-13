@@ -7,6 +7,7 @@ import com.stockquest.domain.auth.TokenPair;
 import com.stockquest.domain.user.User;
 import com.stockquest.domain.user.port.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,11 +29,11 @@ public class LoginService implements LoginUseCase {
     public LoginResult login(LoginCommand command) {
         // 사용자 조회
         User user = userRepository.findByEmail(command.email())
-                .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 이메일입니다: " + command.email()));
+                .orElseThrow(() -> new BadCredentialsException("등록되지 않은 이메일입니다: " + command.email()));
         
         // 비밀번호 검증
         if (!passwordEncoder.matches(command.password(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
+            throw new BadCredentialsException("비밀번호가 올바르지 않습니다.");
         }
         
         // JWT 토큰 쌍 생성

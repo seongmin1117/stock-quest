@@ -167,7 +167,7 @@ export function GlobalLeaderboard({ defaultChallengeId }: GlobalLeaderboardProps
             <InputLabel sx={{ color: '#78828A' }}>챌린지</InputLabel>
             <Select
               value={selectedChallenge}
-              onChange={(e) => setSelectedChallenge(e.target.value)}
+              onChange={(e) => setSelectedChallenge(e.target.value === '' ? '' : Number(e.target.value))}
               size="small"
               sx={{
                 color: '#FFFFFF',

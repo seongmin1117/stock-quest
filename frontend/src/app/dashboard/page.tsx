@@ -33,7 +33,7 @@ import {
   PlayArrow,
 } from '@mui/icons-material';
 import Link from 'next/link';
-import { useAuth } from '@/shared/lib/auth';
+import { useAuth } from '@/shared/lib/auth/auth-store';
 import { UserStatsCard } from '@/widgets/dashboard';
 import { GlobalLeaderboard } from '@/widgets/leaderboard';
 import { CommunityFeed } from '@/widgets/community';

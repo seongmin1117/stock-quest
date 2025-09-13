@@ -23,7 +23,7 @@ import {
   ExpandLess,
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/shared/lib/auth';
+import { useAuth } from '@/shared/lib/auth/auth-store';
 import apiClient from '@/shared/api/api-client';
 
 interface Post {

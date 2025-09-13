@@ -111,7 +111,8 @@ public class SecurityConfig {
                     "/actuator/info",
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
-                    "/api-docs/**"
+                    "/api-docs/**",
+                    "/openapi/**"
                 ).permitAll()
                 
                 // 관리자 전용 엔드포인트

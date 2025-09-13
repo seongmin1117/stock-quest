@@ -42,6 +42,7 @@ export interface TradingNotification {
   orderId?: string;
   symbol?: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  read?: boolean;
 }
 
 export interface ChallengeUpdate {

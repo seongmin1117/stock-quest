@@ -24,29 +24,11 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
 
-  // 프로젝트별 브라우저 설정
+  // 프로젝트별 브라우저 설정 (크롬만)
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    
-    // 모바일 테스트
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
     },
   ],
 
