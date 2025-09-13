@@ -1,0 +1,51 @@
+# ===================================================================
+# 테스트 환경 설정 (application-test.yml)
+# H2 인메모리 데이터베이스 사용
+# ===================================================================
+
+spring:
+  # H2 인메모리 데이터베이스 설정
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+    
+  h2:
+    console:
+      enabled: true
+
+  # JPA/Hibernate 테스트 설정
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Redis 비활성화 (테스트용)
+  data:
+    redis:
+      enabled: false
+
+  # 캐시 비활성화 (테스트용)
+  cache:
+    type: none
+
+# 로깅 설정 - 테스트 환경
+logging:
+  level:
+    root: INFO
+    com.stockquest: DEBUG
+    org.hibernate.SQL: DEBUG
+    
+# 애플리케이션 테스트 설정
+app:
+  environment: test
+
+# 테스트용 JWT 설정
+jwt:
+  secret: test-secret-key-for-development-only
+  access-token-validity: 86400000  # 24 hours
