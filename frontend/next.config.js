@@ -2,7 +2,7 @@
 const nextConfig = {
   experimental: {
     // Feature-Sliced Design을 위한 설정
-    typedRoutes: true,
+    typedRoutes: false,
   },
   
   // 환경 변수 설정

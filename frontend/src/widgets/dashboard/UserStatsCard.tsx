@@ -35,10 +35,10 @@ export function UserStatsCard() {
   const { user } = useAuth();
 
   const { data: stats, isLoading } = useQuery<UserStats>({
-    queryKey: ['userStats', user?.userId],
+    queryKey: ['userStats', user?.id],
     queryFn: async () => {
       // 실제로는 백엔드 API 호출
-      // const data = await apiClient.get(`/api/users/${user?.userId}/stats`);
+      // const data = await apiClient.get(`/api/users/${user?.id}/stats`);
       
       // 임시 모의 데이터
       return {
