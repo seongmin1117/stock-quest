@@ -4,10 +4,10 @@ services:
     image: mysql:8.0
     container_name: stockquest-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: stockquest
-      MYSQL_USER: stockquest
-      MYSQL_PASSWORD: stockquest123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-stockquest}
+      MYSQL_USER: ${MYSQL_USER:-stockquest}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-stockquest123}
     ports:
       - "3306:3306"
     volumes:
@@ -39,12 +39,14 @@ services:
       dockerfile: Dockerfile
     container_name: stockquest-backend
     environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/stockquest?serverTimezone=UTC&characterEncoding=UTF-8
-      SPRING_DATASOURCE_USERNAME: stockquest
-      SPRING_DATASOURCE_PASSWORD: stockquest123
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:mysql://mysql:3306/stockquest?serverTimezone=UTC&characterEncoding=UTF-8}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-stockquest}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-stockquest123}
+      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
+      SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
+      JWT_SECRET: ${JWT_SECRET:-stockquest-jwt-secret-key-for-development-only}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
     ports:
       - "8080:8080"
     depends_on:
