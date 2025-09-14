@@ -18,10 +18,13 @@ import {
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { 
+import {
   PlaceOrderRequestSchema,
   type PlaceOrderRequestType,
 } from '../../shared/validation/order-schemas';
+import { useGetApiSessionsSessionId } from '@/shared/api/generated/챌린지-세션/챌린지-세션';
+import { useGetApiChallengesChallengeId } from '@/shared/api/generated/챌린지/챌린지';
+import { usePostApiSessionsSessionIdOrders } from '@/shared/api/generated/챌린지-세션/챌린지-세션';
 
 type OrderForm = PlaceOrderRequestType;
 
@@ -34,18 +37,28 @@ interface TradingPanelProps {
  * 주문 접수 및 거래 내역 표시
  */
 export function TradingPanel({ sessionId }: TradingPanelProps) {
-  const [instruments, setInstruments] = React.useState<Array<{
-    instrumentKey: string;
-    hiddenName: string;
-    type: string;
-    realPrice: number;
-  }>>([]);
-  
-  const [loading, setLoading] = React.useState(false);
-  const [instrumentsLoading, setInstrumentsLoading] = React.useState(true);
-  const [currentPrices, setCurrentPrices] = React.useState<Record<string, number>>({});
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
+
+  // 세션 정보 가져오기
+  const { data: sessionData, isLoading: sessionLoading } = useGetApiSessionsSessionId(sessionId, {
+    query: {
+      enabled: !isNaN(sessionId) && sessionId > 0,
+    },
+  });
+
+  // 챌린지 정보 가져오기 (instruments 포함)
+  const { data: challengeData, isLoading: challengeLoading } = useGetApiChallengesChallengeId(
+    sessionData?.challengeId || 0,
+    {
+      query: {
+        enabled: !!sessionData?.challengeId,
+      },
+    }
+  );
+
+  // 주문 mutation
+  const orderMutation = usePostApiSessionsSessionIdOrders();
 
   const {
     register,
@@ -67,138 +80,72 @@ export function TradingPanel({ sessionId }: TradingPanelProps) {
 
   const orderType = watch('orderType');
 
-  // Load instruments from session/challenge API
-  React.useEffect(() => {
-    const loadInstruments = async () => {
-      try {
-        setInstrumentsLoading(true);
-        
-        // TODO: Replace with actual API call to get session instruments
-        // const response = await getApiSessionsSessionId(sessionId);
-        // setInstruments(response.data.challenge.instruments);
-        
-        // Temporary mock data for development
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setInstruments([
-          { instrumentKey: 'A', hiddenName: '회사 A', type: 'STOCK', realPrice: 180.00 },
-          { instrumentKey: 'B', hiddenName: '회사 B', type: 'STOCK', realPrice: 420.00 },
-          { instrumentKey: 'C', hiddenName: '회사 C', type: 'STOCK', realPrice: 140.00 },
-          { instrumentKey: 'D', hiddenName: '회사 D', type: 'STOCK', realPrice: 250.00 },
-          { instrumentKey: 'E', hiddenName: '회사 E', type: 'STOCK', realPrice: 150.00 },
-        ]);
-      } catch (error) {
-        console.error('Failed to load instruments:', error);
-        setError('상품 목록을 불러오는데 실패했습니다.');
-      } finally {
-        setInstrumentsLoading(false);
-      }
-    };
-
-    loadInstruments();
-  }, [sessionId]);
+  // Transform instruments from challenge data
+  const instruments = React.useMemo(() => {
+    if (!challengeData?.instruments) return [];
+    return challengeData.instruments.map(key => ({
+      instrumentKey: key,
+      hiddenName: `종목 ${key}`,
+      type: 'STOCK' as const,
+    }));
+  }, [challengeData]);
 
   const onSubmit = async (data: OrderForm) => {
     try {
-      setLoading(true);
       setError(null);
       setSuccess(null);
-      
+
       // Validate form data
       if (!data.instrumentKey) {
         throw new Error('상품을 선택해주세요.');
       }
-      
+
       if (data.quantity < 1) {
         throw new Error('수량은 1 이상이어야 합니다.');
       }
-      
+
       if (data.orderType === 'LIMIT' && (!data.limitPrice || data.limitPrice <= 0)) {
         throw new Error('지정가를 올바르게 입력해주세요.');
       }
-      
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-      
-      // Simulate order processing failures
-      const failureRate = data.orderType === 'LIMIT' ? 0.15 : 0.08;
-      if (Math.random() < failureRate) {
-        const errors = [
-          '주문 수량이 부족합니다.',
-          '시장 마감 시간입니다.',
-          '주문 서버에 일시적인 문제가 발생했습니다.',
-          '지정가가 현재 시세와 너무 많이 차이납니다.',
-        ];
-        throw new Error(errors[Math.floor(Math.random() * errors.length)]);
-      }
-      
-      // Mock successful order execution
-      const instrument = instruments.find(i => i.instrumentKey === data.instrumentKey);
-      const executedPrice = data.orderType === 'LIMIT' 
-        ? data.limitPrice! 
-        : instrument!.realPrice * (1 + (Math.random() - 0.5) * 0.01); // ±0.5% 슬리페이지
-      
-      // Simulate API call
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/sessions/${sessionId}/orders`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          },
-          body: JSON.stringify({
-            ...data,
-            executedPrice,
-            executedAt: new Date().toISOString(),
-          }),
-        }
-      ).catch(() => {
-        // Mock successful response if API is not available
-        return {
-          ok: true,
-          status: 200,
-          json: async () => ({
-            orderId: Math.random().toString(36).substr(2, 9),
-            executedPrice,
-            executedQuantity: data.quantity,
-            executedAt: new Date().toISOString(),
-          })
-        };
+
+      // Execute real API call
+      const result = await orderMutation.mutateAsync({
+        sessionId,
+        data: {
+          instrumentKey: data.instrumentKey,
+          side: data.side,
+          orderType: data.orderType,
+          quantity: data.quantity,
+          limitPrice: data.orderType === 'LIMIT' ? data.limitPrice : undefined,
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: 주문 접수에 실패했습니다`);
-      }
-
-      const result = await response.json();
       const orderTypeText = data.orderType === 'MARKET' ? '시장가' : '지정가';
       const sideText = data.side === 'BUY' ? '매수' : '매도';
-      
+
       setSuccess(
         `${sideText} ${orderTypeText} 주문이 체결되었습니다. ` +
-        `체결가: $${executedPrice.toFixed(2)} (${data.quantity}주)`
+        `주문 ID: ${result.orderId}`
       );
       reset();
-      
+
       // Auto-clear success message after 10 seconds
       setTimeout(() => setSuccess(null), 10000);
-      
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '주문 접수에 실패했습니다';
       setError(errorMessage);
-      
+
       // Auto-clear error message after 8 seconds
       setTimeout(() => setError(null), 8000);
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <Box 
+    <Box
       className="glass"
-      sx={{ 
+      data-testid="trading-panel"
+      sx={{
         p: 3,
         borderRadius: 3,
         position: 'relative',
@@ -312,16 +259,17 @@ export function TradingPanel({ sessionId }: TradingPanelProps) {
           />
 
           {/* 상품 선택 */}
-          <FormControl fullWidth error={!!errors.instrumentKey}>
+          <FormControl fullWidth error={!!errors.instrumentKey} disabled={sessionLoading || challengeLoading}>
             <InputLabel>상품 선택</InputLabel>
             <Select
               {...register('instrumentKey')}
               label="상품 선택"
               defaultValue=""
+              data-testid="stock-list"
             >
               {instruments.map((instrument) => (
                 <MenuItem key={instrument.instrumentKey} value={instrument.instrumentKey}>
-                  {instrument.hiddenName} ({instrument.type})
+                  {instrument.hiddenName}
                 </MenuItem>
               ))}
             </Select>
@@ -390,7 +338,7 @@ export function TradingPanel({ sessionId }: TradingPanelProps) {
             variant="contained"
             size="large"
             fullWidth
-            disabled={loading}
+            disabled={orderMutation.isPending}
             className="btn-hover"
             sx={{
               py: 2,
@@ -410,7 +358,7 @@ export function TradingPanel({ sessionId }: TradingPanelProps) {
               }
             }}
           >
-            {loading ? (
+            {orderMutation.isPending ? (
               <Box display="flex" alignItems="center" gap={1}>
                 <CircularProgress size={20} color="inherit" />
                 주문 처리 중...

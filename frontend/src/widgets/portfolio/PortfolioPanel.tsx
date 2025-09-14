@@ -15,67 +15,22 @@ import {
   Stack,
 } from '@mui/material';
 import { TrendingUp, TrendingDown } from '@mui/icons-material';
-
-interface Position {
-  instrumentKey: string;
-  hiddenName: string;
-  quantity: number;
-  averagePrice: number;
-  currentPrice: number;
-  currentValue: number;
-  unrealizedPnL: number;
-}
-
-interface Portfolio {
-  sessionId: number;
-  currentBalance: number;
-  positions: Position[];
-  totalValue: number;
-  totalPnL: number;
-  returnPercentage: number;
-}
+import { useGetApiSessionsSessionId } from '@/shared/api/generated/챌린지-세션/챌린지-세션';
 
 interface PortfolioPanelProps {
   sessionId: number;
 }
 
-/**
- * Professional Trading Portfolio Panel Component
- * Displays current holdings and performance metrics
- */
 export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
-  const [portfolio, setPortfolio] = React.useState<Portfolio | null>(null);
-  const [loading, setLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    loadPortfolio();
-    
-    // Real-time updates (every 5 seconds)
-    const interval = setInterval(loadPortfolio, 5000);
-    return () => clearInterval(interval);
-  }, [sessionId]);
-
-  const loadPortfolio = async () => {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/sessions/${sessionId}/portfolio`,
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setPortfolio(data);
-      }
-    } catch (err) {
-      console.error('Portfolio load error:', err);
-    } finally {
-      setLoading(false);
+  const { data: sessionData, isLoading: loading, error } = useGetApiSessionsSessionId(
+    sessionId,
+    {
+      query: {
+        refetchInterval: 5000,
+        enabled: !isNaN(sessionId) && sessionId > 0,
+      },
     }
-  };
+  );
 
   const formatCurrency = (amount: number) => {
     return `₩${amount.toLocaleString()}`;
@@ -88,7 +43,7 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
 
   if (loading) {
     return (
-      <Box 
+      <Box
         sx={{
           backgroundColor: '#1A1F2E',
           border: '1px solid #2A3441',
@@ -96,9 +51,9 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
           p: 3,
         }}
       >
-        <Typography 
-          variant="h6" 
-          sx={{ 
+        <Typography
+          variant="h6"
+          sx={{
             fontWeight: 600,
             color: '#FFFFFF',
             mb: 2,
@@ -107,9 +62,9 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
             letterSpacing: '0.05em',
           }}
         >
-          PORTFOLIO
+          포트폴리오
         </Typography>
-        <LinearProgress 
+        <LinearProgress
           sx={{
             backgroundColor: '#2A3441',
             '& .MuiLinearProgress-bar': {
@@ -121,9 +76,9 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
     );
   }
 
-  if (!portfolio) {
+  if (error || !sessionData) {
     return (
-      <Box 
+      <Box
         sx={{
           backgroundColor: '#1A1F2E',
           border: '1px solid #2A3441',
@@ -131,9 +86,9 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
           p: 3,
         }}
       >
-        <Typography 
-          variant="h6" 
-          sx={{ 
+        <Typography
+          variant="h6"
+          sx={{
             fontWeight: 600,
             color: '#FFFFFF',
             mb: 2,
@@ -142,26 +97,32 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
             letterSpacing: '0.05em',
           }}
         >
-          PORTFOLIO
+          포트폴리오
         </Typography>
-        <Typography 
-          variant="body2" 
-          sx={{ 
+        <Typography
+          variant="body2"
+          sx={{
             color: '#78828A',
             fontSize: '0.875rem',
           }}
         >
-          포트폴리오 정보를 불러올 수 없습니다
+          {error ? '포트폴리오 정보를 불러오는데 실패했습니다' : '포트폴리오 정보를 불러올 수 없습니다'}
         </Typography>
       </Box>
     );
   }
 
+  const currentBalance = sessionData.currentBalance || 0;
+  const totalValue = sessionData.totalValue || 0;
+  const profitLoss = sessionData.profitLoss || 0;
+  const profitLossPercent = sessionData.profitLossPercent || 0;
+  const positions = sessionData.positions || [];
+
   return (
-    <Box 
-      sx={{ 
+    <Box
+      sx={{
         backgroundColor: '#1A1F2E',
-        border: `1px solid ${portfolio.totalPnL >= 0 ? '#4CAF50' : '#F44336'}`,
+        border: `1px solid ${profitLoss >= 0 ? '#4CAF50' : '#F44336'}`,
         borderRadius: 2,
         p: 3,
         position: 'relative',
@@ -173,14 +134,14 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
           left: 0,
           right: 0,
           height: '3px',
-          background: portfolio.totalPnL >= 0 ? '#4CAF50' : '#F44336',
+          background: profitLoss >= 0 ? '#4CAF50' : '#F44336',
         }
       }}
     >
-      <Typography 
-        variant="h6" 
+      <Typography
+        variant="h6"
         gutterBottom
-        sx={{ 
+        sx={{
           fontWeight: 600,
           color: '#FFFFFF',
           mb: 3,
@@ -193,14 +154,14 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
         }}
       >
         <Box component="span" sx={{ fontSize: '1rem' }}>💰</Box>
-        PORTFOLIO
+        포트폴리오
       </Typography>
 
       {/* Portfolio Summary */}
-      <Box 
-        sx={{ 
-          mb: 3, 
-          p: 3, 
+      <Box
+        sx={{
+          mb: 3,
+          p: 3,
           backgroundColor: '#0A0E18',
           borderRadius: 2,
           border: '1px solid #2A3441',
@@ -209,9 +170,9 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
         <Stack spacing={2}>
           {/* Cash Balance */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 fontWeight: 500,
                 color: '#78828A',
                 fontSize: '0.75rem',
@@ -219,10 +180,10 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                 letterSpacing: '0.05em',
               }}
             >
-              CASH BALANCE
+              잔고
             </Typography>
-            <Typography 
-              variant="h6" 
+            <Typography
+              variant="h6"
               sx={{
                 fontWeight: 600,
                 color: '#2196F3',
@@ -230,15 +191,15 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                 fontSize: '1rem',
               }}
             >
-              {formatCurrency(portfolio.currentBalance)}
+              {formatCurrency(currentBalance)}
             </Typography>
           </Box>
 
           {/* Total Value */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 fontWeight: 500,
                 color: '#78828A',
                 fontSize: '0.75rem',
@@ -246,10 +207,10 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                 letterSpacing: '0.05em',
               }}
             >
-              TOTAL VALUE
+              총 자산
             </Typography>
-            <Typography 
-              variant="h6" 
+            <Typography
+              variant="h6"
               sx={{
                 fontWeight: 600,
                 color: '#FFFFFF',
@@ -257,15 +218,15 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                 fontSize: '1rem',
               }}
             >
-              {formatCurrency(portfolio.totalValue)}
+              {formatCurrency(totalValue)}
             </Typography>
           </Box>
 
           {/* Total P&L */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 fontWeight: 500,
                 color: '#78828A',
                 fontSize: '0.75rem',
@@ -273,7 +234,7 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                 letterSpacing: '0.05em',
               }}
             >
-              TOTAL P&L
+              손익
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Box
@@ -284,34 +245,34 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: portfolio.totalPnL >= 0 ? '#4CAF50' : '#F44336',
+                  backgroundColor: profitLoss >= 0 ? '#4CAF50' : '#F44336',
                 }}
               >
-                {portfolio.totalPnL >= 0 ? (
+                {profitLoss >= 0 ? (
                   <TrendingUp sx={{ color: 'white', fontSize: '16px' }} />
                 ) : (
                   <TrendingDown sx={{ color: 'white', fontSize: '16px' }} />
                 )}
               </Box>
-              <Typography 
-                variant="h6" 
+              <Typography
+                variant="h6"
                 sx={{
                   fontWeight: 600,
-                  color: portfolio.totalPnL >= 0 ? '#4CAF50' : '#F44336',
+                  color: profitLoss >= 0 ? '#4CAF50' : '#F44336',
                   fontFamily: '"Roboto Mono", monospace',
                   fontSize: '1rem',
                 }}
               >
-                {formatCurrency(portfolio.totalPnL)}
+                {formatCurrency(profitLoss)}
               </Typography>
             </Box>
           </Box>
 
           {/* Return Percentage */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 fontWeight: 500,
                 color: '#78828A',
                 fontSize: '0.75rem',
@@ -319,20 +280,20 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                 letterSpacing: '0.05em',
               }}
             >
-              RETURN
+              수익률
             </Typography>
             <Chip
-              label={formatPercentage(portfolio.returnPercentage)}
+              label={formatPercentage(profitLossPercent)}
               size="small"
               sx={{
                 fontWeight: 600,
                 fontSize: '0.75rem',
                 height: 24,
-                backgroundColor: portfolio.returnPercentage >= 0
+                backgroundColor: profitLossPercent >= 0
                   ? 'rgba(76, 175, 80, 0.15)'
                   : 'rgba(244, 67, 54, 0.15)',
-                color: portfolio.returnPercentage >= 0 ? '#4CAF50' : '#F44336',
-                border: `1px solid ${portfolio.returnPercentage >= 0 ? '#4CAF50' : '#F44336'}`,
+                color: profitLossPercent >= 0 ? '#4CAF50' : '#F44336',
+                border: `1px solid ${profitLossPercent >= 0 ? '#4CAF50' : '#F44336'}`,
                 fontFamily: '"Roboto Mono", monospace',
               }}
             />
@@ -341,9 +302,9 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
       </Box>
 
       {/* Positions Table */}
-      <Typography 
-        variant="subtitle1" 
-        sx={{ 
+      <Typography
+        variant="subtitle1"
+        sx={{
           fontWeight: 600,
           color: '#FFFFFF',
           mb: 2,
@@ -352,22 +313,22 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
           letterSpacing: '0.05em',
         }}
       >
-        POSITIONS
+        보유 종목
       </Typography>
-      
-      {portfolio.positions.length === 0 ? (
-        <Box 
-          sx={{ 
-            textAlign: 'center', 
+
+      {positions.length === 0 ? (
+        <Box
+          sx={{
+            textAlign: 'center',
             py: 4,
             backgroundColor: '#0A0E18',
             borderRadius: 2,
             border: '1px solid #2A3441',
           }}
         >
-          <Typography 
-            variant="body2" 
-            sx={{ 
+          <Typography
+            variant="body2"
+            sx={{
               color: '#78828A',
               fontSize: '0.875rem',
             }}
@@ -376,7 +337,7 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
           </Typography>
         </Box>
       ) : (
-        <TableContainer 
+        <TableContainer
           sx={{
             backgroundColor: '#0A0E18',
             border: '1px solid #2A3441',
@@ -386,8 +347,8 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell 
-                  sx={{ 
+                <TableCell
+                  sx={{
                     color: '#78828A',
                     fontWeight: 600,
                     fontSize: '0.625rem',
@@ -396,11 +357,11 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                     borderColor: '#2A3441',
                   }}
                 >
-                  INSTRUMENT
+                  종목
                 </TableCell>
-                <TableCell 
+                <TableCell
                   align="right"
-                  sx={{ 
+                  sx={{
                     color: '#78828A',
                     fontWeight: 600,
                     fontSize: '0.625rem',
@@ -409,11 +370,11 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                     borderColor: '#2A3441',
                   }}
                 >
-                  QUANTITY
+                  수량
                 </TableCell>
-                <TableCell 
+                <TableCell
                   align="right"
-                  sx={{ 
+                  sx={{
                     color: '#78828A',
                     fontWeight: 600,
                     fontSize: '0.625rem',
@@ -422,11 +383,11 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                     borderColor: '#2A3441',
                   }}
                 >
-                  AVG PRICE
+                  평균단가
                 </TableCell>
-                <TableCell 
+                <TableCell
                   align="right"
-                  sx={{ 
+                  sx={{
                     color: '#78828A',
                     fontWeight: 600,
                     fontSize: '0.625rem',
@@ -435,13 +396,13 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                     borderColor: '#2A3441',
                   }}
                 >
-                  P&L
+                  손익
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {portfolio.positions.map((position) => (
-                <TableRow 
+              {positions.map((position) => (
+                <TableRow
                   key={position.instrumentKey}
                   sx={{
                     '&:hover': {
@@ -450,29 +411,19 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                   }}
                 >
                   <TableCell sx={{ borderColor: '#2A3441' }}>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
+                    <Typography
+                      variant="body2"
+                      sx={{
                         fontWeight: 500,
                         color: '#FFFFFF',
                         fontSize: '0.75rem',
-                      }}
-                    >
-                      {position.hiddenName}
-                    </Typography>
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        color: '#78828A',
-                        fontSize: '0.625rem',
-                        fontFamily: '"Roboto Mono", monospace',
                       }}
                     >
                       {position.instrumentKey}
                     </Typography>
                   </TableCell>
                   <TableCell align="right" sx={{ borderColor: '#2A3441' }}>
-                    <Typography 
+                    <Typography
                       variant="body2"
                       sx={{
                         color: '#B0BEC5',
@@ -480,11 +431,11 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                         fontFamily: '"Roboto Mono", monospace',
                       }}
                     >
-                      {position.quantity.toLocaleString()}
+                      {(position.quantity || 0).toLocaleString()}
                     </Typography>
                   </TableCell>
                   <TableCell align="right" sx={{ borderColor: '#2A3441' }}>
-                    <Typography 
+                    <Typography
                       variant="body2"
                       sx={{
                         color: '#B0BEC5',
@@ -492,10 +443,10 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                         fontFamily: '"Roboto Mono", monospace',
                       }}
                     >
-                      {formatCurrency(position.averagePrice)}
+                      {formatCurrency(position.averagePrice || 0)}
                     </Typography>
-                    <Typography 
-                      variant="caption" 
+                    <Typography
+                      variant="caption"
                       display="block"
                       sx={{
                         color: '#78828A',
@@ -503,20 +454,20 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                         fontFamily: '"Roboto Mono", monospace',
                       }}
                     >
-                      Current: {formatCurrency(position.currentPrice)}
+                      현재: {formatCurrency(position.currentPrice || 0)}
                     </Typography>
                   </TableCell>
                   <TableCell align="right" sx={{ borderColor: '#2A3441' }}>
-                    <Typography 
+                    <Typography
                       variant="body2"
                       sx={{
                         fontWeight: 600,
-                        color: position.unrealizedPnL >= 0 ? '#4CAF50' : '#F44336',
+                        color: (position.unrealizedPL || 0) >= 0 ? '#4CAF50' : '#F44336',
                         fontSize: '0.75rem',
                         fontFamily: '"Roboto Mono", monospace',
                       }}
                     >
-                      {formatCurrency(position.unrealizedPnL)}
+                      {formatCurrency(position.unrealizedPL || 0)}
                     </Typography>
                   </TableCell>
                 </TableRow>

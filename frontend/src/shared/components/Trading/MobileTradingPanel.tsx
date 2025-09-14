@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useGetApiChallengesChallengeId } from '@/shared/api/generated/챌린지/챌린지';
 
 interface Stock {
   symbol: string;
@@ -13,6 +15,7 @@ interface Stock {
 }
 
 interface MobileTradingPanelProps {
+  challengeId: number;
   selectedStock?: Stock;
   onStockSelect: (stock: Stock) => void;
   onTrade: (type: 'BUY' | 'SELL', stock: Stock, quantity: number, price: number) => void;
@@ -23,6 +26,7 @@ interface MobileTradingPanelProps {
  * 모바일 최적화된 거래 패널 (스와이프 제스처 및 터치 친화적 컨트롤)
  */
 export const MobileTradingPanel: React.FC<MobileTradingPanelProps> = ({
+  challengeId,
   selectedStock,
   onStockSelect,
   onTrade
@@ -39,45 +43,40 @@ export const MobileTradingPanel: React.FC<MobileTradingPanelProps> = ({
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [currentTranslateX, setCurrentTranslateX] = useState(0);
 
-  // Mock market data
-  const marketStocks: Stock[] = [
-    {
-      symbol: 'AAPL',
-      name: 'Apple Inc.',
-      price: 175.43,
-      change: 2.15,
-      changePercent: 1.24,
-      volume: 48562000,
-      marketCap: 2750000000000
-    },
-    {
-      symbol: 'TSLA',
-      name: 'Tesla, Inc.',
-      price: 248.87,
-      change: -8.32,
-      changePercent: -3.24,
-      volume: 89345000,
-      marketCap: 785000000000
-    },
-    {
-      symbol: 'MSFT',
-      name: 'Microsoft Corporation',
-      price: 378.85,
-      change: 5.67,
-      changePercent: 1.52,
-      volume: 23987000,
-      marketCap: 2820000000000
-    },
-    {
-      symbol: 'GOOGL',
-      name: 'Alphabet Inc.',
-      price: 142.56,
-      change: -1.23,
-      changePercent: -0.86,
-      volume: 28764000,
-      marketCap: 1800000000000
+  // Fetch challenge data to get instruments
+  const { data: challengeData, isLoading: loadingChallenge } = useGetApiChallengesChallengeId(challengeId, {
+    query: {
+      enabled: !isNaN(challengeId) && challengeId > 0,
+      refetchInterval: 5000, // Refresh every 5 seconds for live data
     }
-  ];
+  });
+
+  // Convert challenge instruments to Stock format with simulated market data
+  const marketStocks: Stock[] = React.useMemo(() => {
+    if (!challengeData?.instruments || challengeData.instruments.length === 0) {
+      return [];
+    }
+
+    return challengeData.instruments.map((instrumentKey, index) => {
+      // Generate simulated market data based on instrument key
+      const basePrice = 100 + (instrumentKey.charCodeAt(0) - 65) * 50; // A=100, B=150, C=200, etc.
+      const variation = (Math.sin(Date.now() / 10000 + index) * 10); // Time-based price variation
+      const currentPrice = basePrice + variation;
+      const openPrice = basePrice + (Math.random() - 0.5) * 5;
+      const change = currentPrice - openPrice;
+      const changePercent = (change / openPrice) * 100;
+
+      return {
+        symbol: instrumentKey,
+        name: `회사 ${instrumentKey}`, // Hidden company name
+        price: currentPrice,
+        change: change,
+        changePercent: changePercent,
+        volume: Math.floor(Math.random() * 10000000) + 1000000, // Random volume between 1M-11M
+        marketCap: Math.floor(Math.random() * 1000000000000) + 100000000000 // Random market cap
+      };
+    });
+  }, [challengeData?.instruments]);
 
   const currentStock = selectedStock || marketStocks[0];
 
@@ -130,12 +129,7 @@ export const MobileTradingPanel: React.FC<MobileTradingPanelProps> = ({
   }, [touchStart, currentTranslateX, activeTab]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
+    return `₩${amount.toLocaleString()}`;
   };
 
   const formatVolume = (volume: number) => {
@@ -155,6 +149,18 @@ export const MobileTradingPanel: React.FC<MobileTradingPanelProps> = ({
     const price = orderType === 'market' ? currentStock.price : parseFloat(limitPrice);
     onTrade(tradeType, currentStock, quantity, price);
   };
+
+  // Show loading state
+  if (loadingChallenge || marketStocks.length === 0) {
+    return (
+      <div className="bg-slate-900 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-white">시장 데이터를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-900 min-h-screen pb-20">

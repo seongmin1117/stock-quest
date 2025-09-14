@@ -17,6 +17,7 @@ import {
   TableRow,
 } from '@mui/material';
 import { TrendingUp, TrendingDown, Speed } from '@mui/icons-material';
+import { useGetApiChallengesChallengeId } from '@/shared/api/generated/챌린지/챌린지';
 
 interface MarketData {
   instrumentKey: string;
@@ -39,73 +40,57 @@ interface MarketDataPanelProps {
  * 실시간 가격 정보와 차트 표시 (회사명 숨김)
  */
 export function MarketDataPanel({ challengeId }: MarketDataPanelProps) {
-  const [marketData, setMarketData] = React.useState<MarketData[]>([]);
-  const [loading, setLoading] = React.useState(true);
   const [currentTime, setCurrentTime] = React.useState(new Date());
 
+  // Fetch challenge data to get instruments
+  const { data: challengeData, isLoading: loading } = useGetApiChallengesChallengeId(challengeId, {
+    query: {
+      enabled: !isNaN(challengeId) && challengeId > 0,
+      refetchInterval: 3000, // Refresh every 3 seconds for live simulation
+    }
+  });
+
+  // Generate market data from challenge instruments
+  const marketData: MarketData[] = React.useMemo(() => {
+    if (!challengeData?.instruments || challengeData.instruments.length === 0) {
+      return [];
+    }
+
+    return challengeData.instruments.map((instrumentKey, index) => {
+      // Generate simulated market data based on instrument key
+      const basePrice = 100 + (instrumentKey.charCodeAt(0) - 65) * 50; // A=100, B=150, C=200, etc.
+      const variation = (Math.sin(Date.now() / 10000 + index) * 10); // Time-based price variation
+      const currentPrice = basePrice + variation;
+      const openPrice = basePrice + (Math.random() - 0.5) * 5;
+      const highPrice = Math.max(currentPrice, openPrice) + Math.random() * 10;
+      const lowPrice = Math.min(currentPrice, openPrice) - Math.random() * 10;
+      const dailyChange = currentPrice - openPrice;
+      const dailyChangePercent = (dailyChange / openPrice) * 100;
+
+      return {
+        instrumentKey,
+        hiddenName: `회사 ${instrumentKey}`, // Hidden company name
+        currentPrice,
+        openPrice,
+        highPrice,
+        lowPrice,
+        volume: Math.floor(Math.random() * 10000000) + 1000000, // Random volume between 1M-11M
+        dailyChange,
+        dailyChangePercent,
+      };
+    });
+  }, [challengeData?.instruments, currentTime]); // Include currentTime to update data
+
   React.useEffect(() => {
-    loadMarketData();
-    
     // 시뮬레이션 시간 업데이트 (1초마다)
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-    
-    // 시장 데이터 업데이트 (3초마다 - 빠른 재생 시뮬레이션)
-    const dataInterval = setInterval(loadMarketData, 3000);
-    
+
     return () => {
       clearInterval(timeInterval);
-      clearInterval(dataInterval);
     };
   }, [challengeId]);
-
-  const loadMarketData = async () => {
-    try {
-      // 실제로는 실시간 가격 API를 호출하지만, 여기서는 모킹 데이터 생성
-      const mockData: MarketData[] = [
-        {
-          instrumentKey: 'A',
-          hiddenName: '회사 A',
-          currentPrice: 120.50 + (Math.random() - 0.5) * 10,
-          openPrice: 118.20,
-          highPrice: 125.80,
-          lowPrice: 116.90,
-          volume: 1234567,
-          dailyChange: 2.30,
-          dailyChangePercent: 1.95,
-        },
-        {
-          instrumentKey: 'B',
-          hiddenName: '회사 B',
-          currentPrice: 89.20 + (Math.random() - 0.5) * 5,
-          openPrice: 87.50,
-          highPrice: 92.10,
-          lowPrice: 85.30,
-          volume: 987654,
-          dailyChange: 1.70,
-          dailyChangePercent: 1.94,
-        },
-        {
-          instrumentKey: 'C',
-          hiddenName: '회사 C',
-          currentPrice: 45.80 + (Math.random() - 0.5) * 3,
-          openPrice: 47.20,
-          highPrice: 48.50,
-          lowPrice: 44.10,
-          volume: 567890,
-          dailyChange: -1.40,
-          dailyChangePercent: -2.97,
-        },
-      ];
-      
-      setMarketData(mockData);
-    } catch (err) {
-      console.error('시장 데이터 로드 오류:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatCurrency = (amount: number) => {
     return `₩${amount.toFixed(2)}`;
@@ -124,6 +109,17 @@ export function MarketDataPanel({ challengeId }: MarketDataPanelProps) {
     }
     return volume.toLocaleString();
   };
+
+  if (loading) {
+    return (
+      <Box>
+        <Typography variant="h6" gutterBottom>
+          시장 현황
+        </Typography>
+        <LinearProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
