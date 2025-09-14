@@ -1,5 +1,7 @@
 package com.stockquest.config.cache;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.cache.CacheManager;
@@ -25,13 +27,16 @@ import java.util.Map;
 @Configuration
 @EnableCaching
 public class AdvancedCacheConfig {
-    
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Value("${spring.cache.redis.time-to-live:3600000}")
     private Duration defaultTtl;
-    
+
     @Value("${spring.cache.redis.cache-null-values:false}")
     private boolean cacheNullValues;
-    
+
     @Value("${spring.cache.redis.key-prefix:stockquest:}")
     private String keyPrefix;
     
@@ -42,16 +47,16 @@ public class AdvancedCacheConfig {
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        
+
         // String 기반 Key Serializer
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
-        
-        // JSON 기반 Value Serializer (압축 성능 최적화)
-        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer();
+
+        // JSON 기반 Value Serializer (JavaTimeModule 포함된 ObjectMapper 사용)
+        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
         template.setValueSerializer(serializer);
         template.setHashValueSerializer(serializer);
-        
+
         template.afterPropertiesSet();
         return template;
     }
@@ -77,9 +82,9 @@ public class AdvancedCacheConfig {
                 .entryTtl(defaultTtl)
                 .disableCachingNullValues()
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer(objectMapper)))
                 .prefixCacheNameWith(keyPrefix);
-        
+
         return RedisCacheManager.RedisCacheManagerBuilder
                 .fromConnectionFactory(connectionFactory)
                 .cacheDefaults(defaultConfig)
@@ -138,7 +143,7 @@ public class AdvancedCacheConfig {
                 .entryTtl(ttl)
                 .disableCachingNullValues()
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer(objectMapper)))
                 .prefixCacheNameWith(keyPrefix + description + ":");
     }
     

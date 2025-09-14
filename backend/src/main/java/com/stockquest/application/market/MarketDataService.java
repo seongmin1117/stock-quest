@@ -57,10 +57,21 @@ public class MarketDataService {
             PriceCandle externalCandle = externalClient.fetchLatestPrice(ticker);
             
             if (externalCandle != null) {
-                // 3. 로컬 DB에 저장
-                PriceCandle savedCandle = marketDataRepository.save(externalCandle);
-                log.info("외부 API에서 최신 데이터 조회 및 저장 완료: {} ({})", ticker, savedCandle.getClosePrice());
-                return savedCandle;
+                // 3. 중복 체크 후 로컬 DB에 저장
+                Optional<PriceCandle> existingCandle = marketDataRepository.findByTickerAndDate(
+                    externalCandle.getTicker(),
+                    externalCandle.getDate(),
+                    externalCandle.getTimeframe()
+                );
+
+                if (existingCandle.isPresent()) {
+                    log.debug("중복 데이터 감지, 기존 데이터 반환: {} ({})", ticker, existingCandle.get().getClosePrice());
+                    return existingCandle.get();
+                } else {
+                    PriceCandle savedCandle = marketDataRepository.save(externalCandle);
+                    log.info("외부 API에서 최신 데이터 조회 및 저장 완료: {} ({})", ticker, savedCandle.getClosePrice());
+                    return savedCandle;
+                }
             }
             
             // 4. 외부 데이터가 없으면 가장 최근 로컬 데이터 반환

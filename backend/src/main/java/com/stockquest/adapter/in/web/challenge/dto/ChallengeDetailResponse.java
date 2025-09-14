@@ -8,6 +8,7 @@ import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 챌린지 상세 조회 응답 DTO
@@ -23,6 +24,7 @@ public record ChallengeDetailResponse(
     Integer durationDays,
     LocalDateTime startDate,
     LocalDateTime endDate,
+    List<String> instruments,
     UserSession userSession
 ) {
     
@@ -53,6 +55,12 @@ public record ChallengeDetailResponse(
     }
     
     public static ChallengeDetailResponse from(GetChallengeDetailResult result) {
+        List<String> instrumentKeys = result.challenge().getInstruments() != null
+            ? result.challenge().getInstruments().stream()
+                .map(instrument -> instrument.getInstrumentKey())
+                .toList()
+            : List.of();
+
         return ChallengeDetailResponse.builder()
                 .id(result.challenge().getId())
                 .title(result.challenge().getTitle())
@@ -63,6 +71,7 @@ public record ChallengeDetailResponse(
                 .durationDays(result.challenge().getDurationDays())
                 .startDate(result.challenge().getStartDate())
                 .endDate(result.challenge().getEndDate())
+                .instruments(instrumentKeys)
                 .userSession(UserSession.from(result.userSession()))
                 .build();
     }
