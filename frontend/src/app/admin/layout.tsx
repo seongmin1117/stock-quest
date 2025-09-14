@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Box, Drawer, AppBar, Toolbar, Typography, List, ListItem, ListItemButton, ListItemIcon, ListItemText, CssBaseline } from '@mui/material';
-import { Dashboard, TrendingUp, Template, People, Settings, Analytics } from '@mui/icons-material';
+import { Dashboard, TrendingUp, Assignment, People, Settings, Analytics } from '@mui/icons-material';
 import { useRouter, usePathname } from 'next/navigation';
 import AdminAuthGuard from '@/features/admin-panel/components/AdminAuthGuard';
 
@@ -11,7 +11,7 @@ const drawerWidth = 240;
 const menuItems = [
   { text: '대시보드', icon: <Dashboard />, path: '/admin/dashboard' },
   { text: '챌린지 관리', icon: <TrendingUp />, path: '/admin/challenges' },
-  { text: '템플릿 관리', icon: <Template />, path: '/admin/templates' },
+  { text: '템플릿 관리', icon: <Assignment />, path: '/admin/templates' },
   { text: '사용자 관리', icon: <People />, path: '/admin/users' },
   { text: '분석', icon: <Analytics />, path: '/admin/analytics' },
   { text: '설정', icon: <Settings />, path: '/admin/settings' },
