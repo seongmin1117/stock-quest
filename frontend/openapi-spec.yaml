@@ -29,6 +29,12 @@ tags:
     description: "순위 및 성과 관련 API"
   - name: 관리자
     description: "관리자 전용 API"
+  - name: ML 시그널
+    description: "ML 트레이딩 시그널 관련 API"
+  - name: 리스크 관리
+    description: "포트폴리오 리스크 관리 관련 API"
+  - name: 포트폴리오 최적화
+    description: "AI 기반 포트폴리오 최적화 관련 API"
 
 paths:
   # Authentication APIs
@@ -547,6 +553,486 @@ paths:
                   $ref: '#/components/schemas/LeaderboardResponse'
         '400':
           description: "잘못된 요청"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ML Signals APIs
+  /api/v1/ml/signals/generate/{symbol}:
+    get:
+      tags:
+        - ML 시그널
+      summary: ML 트레이딩 시그널 생성
+      description: "단일 심볼에 대한 ML 기반 트레이딩 시그널을 생성합니다"
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          description: "주식 심볼 (예: A, B, C, D, E)"
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "시그널 생성 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingSignalResponse'
+        '500':
+          description: "시그널 생성 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ml/signals/generate/batch:
+    post:
+      tags:
+        - ML 시그널
+      summary: 배치 ML 시그널 생성
+      description: "복수 심볼에 대한 ML 트레이딩 시그널을 배치로 생성합니다"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchSignalRequest'
+      responses:
+        '200':
+          description: "배치 시그널 생성 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchSignalResponse'
+        '500':
+          description: "배치 시그널 생성 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ml/signals/filter:
+    post:
+      tags:
+        - ML 시그널
+      summary: 시장 조건별 시그널 필터링
+      description: "시장 조건에 따라 시그널을 필터링합니다"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilterSignalsRequest'
+      responses:
+        '200':
+          description: "시그널 필터링 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilteredSignalResponse'
+        '500':
+          description: "시그널 필터링 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ml/signals/{signalId}/performance:
+    put:
+      tags:
+        - ML 시그널
+      summary: 시그널 성과 업데이트
+      description: "시그널의 성과 정보를 업데이트합니다"
+      parameters:
+        - name: signalId
+          in: path
+          required: true
+          description: "시그널 ID"
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformanceUpdateRequest'
+      responses:
+        '200':
+          description: "성과 업데이트 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceUpdateResponse'
+        '500':
+          description: "성과 업데이트 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ml/signals/active:
+    get:
+      tags:
+        - ML 시그널
+      summary: 활성 시그널 조회
+      description: "현재 활성 상태인 ML 트레이딩 시그널 목록을 조회합니다"
+      parameters:
+        - name: limit
+          in: query
+          description: "조회할 시그널 수"
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: "활성 시그널 조회 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActiveSignalsResponse'
+        '500':
+          description: "활성 시그널 조회 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Risk Management APIs
+  /api/v1/risk/portfolios/{portfolioId}/var:
+    get:
+      tags:
+        - 리스크 관리
+      summary: 포트폴리오 VaR 계산
+      description: "Value at Risk (VaR)를 계산합니다"
+      parameters:
+        - name: portfolioId
+          in: path
+          required: true
+          description: "포트폴리오 ID"
+          schema:
+            type: integer
+            format: int64
+        - name: confidenceLevel
+          in: query
+          description: "신뢰수준 (%)"
+          required: false
+          schema:
+            type: number
+            format: double
+            default: 95.0
+        - name: timeHorizon
+          in: query
+          description: "시간 지평 (일)"
+          required: false
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: "VaR 계산 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaRResponse'
+        '500':
+          description: "VaR 계산 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/risk/alerts:
+    get:
+      tags:
+        - 리스크 관리
+      summary: 리스크 알림 조회
+      description: "활성 리스크 알림 목록을 조회합니다"
+      parameters:
+        - name: status
+          in: query
+          description: "알림 상태"
+          required: false
+          schema:
+            type: string
+            enum: [ACTIVE, RESOLVED, ALL]
+            default: ACTIVE
+      responses:
+        '200':
+          description: "리스크 알림 조회 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAlertsResponse'
+        '500':
+          description: "리스크 알림 조회 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/risk/dashboard:
+    get:
+      tags:
+        - 리스크 관리
+      summary: 리스크 대시보드 데이터 조회
+      description: "전체 리스크 관리 대시보드 데이터를 조회합니다"
+      responses:
+        '200':
+          description: "리스크 대시보드 조회 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskDashboardResponse'
+        '500':
+          description: "리스크 대시보드 조회 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/risk/alerts/configure:
+    post:
+      tags:
+        - 리스크 관리
+      summary: 리스크 알림 설정
+      description: "리스크 알림 임계값을 설정합니다"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskAlertConfigRequest'
+      responses:
+        '200':
+          description: "리스크 알림 설정 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAlertConfigResponse'
+        '500':
+          description: "리스크 알림 설정 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/risk/limits/{portfolioId}:
+    put:
+      tags:
+        - 리스크 관리
+      summary: 리스크 한도 업데이트
+      description: "포트폴리오의 리스크 한도를 업데이트합니다"
+      parameters:
+        - name: portfolioId
+          in: path
+          required: true
+          description: "포트폴리오 ID"
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskLimitsUpdateRequest'
+      responses:
+        '200':
+          description: "리스크 한도 업데이트 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskLimitsUpdateResponse'
+        '500':
+          description: "리스크 한도 업데이트 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Portfolio Optimization APIs
+  /api/v1/ml/portfolio-optimization/{portfolioId}/optimize:
+    post:
+      tags:
+        - 포트폴리오 최적화
+      summary: 포트폴리오 최적화 실행
+      description: "AI 기반 포트폴리오 최적화를 실행합니다"
+      parameters:
+        - name: portfolioId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: "포트폴리오 ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptimizationRequest'
+      responses:
+        '200':
+          description: "포트폴리오 최적화 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioOptimizationResponse'
+        '400':
+          description: "잘못된 요청"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: "포트폴리오 최적화 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ml/portfolio-optimization/{portfolioId}/efficient-frontier:
+    post:
+      tags:
+        - 포트폴리오 최적화
+      summary: 효율적 프론티어 계산
+      description: "포트폴리오의 효율적 프론티어를 계산합니다"
+      parameters:
+        - name: portfolioId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: "포트폴리오 ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EfficientFrontierRequest'
+      responses:
+        '200':
+          description: "효율적 프론티어 계산 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EfficientFrontierResponse'
+        '400':
+          description: "잘못된 요청"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: "효율적 프론티어 계산 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ml/portfolio-optimization/{portfolioId}/rebalancing-suggestions:
+    get:
+      tags:
+        - 포트폴리오 최적화
+      summary: 리밸런싱 제안 조회
+      description: "포트폴리오의 리밸런싱 제안을 조회합니다"
+      parameters:
+        - name: portfolioId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: "포트폴리오 ID"
+      responses:
+        '200':
+          description: "리밸런싱 제안 조회 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RebalancingSuggestionsResponse'
+        '500':
+          description: "리밸런싱 제안 조회 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ml/portfolio-optimization/{portfolioId}/history:
+    get:
+      tags:
+        - 포트폴리오 최적화
+      summary: 최적화 이력 조회
+      description: "포트폴리오의 최적화 이력을 조회합니다"
+      parameters:
+        - name: portfolioId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: "포트폴리오 ID"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: "조회할 이력 수"
+      responses:
+        '200':
+          description: "최적화 이력 조회 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationHistoryResponse'
+        '500':
+          description: "최적화 이력 조회 실패"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/ml/portfolio-optimization/{portfolioId}/backtest:
+    post:
+      tags:
+        - 포트폴리오 최적화
+      summary: 백테스트 실행
+      description: "포트폴리오 전략의 백테스트를 실행합니다"
+      parameters:
+        - name: portfolioId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: "포트폴리오 ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BacktestRequest'
+      responses:
+        '200':
+          description: "백테스트 실행 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BacktestResponse'
+        '400':
+          description: "잘못된 요청"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: "백테스트 실행 실패"
           content:
             application/json:
               schema:
@@ -1172,3 +1658,893 @@ components:
           format: date-time
           description: "완료 시간"
           example: "2024-01-31T23:59:59Z"
+
+    # ML Signals DTOs
+    TradingSignalResponse:
+      type: object
+      properties:
+        signalId:
+          type: string
+          description: "시그널 ID"
+          example: "ml_signal_123"
+        symbol:
+          type: string
+          description: "주식 심볼"
+          example: "A"
+        signalType:
+          type: string
+          enum: [BUY, SELL, HOLD]
+          description: "시그널 타입"
+          example: "BUY"
+        strength:
+          type: string
+          enum: [WEAK, MODERATE, STRONG]
+          description: "시그널 강도"
+          example: "STRONG"
+        confidence:
+          type: string
+          description: "신뢰도"
+          example: "85.5"
+        expectedReturn:
+          type: string
+          description: "예상 수익률"
+          example: "12.5"
+        expectedRisk:
+          type: string
+          description: "예상 위험도"
+          example: "8.2"
+        timeHorizon:
+          type: integer
+          description: "투자 기간 (일)"
+          example: 30
+        targetPrice:
+          type: string
+          description: "목표 가격"
+          example: "150.00"
+        stopLossPrice:
+          type: string
+          description: "손절 가격"
+          example: "140.00"
+        generatedAt:
+          type: string
+          format: date-time
+          description: "시그널 생성 시간"
+          example: "2024-01-15T12:00:00Z"
+        expiresAt:
+          type: string
+          format: date-time
+          description: "시그널 만료 시간"
+          example: "2024-02-15T12:00:00Z"
+        status:
+          type: string
+          enum: [ACTIVE, EXPIRED, TRIGGERED]
+          description: "시그널 상태"
+          example: "ACTIVE"
+        topReasons:
+          type: array
+          description: "주요 근거"
+          items:
+            $ref: '#/components/schemas/SignalReasonResponse'
+        marketCondition:
+          $ref: '#/components/schemas/MarketConditionResponse'
+
+    SignalReasonResponse:
+      type: object
+      properties:
+        featureName:
+          type: string
+          description: "특성 이름"
+          example: "RSI"
+        importance:
+          type: string
+          description: "중요도"
+          example: "0.75"
+        value:
+          type: string
+          description: "값"
+          example: "25.5"
+        description:
+          type: string
+          description: "설명"
+          example: "과매도 구간 진입"
+        category:
+          type: string
+          enum: [TECHNICAL, FUNDAMENTAL, SENTIMENT]
+          description: "카테고리"
+          example: "TECHNICAL"
+
+    MarketConditionResponse:
+      type: object
+      properties:
+        regime:
+          type: string
+          enum: [BULL, BEAR, SIDEWAYS, VOLATILE]
+          description: "시장 상황"
+          example: "BULL"
+        volatility:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+          description: "변동성"
+          example: "MEDIUM"
+        liquidity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+          description: "유동성"
+          example: "HIGH"
+        marketSentiment:
+          type: string
+          description: "시장 심리"
+          example: "75.5"
+        vixLevel:
+          type: string
+          description: "VIX 수준"
+          example: "18.5"
+
+    BatchSignalRequest:
+      type: object
+      required:
+        - symbols
+      properties:
+        symbols:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: string
+          description: "주식 심볼 목록"
+          example: ["A", "B", "C"]
+
+    BatchSignalResponse:
+      type: object
+      properties:
+        signals:
+          type: array
+          items:
+            $ref: '#/components/schemas/TradingSignalResponse'
+        totalCount:
+          type: integer
+          description: "총 시그널 수"
+          example: 3
+
+    FilterSignalsRequest:
+      type: object
+      required:
+        - symbols
+        - marketRegime
+      properties:
+        symbols:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: string
+          description: "주식 심볼 목록"
+          example: ["A", "B", "C", "D", "E"]
+        marketRegime:
+          type: string
+          enum: [BULL, BEAR, SIDEWAYS, VOLATILE]
+          description: "시장 상황"
+          example: "BULL"
+
+    FilteredSignalResponse:
+      type: object
+      properties:
+        filteredSignals:
+          type: array
+          items:
+            $ref: '#/components/schemas/TradingSignalResponse'
+        totalOriginalCount:
+          type: integer
+          description: "원본 시그널 수"
+          example: 5
+        filteredCount:
+          type: integer
+          description: "필터링된 시그널 수"
+          example: 3
+        marketRegime:
+          type: string
+          enum: [BULL, BEAR, SIDEWAYS, VOLATILE]
+          description: "적용된 시장 상황"
+          example: "BULL"
+
+    PerformanceUpdateRequest:
+      type: object
+      properties:
+        currentPrice:
+          type: string
+          description: "현재 가격"
+          example: "145.00"
+        unrealizedReturn:
+          type: string
+          description: "미실현 수익률"
+          example: "5.2"
+        maxReturn:
+          type: string
+          description: "최대 수익률"
+          example: "8.5"
+        maxDrawdown:
+          type: string
+          description: "최대 손실률"
+          example: "-2.1"
+
+    PerformanceUpdateResponse:
+      type: object
+      properties:
+        signalId:
+          type: string
+          description: "시그널 ID"
+          example: "ml_signal_123"
+        updated:
+          type: boolean
+          description: "업데이트 성공 여부"
+          example: true
+        message:
+          type: string
+          description: "메시지"
+          example: "성과 정보가 성공적으로 업데이트되었습니다"
+
+    ActiveSignalsResponse:
+      type: object
+      properties:
+        activeSignals:
+          type: array
+          items:
+            $ref: '#/components/schemas/TradingSignalResponse'
+        count:
+          type: integer
+          description: "활성 시그널 수"
+          example: 5
+
+    # Risk Management DTOs
+    VaRResponse:
+      type: object
+      properties:
+        portfolioId:
+          type: integer
+          format: int64
+          description: "포트폴리오 ID"
+          example: 123
+        confidenceLevel:
+          type: number
+          format: double
+          description: "신뢰수준 (%)"
+          example: 95.0
+        timeHorizon:
+          type: integer
+          description: "시간 지평 (일)"
+          example: 1
+        value:
+          type: string
+          description: "VaR 값"
+          example: "50000.00"
+        percentage:
+          type: string
+          description: "VaR 비율 (%)"
+          example: "5.2"
+        riskRating:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          description: "리스크 등급"
+          example: "MEDIUM"
+        calculatedAt:
+          type: string
+          format: date-time
+          description: "계산 시간"
+          example: "2024-01-15T12:00:00Z"
+
+    RiskAlert:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: "알림 ID"
+          example: 456
+        portfolioId:
+          type: integer
+          format: int64
+          description: "포트폴리오 ID"
+          example: 123
+        alertType:
+          type: string
+          enum: [VAR_BREACH, CONCENTRATION_RISK, VOLATILITY_SPIKE, CORRELATION_RISK]
+          description: "알림 유형"
+          example: "VAR_BREACH"
+        severity:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          description: "심각도"
+          example: "HIGH"
+        message:
+          type: string
+          description: "알림 메시지"
+          example: "포트폴리오 VaR가 설정된 한도를 초과했습니다"
+        currentValue:
+          type: string
+          description: "현재 값"
+          example: "75000.00"
+        thresholdValue:
+          type: string
+          description: "임계값"
+          example: "50000.00"
+        status:
+          type: string
+          enum: [ACTIVE, RESOLVED, ACKNOWLEDGED]
+          description: "알림 상태"
+          example: "ACTIVE"
+        triggeredAt:
+          type: string
+          format: date-time
+          description: "발생 시간"
+          example: "2024-01-15T11:30:00Z"
+        resolvedAt:
+          type: string
+          format: date-time
+          description: "해결 시간"
+          example: "2024-01-15T12:30:00Z"
+
+    RiskAlertsResponse:
+      type: object
+      properties:
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskAlert'
+        totalCount:
+          type: integer
+          description: "전체 알림 수"
+          example: 3
+        activeCount:
+          type: integer
+          description: "활성 알림 수"
+          example: 2
+
+    RiskDashboardResponse:
+      type: object
+      properties:
+        overallRiskScore:
+          type: string
+          description: "전체 리스크 점수"
+          example: "7.2"
+        riskRating:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          description: "리스크 등급"
+          example: "MEDIUM"
+        totalPortfolioValue:
+          type: string
+          description: "전체 포트폴리오 가치"
+          example: "1000000.00"
+        var95:
+          type: string
+          description: "95% VaR"
+          example: "50000.00"
+        var99:
+          type: string
+          description: "99% VaR"
+          example: "75000.00"
+        portfolioVolatility:
+          type: string
+          description: "포트폴리오 변동성"
+          example: "15.2"
+        sharpeRatio:
+          type: string
+          description: "샤프 비율"
+          example: "1.25"
+        maxDrawdown:
+          type: string
+          description: "최대 손실률"
+          example: "-8.5"
+        concentrationRisk:
+          type: string
+          description: "집중 리스크"
+          example: "12.8"
+        activeAlerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskAlert'
+        riskBreakdown:
+          type: object
+          properties:
+            marketRisk:
+              type: string
+              example: "40.0"
+            creditRisk:
+              type: string
+              example: "20.0"
+            liquidityRisk:
+              type: string
+              example: "15.0"
+            concentrationRisk:
+              type: string
+              example: "25.0"
+
+    RiskAlertConfigRequest:
+      type: object
+      properties:
+        portfolioId:
+          type: integer
+          format: int64
+          description: "포트폴리오 ID"
+          example: 123
+        varThreshold:
+          type: string
+          description: "VaR 임계값"
+          example: "50000.00"
+        volatilityThreshold:
+          type: string
+          description: "변동성 임계값"
+          example: "20.0"
+        concentrationThreshold:
+          type: string
+          description: "집중도 임계값"
+          example: "30.0"
+        notificationEnabled:
+          type: boolean
+          description: "알림 활성화 여부"
+          example: true
+        emailNotification:
+          type: boolean
+          description: "이메일 알림 여부"
+          example: true
+
+    RiskAlertConfigResponse:
+      type: object
+      properties:
+        configId:
+          type: integer
+          format: int64
+          description: "설정 ID"
+          example: 789
+        portfolioId:
+          type: integer
+          format: int64
+          description: "포트폴리오 ID"
+          example: 123
+        configured:
+          type: boolean
+          description: "설정 완료 여부"
+          example: true
+        message:
+          type: string
+          description: "메시지"
+          example: "리스크 알림 설정이 완료되었습니다"
+
+    RiskLimitsUpdateRequest:
+      type: object
+      properties:
+        maxVaR:
+          type: string
+          description: "최대 VaR 한도"
+          example: "100000.00"
+        maxVolatility:
+          type: string
+          description: "최대 변동성 한도"
+          example: "25.0"
+        maxConcentration:
+          type: string
+          description: "최대 집중도 한도"
+          example: "40.0"
+        maxDrawdown:
+          type: string
+          description: "최대 손실률 한도"
+          example: "15.0"
+
+    RiskLimitsUpdateResponse:
+      type: object
+      properties:
+        portfolioId:
+          type: integer
+          format: int64
+          description: "포트폴리오 ID"
+          example: 123
+        updated:
+          type: boolean
+          description: "업데이트 완료 여부"
+          example: true
+        message:
+          type: string
+          description: "메시지"
+          example: "리스크 한도가 성공적으로 업데이트되었습니다"
+        appliedAt:
+          type: string
+          format: date-time
+          description: "적용 시간"
+          example: "2024-01-15T12:00:00Z"
+
+    # Portfolio Optimization DTOs
+    OptimizationRequest:
+      type: object
+      required:
+        - optimizationType
+        - objective
+      properties:
+        optimizationType:
+          type: string
+          enum: [MODERN_PORTFOLIO_THEORY, BLACK_LITTERMAN, RISK_PARITY, EQUAL_WEIGHT]
+          description: "최적화 유형"
+          example: "MODERN_PORTFOLIO_THEORY"
+        objective:
+          type: string
+          enum: [MAXIMIZE_RETURN, MINIMIZE_RISK, MAXIMIZE_SHARPE_RATIO, TARGET_VOLATILITY]
+          description: "최적화 목표"
+          example: "MAXIMIZE_SHARPE_RATIO"
+        maxWeight:
+          type: string
+          description: "최대 종목 비중"
+          example: "0.3"
+        minWeight:
+          type: string
+          description: "최소 종목 비중"
+          example: "0.05"
+        targetVolatility:
+          type: string
+          description: "목표 변동성"
+          example: "0.15"
+
+    PortfolioOptimizationResponse:
+      type: object
+      properties:
+        optimizationId:
+          type: string
+          description: "최적화 ID"
+          example: "opt_12345"
+        portfolioId:
+          type: integer
+          format: int64
+          description: "포트폴리오 ID"
+          example: 123
+        optimizationType:
+          type: string
+          description: "최적화 유형"
+          example: "MODERN_PORTFOLIO_THEORY"
+        objective:
+          type: string
+          description: "최적화 목표"
+          example: "MAXIMIZE_SHARPE_RATIO"
+        recommendedAllocations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetAllocationResponse'
+          description: "권장 자산 배분"
+        currentAllocations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetAllocationResponse'
+          description: "현재 자산 배분"
+        rebalancingActions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RebalancingActionResponse'
+          description: "리밸런싱 액션"
+        expectedPerformance:
+          $ref: '#/components/schemas/ExpectedPerformanceResponse'
+        riskMetrics:
+          $ref: '#/components/schemas/RiskMetricsResponse'
+        generatedAt:
+          type: string
+          format: date-time
+          description: "생성 시간"
+          example: "2024-01-15T12:00:00Z"
+        nextRebalancingDate:
+          type: string
+          format: date-time
+          description: "다음 리밸런싱 날짜"
+          example: "2024-02-15T12:00:00Z"
+        confidence:
+          type: string
+          description: "신뢰도"
+          example: "85.5"
+
+    AssetAllocationResponse:
+      type: object
+      properties:
+        symbol:
+          type: string
+          description: "종목 심볼"
+          example: "A"
+        assetName:
+          type: string
+          description: "자산명"
+          example: "종목 A"
+        category:
+          type: string
+          description: "자산 카테고리"
+          example: "STOCK"
+        recommendedWeight:
+          type: string
+          description: "권장 비중"
+          example: "25.5"
+        currentWeight:
+          type: string
+          description: "현재 비중"
+          example: "20.0"
+        expectedReturn:
+          type: string
+          description: "예상 수익률"
+          example: "12.5"
+        expectedVolatility:
+          type: string
+          description: "예상 변동성"
+          example: "15.2"
+        riskContribution:
+          type: string
+          description: "리스크 기여도"
+          example: "18.3"
+        allocationConfidence:
+          type: string
+          description: "배분 신뢰도"
+          example: "88.7"
+
+    RebalancingActionResponse:
+      type: object
+      properties:
+        actionType:
+          type: string
+          enum: [BUY, SELL, HOLD]
+          description: "액션 유형"
+          example: "BUY"
+        symbol:
+          type: string
+          description: "종목 심볼"
+          example: "A"
+        quantity:
+          type: string
+          description: "수량"
+          example: "100"
+        amount:
+          type: string
+          description: "금액"
+          example: "50000.00"
+        priority:
+          type: integer
+          description: "우선순위"
+          example: 1
+        recommendedExecutionTime:
+          type: string
+          format: date-time
+          description: "권장 실행 시간"
+          example: "2024-01-15T14:30:00Z"
+        estimatedCost:
+          type: string
+          description: "예상 비용"
+          example: "500.00"
+        marketImpact:
+          type: string
+          description: "시장 영향도"
+          example: "0.05"
+        reason:
+          type: string
+          description: "리밸런싱 사유"
+          example: "비중 조정 필요"
+
+    ExpectedPerformanceResponse:
+      type: object
+      properties:
+        expectedReturn:
+          type: string
+          description: "예상 수익률"
+          example: "12.5"
+        expectedVolatility:
+          type: string
+          description: "예상 변동성"
+          example: "15.2"
+        expectedSharpeRatio:
+          type: string
+          description: "예상 샤프 비율"
+          example: "0.82"
+        expectedMaxDrawdown:
+          type: string
+          description: "예상 최대 낙폭"
+          example: "8.5"
+        beta:
+          type: string
+          description: "베타"
+          example: "0.95"
+        trackingError:
+          type: string
+          description: "추적 오차"
+          example: "3.2"
+
+    RiskMetricsResponse:
+      type: object
+      properties:
+        var95:
+          type: string
+          description: "95% VaR"
+          example: "45000.00"
+        cvar95:
+          type: string
+          description: "95% CVaR"
+          example: "62000.00"
+        diversificationRatio:
+          type: string
+          description: "다각화 비율"
+          example: "0.78"
+        concentrationRisk:
+          type: string
+          description: "집중 리스크"
+          example: "25.5"
+        liquidityRisk:
+          type: string
+          description: "유동성 리스크"
+          example: "LOW"
+
+    EfficientFrontierRequest:
+      type: object
+      properties:
+        points:
+          type: integer
+          default: 20
+          description: "프론티어 점의 수"
+          example: 20
+        riskLevels:
+          type: array
+          items:
+            type: string
+          description: "리스크 레벨 목록"
+          example: ["0.10", "0.15", "0.20", "0.25", "0.30"]
+        maxWeight:
+          type: string
+          description: "최대 비중"
+          example: "0.4"
+        minWeight:
+          type: string
+          description: "최소 비중"
+          example: "0.05"
+
+    EfficientFrontierResponse:
+      type: object
+      properties:
+        portfolioId:
+          type: integer
+          format: int64
+          description: "포트폴리오 ID"
+          example: 123
+        frontierPoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/FrontierPoint'
+          description: "효율적 프론티어 점들"
+
+    FrontierPoint:
+      type: object
+      properties:
+        risk:
+          type: string
+          description: "위험도"
+          example: "15.2"
+        return:
+          type: string
+          description: "수익률"
+          example: "12.5"
+        sharpeRatio:
+          type: string
+          description: "샤프 비율"
+          example: "0.82"
+
+    RebalancingSuggestionsResponse:
+      type: object
+      properties:
+        portfolioId:
+          type: integer
+          format: int64
+          description: "포트폴리오 ID"
+          example: 123
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RebalancingActionResponse'
+          description: "리밸런싱 제안"
+        totalSuggestions:
+          type: integer
+          description: "총 제안 수"
+          example: 5
+
+    OptimizationHistoryResponse:
+      type: object
+      properties:
+        portfolioId:
+          type: integer
+          format: int64
+          description: "포트폴리오 ID"
+          example: 123
+        optimizations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioOptimizationResponse'
+          description: "최적화 이력"
+        totalCount:
+          type: integer
+          description: "총 이력 수"
+          example: 15
+
+    BacktestRequest:
+      type: object
+      required:
+        - startDate
+        - endDate
+      properties:
+        startDate:
+          type: string
+          format: date-time
+          description: "백테스트 시작 날짜"
+          example: "2023-01-01T00:00:00Z"
+        endDate:
+          type: string
+          format: date-time
+          description: "백테스트 종료 날짜"
+          example: "2023-12-31T00:00:00Z"
+        optimizationType:
+          type: string
+          enum: [MODERN_PORTFOLIO_THEORY, BLACK_LITTERMAN, RISK_PARITY, EQUAL_WEIGHT]
+          default: "MODERN_PORTFOLIO_THEORY"
+          description: "최적화 유형"
+          example: "MODERN_PORTFOLIO_THEORY"
+        objective:
+          type: string
+          enum: [MAXIMIZE_RETURN, MINIMIZE_RISK, MAXIMIZE_SHARPE_RATIO, TARGET_VOLATILITY]
+          default: "MAXIMIZE_SHARPE_RATIO"
+          description: "최적화 목표"
+          example: "MAXIMIZE_SHARPE_RATIO"
+
+    BacktestResponse:
+      type: object
+      properties:
+        portfolioId:
+          type: integer
+          format: int64
+          description: "포트폴리오 ID"
+          example: 123
+        startDate:
+          type: string
+          format: date-time
+          description: "백테스트 시작 날짜"
+          example: "2023-01-01T00:00:00Z"
+        endDate:
+          type: string
+          format: date-time
+          description: "백테스트 종료 날짜"
+          example: "2023-12-31T00:00:00Z"
+        totalReturn:
+          type: string
+          description: "총 수익률"
+          example: "15.0"
+        volatility:
+          type: string
+          description: "변동성"
+          example: "12.0"
+        sharpeRatio:
+          type: string
+          description: "샤프 비율"
+          example: "1.25"
+        maxDrawdown:
+          type: string
+          description: "최대 낙폭"
+          example: "8.0"
+        performanceData:
+          type: array
+          items:
+            $ref: '#/components/schemas/PerformancePoint'
+          description: "성과 데이터"
+
+    PerformancePoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date-time
+          description: "날짜"
+          example: "2023-01-01T00:00:00Z"
+        portfolioValue:
+          type: string
+          description: "포트폴리오 가치"
+          example: "1050000.00"
+        benchmarkValue:
+          type: string
+          description: "벤치마크 가치"
+          example: "1030000.00"
+        cumulativeReturn:
+          type: string
+          description: "누적 수익률"
+          example: "5.0"
