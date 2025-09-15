@@ -74,7 +74,7 @@ dependencies {
     // implementation 'com.github.haifengl:smile-core:3.1.1'              // Machine learning algorithms (fallback mode)
     // implementation 'com.github.haifengl:smile-data:3.1.1'              // Data processing (fallback mode)
     implementation 'org.springframework.boot:spring-boot-starter-cache'   // Advanced caching
-    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'        // High-performance caching
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.2.2'        // High-performance caching
     implementation 'io.projectreactor:reactor-tools'                     // Reactor debugging tools
     implementation 'org.springframework.boot:spring-boot-starter-mail'    // Email alerts for risk monitoring
     
