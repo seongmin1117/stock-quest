@@ -1,5 +1,7 @@
 package com.stockquest.domain.simulation;
 
+import com.stockquest.domain.simulation.port.BenchmarkDataRepository;
+import com.stockquest.domain.simulation.port.PriceDataRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
