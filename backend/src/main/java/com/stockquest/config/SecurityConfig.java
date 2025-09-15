@@ -123,6 +123,7 @@ public class SecurityConfig {
                 
                 // 읽기 전용 작업
                 .requestMatchers(HttpMethod.GET, "/api/challenges/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/companies/**").permitAll()
                 
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()

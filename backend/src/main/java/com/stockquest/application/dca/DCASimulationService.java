@@ -6,6 +6,7 @@ import com.stockquest.domain.simulation.DCASimulationParameters;
 import com.stockquest.domain.simulation.DCASimulationResult;
 import com.stockquest.domain.simulation.InvestmentFrequency;
 import com.stockquest.domain.simulation.MonthlyInvestmentRecord;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
  * DCA 시뮬레이션 애플리케이션 서비스
  * 사용자 요청을 받아 도메인 서비스를 호출하고 응답을 변환
  */
+@Service
 public class DCASimulationService {
 
     private final com.stockquest.domain.simulation.DCASimulationService domainSimulationService;

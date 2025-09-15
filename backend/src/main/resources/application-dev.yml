@@ -20,7 +20,7 @@ spring:
       max-lifetime: 1200000
       leak-detection-threshold: 60000
       connection-test-query: "SELECT 1"
-      connection-init-sql: "SET NAMES utf8mb4"
+      connection-init-sql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
       
       # MySQL Driver 최적화 설정
       data-source-properties:

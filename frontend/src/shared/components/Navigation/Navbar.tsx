@@ -29,6 +29,7 @@ import {
   ExitToApp,
   Menu as MenuIcon,
   Dashboard,
+  ShowChart,
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -73,6 +74,7 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
   const navigationItems = [
     { label: '홈', icon: <Home />, href: '/' },
     { label: '챌린지', icon: <TrendingUp />, href: '/challenges' },
+    { label: 'DCA 시뮬레이션', icon: <ShowChart />, href: '/dca-simulation' },
     { label: '리더보드', icon: <Leaderboard />, href: '/leaderboard' },
     { label: '커뮤니티', icon: <People />, href: '/community' },
   ];

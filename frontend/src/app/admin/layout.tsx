@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Box, Drawer, AppBar, Toolbar, Typography, List, ListItem, ListItemButton, ListItemIcon, ListItemText, CssBaseline } from '@mui/material';
-import { Dashboard, TrendingUp, Assignment, People, Settings, Analytics, SmartToy, Recommend, PieChart, Security } from '@mui/icons-material';
+import { Dashboard, TrendingUp, Assignment, People, Settings, Analytics, SmartToy, Recommend, PieChart, Security, ShowChart } from '@mui/icons-material';
 import { useRouter, usePathname } from 'next/navigation';
 import AdminAuthGuard from '@/features/admin-panel/components/AdminAuthGuard';
 
@@ -18,6 +18,7 @@ const menuItems = [
   { text: '추천 시스템', icon: <Recommend />, path: '/admin/recommendations' },
   { text: '포트폴리오 최적화', icon: <PieChart />, path: '/admin/portfolio-optimization' },
   { text: '리스크 관리', icon: <Security />, path: '/admin/risk-management' },
+  { text: 'DCA 시뮬레이션', icon: <ShowChart />, path: '/admin/dca-simulation' },
   { text: '설정', icon: <Settings />, path: '/admin/settings' },
 ];
 

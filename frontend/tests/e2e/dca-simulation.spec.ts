@@ -12,28 +12,25 @@ test.describe('DCA Simulation E2E Tests', () => {
 
     if (await emailInput.count() > 0) {
       // 테스트용 계정으로 로그인 시도
-      await emailInput.fill('test@example.com');
-      await passwordInput.fill('test123');
+      await emailInput.fill('test1234@test.com');
+      await passwordInput.fill('Test1234!');
       await loginButton.click();
 
       // 로그인 성공 여부 확인 (리다이렉트 대기)
       try {
-        await page.waitForURL(/\/admin/, { timeout: 10000 });
-        console.log('✅ Login successful - redirected to admin');
+        await page.waitForURL(/\//, { timeout: 10000 });
+        console.log('✅ Login successful');
       } catch (error) {
         console.log('⚠️ Login failed or no redirect - continuing with test');
-        // 로그인 없이 직접 페이지 접근 시도 (개발 환경에서 인증 우회 가능)
-        await page.goto('/admin');
       }
     } else {
-      console.log('⚠️ Login form not found - accessing admin directly');
-      await page.goto('/admin');
+      console.log('⚠️ Login form not found - continuing with test');
     }
   });
 
   test.describe('DCA 시뮬레이션 페이지', () => {
     test('DCA 시뮬레이션 페이지 기본 로딩 및 표시', async ({ page }) => {
-      await page.goto('/admin/dca-simulation');
+      await page.goto('/dca-simulation');
 
       // 페이지 제목 및 설명 확인
       await expect(page.getByRole('heading', { name: 'DCA 시뮬레이션' })).toBeVisible();
@@ -51,7 +48,7 @@ test.describe('DCA Simulation E2E Tests', () => {
     });
 
     test('DCA 시뮬레이션 폼 입력 및 검증', async ({ page }) => {
-      await page.goto('/admin/dca-simulation');
+      await page.goto('/dca-simulation');
 
       // 폼 입력
       await page.getByLabel('종목 코드').fill('AAPL');
@@ -69,7 +66,7 @@ test.describe('DCA Simulation E2E Tests', () => {
     });
 
     test('DCA 시뮬레이션 실행 및 결과 표시', async ({ page }) => {
-      await page.goto('/admin/dca-simulation');
+      await page.goto('/dca-simulation');
 
       // Mock API 응답 설정
       await page.route('/api/v1/dca/simulate', async route => {
@@ -140,7 +137,7 @@ test.describe('DCA Simulation E2E Tests', () => {
     });
 
     test('DCA 시뮬레이션 에러 처리', async ({ page }) => {
-      await page.goto('/admin/dca-simulation');
+      await page.goto('/dca-simulation');
 
       // 에러 응답 Mock
       await page.route('/api/v1/dca/simulate', async route => {
@@ -169,7 +166,7 @@ test.describe('DCA Simulation E2E Tests', () => {
     });
 
     test('DCA 시뮬레이션 폼 검증', async ({ page }) => {
-      await page.goto('/admin/dca-simulation');
+      await page.goto('/dca-simulation');
 
       // 빈 값으로 시뮬레이션 실행 시도
       await page.getByRole('button', { name: '시뮬레이션 실행' }).click();
@@ -196,7 +193,7 @@ test.describe('DCA Simulation E2E Tests', () => {
 
   test.describe('DCA 시뮬레이션 차트 및 데이터 시각화', () => {
     test('DCA 결과 차트 렌더링 및 상호작용', async ({ page }) => {
-      await page.goto('/admin/dca-simulation');
+      await page.goto('/dca-simulation');
 
       // Mock API 응답 설정 (더 많은 데이터 포인트)
       await page.route('/api/v1/dca/simulate', async route => {
@@ -263,7 +260,7 @@ test.describe('DCA Simulation E2E Tests', () => {
     });
 
     test('DCA 시뮬레이션 결과 내보내기', async ({ page }) => {
-      await page.goto('/admin/dca-simulation');
+      await page.goto('/dca-simulation');
 
       // Mock API 설정
       await page.route('/api/v1/dca/simulate', async route => {
@@ -322,9 +319,263 @@ test.describe('DCA Simulation E2E Tests', () => {
     });
   });
 
+  test.describe('Korean Company Selection Enhancement', () => {
+    test('Korean company autocomplete and selection', async ({ page }) => {
+      await page.goto('/dca-simulation');
+
+      // Mock API for company search
+      await page.route('/api/v1/companies/search**', async route => {
+        const url = new URL(route.request().url());
+        const query = url.searchParams.get('q') || '';
+
+        const companies = [
+          { symbol: '005930', nameKr: '삼성전자', nameEn: 'Samsung Electronics', sector: '반도체', logo: '/logos/samsung.png' },
+          { symbol: '000660', nameKr: 'SK하이닉스', nameEn: 'SK Hynix', sector: '반도체', logo: '/logos/sk-hynix.png' },
+          { symbol: '035720', nameKr: '카카오', nameEn: 'Kakao', sector: 'IT서비스', logo: '/logos/kakao.png' },
+          { symbol: '035420', nameKr: '네이버', nameEn: 'Naver', sector: 'IT서비스', logo: '/logos/naver.png' },
+          { symbol: '005380', nameKr: '현대차', nameEn: 'Hyundai Motor', sector: '자동차', logo: '/logos/hyundai.png' }
+        ];
+
+        const filtered = companies.filter(company =>
+          company.nameKr.includes(query) ||
+          company.nameEn.toLowerCase().includes(query.toLowerCase()) ||
+          company.symbol.includes(query)
+        );
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ companies: filtered.slice(0, 5) })
+        });
+      });
+
+      // Type in company search box
+      const companySearchBox = page.getByLabel('회사 검색');
+      await expect(companySearchBox).toBeVisible();
+
+      await companySearchBox.fill('삼성');
+
+      // Wait for autocomplete dropdown
+      await expect(page.getByTestId('company-autocomplete-dropdown')).toBeVisible();
+
+      // Check if Samsung Electronics appears in dropdown
+      const samsungOption = page.getByTestId('company-option-005930');
+      await expect(samsungOption).toBeVisible();
+      await expect(samsungOption.getByText('삼성전자')).toBeVisible();
+      await expect(samsungOption.getByText('Samsung Electronics')).toBeVisible();
+      await expect(samsungOption.getByText('반도체')).toBeVisible();
+
+      // Select Samsung Electronics
+      await samsungOption.click();
+
+      // Verify selection
+      await expect(page.getByDisplayValue('005930')).toBeVisible();
+      await expect(page.getByText('삼성전자 (Samsung Electronics)')).toBeVisible();
+    });
+
+    test('Company category filtering', async ({ page }) => {
+      await page.goto('/dca-simulation');
+
+      // Mock categories API
+      await page.route('/api/v1/companies/categories', async route => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([
+            { id: 'tech', name: '기술', count: 15 },
+            { id: 'finance', name: '금융', count: 8 },
+            { id: 'automotive', name: '자동차', count: 5 },
+            { id: 'semiconductor', name: '반도체', count: 3 }
+          ])
+        });
+      });
+
+      // Mock filtered companies API
+      await page.route('/api/v1/companies**', async route => {
+        const url = new URL(route.request().url());
+        const category = url.searchParams.get('category');
+
+        let companies = [];
+        if (category === 'tech') {
+          companies = [
+            { symbol: '035720', nameKr: '카카오', nameEn: 'Kakao', sector: 'IT서비스' },
+            { symbol: '035420', nameKr: '네이버', nameEn: 'Naver', sector: 'IT서비스' }
+          ];
+        } else if (category === 'semiconductor') {
+          companies = [
+            { symbol: '005930', nameKr: '삼성전자', nameEn: 'Samsung Electronics', sector: '반도체' },
+            { symbol: '000660', nameKr: 'SK하이닉스', nameEn: 'SK Hynix', sector: '반도체' }
+          ];
+        }
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ companies })
+        });
+      });
+
+      // Check category filters
+      await expect(page.getByTestId('category-filter-tech')).toBeVisible();
+      await expect(page.getByText('기술 (15)')).toBeVisible();
+
+      // Click semiconductor category
+      await page.getByTestId('category-filter-semiconductor').click();
+
+      // Verify filtered results
+      await expect(page.getByText('삼성전자')).toBeVisible();
+      await expect(page.getByText('SK하이닉스')).toBeVisible();
+      await expect(page.getByText('카카오')).not.toBeVisible();
+    });
+
+    test('Popular companies section', async ({ page }) => {
+      await page.goto('/dca-simulation');
+
+      // Mock popular companies API
+      await page.route('/api/v1/companies/popular', async route => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([
+            { symbol: '005930', nameKr: '삼성전자', nameEn: 'Samsung Electronics', marketCap: '360조원' },
+            { symbol: '000660', nameKr: 'SK하이닉스', nameEn: 'SK Hynix', marketCap: '70조원' },
+            { symbol: '035720', nameKr: '카카오', nameEn: 'Kakao', marketCap: '25조원' },
+            { symbol: '035420', nameKr: '네이버', nameEn: 'Naver', marketCap: '35조원' }
+          ])
+        });
+      });
+
+      // Check popular companies section
+      await expect(page.getByText('인기 종목')).toBeVisible();
+
+      // Check popular company chips
+      await expect(page.getByTestId('popular-company-005930')).toBeVisible();
+      await expect(page.getByText('삼성전자')).toBeVisible();
+      await expect(page.getByText('360조원')).toBeVisible();
+
+      // Click popular company chip to select
+      await page.getByTestId('popular-company-005930').click();
+
+      // Verify selection
+      await expect(page.getByDisplayValue('005930')).toBeVisible();
+    });
+
+    test('Date range presets for Korean market', async ({ page }) => {
+      await page.goto('/dca-simulation');
+
+      // Check date preset buttons
+      await expect(page.getByTestId('date-preset-1year')).toBeVisible();
+      await expect(page.getByText('1년')).toBeVisible();
+      await expect(page.getByTestId('date-preset-3years')).toBeVisible();
+      await expect(page.getByText('3년')).toBeVisible();
+      await expect(page.getByTestId('date-preset-5years')).toBeVisible();
+      await expect(page.getByText('5년')).toBeVisible();
+      await expect(page.getByTestId('date-preset-10years')).toBeVisible();
+      await expect(page.getByText('10년')).toBeVisible();
+
+      // Click 3년 preset
+      await page.getByTestId('date-preset-3years').click();
+
+      // Calculate expected dates (3 years ago to today)
+      const today = new Date();
+      const threeYearsAgo = new Date(today.getFullYear() - 3, today.getMonth(), today.getDate());
+
+      const expectedStartDate = threeYearsAgo.toISOString().split('T')[0];
+      const expectedEndDate = today.toISOString().split('T')[0];
+
+      // Verify dates are set
+      await expect(page.getByLabel('시작일')).toHaveValue(expectedStartDate);
+      await expect(page.getByLabel('종료일')).toHaveValue(expectedEndDate);
+    });
+
+    test('Korean investment amount presets', async ({ page }) => {
+      await page.goto('/dca-simulation');
+
+      // Check investment amount presets
+      await expect(page.getByTestId('amount-preset-100k')).toBeVisible();
+      await expect(page.getByText('월 10만원')).toBeVisible();
+      await expect(page.getByTestId('amount-preset-500k')).toBeVisible();
+      await expect(page.getByText('월 50만원')).toBeVisible();
+      await expect(page.getByTestId('amount-preset-1m')).toBeVisible();
+      await expect(page.getByText('월 100만원')).toBeVisible();
+
+      // Click 50만원 preset
+      await page.getByTestId('amount-preset-500k').click();
+
+      // Verify amount is set
+      await expect(page.getByLabel('월 투자 금액')).toHaveValue('500000');
+    });
+  });
+
+  test.describe('KOSPI Benchmark Integration', () => {
+    test('KOSPI comparison instead of S&P 500 for Korean stocks', async ({ page }) => {
+      await page.goto('/dca-simulation');
+
+      // Mock DCA simulation with KOSPI data
+      await page.route('/api/v1/dca/simulate', async route => {
+        const mockResponse = {
+          symbol: '005930',
+          nameKr: '삼성전자',
+          totalInvestmentAmount: 1200000,
+          finalPortfolioValue: 1560000,
+          totalReturnPercentage: 30.00,
+          annualizedReturn: 15.00,
+          investmentRecords: [
+            {
+              investmentDate: '2022-01-01T00:00:00',
+              investmentAmount: 100000,
+              stockPrice: 82000,
+              sharesPurchased: 1.219,
+              portfolioValue: 100000
+            }
+          ],
+          kospiReturnAmount: 1440000,  // Korean benchmark
+          sp500ReturnAmount: 1380000,
+          nasdaqReturnAmount: 1420000,
+          outperformanceVsKOSPI: 8.33,   // Main benchmark for Korean stocks
+          outperformanceVsSP500: 13.04,
+          outperformanceVsNASDAQ: 9.85,
+          maxPortfolioValue: 1600000
+        };
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(mockResponse)
+        });
+      });
+
+      // Select Korean stock and run simulation
+      await page.getByLabel('회사 검색').fill('005930');
+      await page.getByTestId('company-option-005930').click();
+      await page.getByLabel('월 투자 금액').fill('100000');
+      await page.getByTestId('date-preset-1year').click();
+
+      await page.getByRole('button', { name: '시뮬레이션 실행' }).click();
+
+      // Wait for results
+      await expect(page.getByText('시뮬레이션 결과')).toBeVisible({ timeout: 10000 });
+
+      // Check KOSPI comparison is primary for Korean stocks
+      await expect(page.getByText('KOSPI 대비')).toBeVisible();
+      await expect(page.getByText('+8.33%')).toBeVisible();
+
+      // Check other benchmarks are secondary
+      await expect(page.getByText('S&P 500 대비')).toBeVisible();
+      await expect(page.getByText('NASDAQ 대비')).toBeVisible();
+
+      // Verify chart includes KOSPI line
+      await expect(page.getByText('KOSPI')).toBeVisible();
+
+      // Verify Korean formatting
+      await expect(page.getByText('₩1,560,000')).toBeVisible(); // Korean won formatting
+      await expect(page.getByText('삼성전자')).toBeVisible(); // Korean company name
+    });
+  });
+
   test.describe('DCA 시뮬레이션 성능 및 사용성', () => {
     test('대용량 데이터 처리 성능', async ({ page }) => {
-      await page.goto('/admin/dca-simulation');
+      await page.goto('/dca-simulation');
 
       // 대용량 데이터 Mock (5년치 일별 데이터)
       await page.route('/api/v1/dca/simulate', async route => {

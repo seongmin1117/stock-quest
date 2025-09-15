@@ -6,33 +6,43 @@ spring:
     include: security
   main:
     allow-bean-definition-overriding: true
-  
-  # 데이터베이스 설정 (환경별 파일에서 오버라이드)
+
+# 데이터베이스 설정 (환경별 파일에서 오버라이드)
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    
+
   # JPA 설정
   jpa:
     hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:create-drop}  # 개발용 - 테이블 자동 생성, 프로덕션에서는 validate 사용
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:none}  # 개발용 - 수동으로 테이블 생성됨
     show-sql: false
     open-in-view: false  # 성능 최적화 및 예기치 않은 지연 로딩 방지
     properties:
       hibernate:
         format_sql: true
-        
+
   # Redis 설정
   data:
     redis:
       host: localhost
       port: 6379
       timeout: 2000ms
-      
+
   # Flyway 설정
   flyway:
     enabled: false
     baseline-on-migrate: true
     locations: classpath:db/migration
+
+  # Jackson JSON 설정
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+# 서버 설정
+server:
+  port: 8080
 
 # JWT 설정
 jwt:
