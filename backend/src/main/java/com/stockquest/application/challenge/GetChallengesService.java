@@ -66,7 +66,7 @@ public class GetChallengesService {
      */
     @Cacheable(value = "activeChallengeCount", cacheManager = "cacheManager")
     public long getActiveChallengeCount() {
-        // 임시로 featured 챌린지 수를 반환
-        return challengePort.findFeaturedChallenges().size();
+        // 임시로 featured 챌린지 수를 반환 (size()는 int이므로 long으로 명시적 캐스팅)
+        return (long) challengePort.findFeaturedChallenges().size();
     }
 }

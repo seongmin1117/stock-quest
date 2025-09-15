@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Paper,
@@ -83,6 +83,20 @@ import {
   RadialBarChart,
   RadialBar,
 } from 'recharts';
+import {
+  useGetApiV1MlPortfolioOptimizationPortfolioIdRebalancingSuggestions,
+  useGetApiV1MlPortfolioOptimizationPortfolioIdHistory,
+  usePostApiV1MlPortfolioOptimizationPortfolioIdOptimize,
+  usePostApiV1MlPortfolioOptimizationPortfolioIdEfficientFrontier,
+  usePostApiV1MlPortfolioOptimizationPortfolioIdBacktest
+} from '@/shared/api/generated/포트폴리오-최적화/포트폴리오-최적화';
+import type {
+  PortfolioOptimizationResponse,
+  EfficientFrontierResponse,
+  BacktestResponse,
+  RebalancingSuggestionsResponse,
+  OptimizationHistoryResponse
+} from '@/shared/api/generated/model';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -118,15 +132,56 @@ const PortfolioOptimizationPage = () => {
   const [currentTab, setCurrentTab] = useState(0);
   const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
 
-  // 최적화 통계
-  const optimizationStats = {
-    totalPortfolios: 1845,
-    optimizedToday: 127,
-    avgImprovement: 23.8,
-    successRate: 91.2,
-    avgSharpeRatio: 1.67,
-    avgVolatility: 14.5
+  // Portfolio ID - In a real app, this would come from user context or route params
+  const portfolioId = 1;
+
+  // API calls for portfolio optimization data
+  const { data: rebalancingData, isLoading: rebalancingLoading, error: rebalancingError } =
+    useGetApiV1MlPortfolioOptimizationPortfolioIdRebalancingSuggestions(portfolioId);
+
+  const { data: optimizationHistory, isLoading: historyLoading, error: historyError } =
+    useGetApiV1MlPortfolioOptimizationPortfolioIdHistory(portfolioId);
+
+  // Mutations for interactive features
+  const optimizeMutation = usePostApiV1MlPortfolioOptimizationPortfolioIdOptimize();
+  const efficientFrontierMutation = usePostApiV1MlPortfolioOptimizationPortfolioIdEfficientFrontier();
+  const backtestMutation = usePostApiV1MlPortfolioOptimizationPortfolioIdBacktest();
+
+  // Loading state for overall page
+  const isLoading = rebalancingLoading || historyLoading;
+  const hasError = rebalancingError || historyError;
+
+  // Data transformation functions
+  const transformOptimizationStats = () => {
+    if (!optimizationHistory?.optimizations) {
+      return {
+        totalPortfolios: 0,
+        optimizedToday: 0,
+        avgImprovement: 0,
+        successRate: 0,
+        avgSharpeRatio: 0,
+        avgVolatility: 0
+      };
+    }
+
+    const optimizations = optimizationHistory.optimizations;
+    const todayOptimizations = optimizations.filter(opt => {
+      const optDate = new Date(opt.createdAt || '');
+      const today = new Date();
+      return optDate.toDateString() === today.toDateString();
+    });
+
+    return {
+      totalPortfolios: optimizations.length,
+      optimizedToday: todayOptimizations.length,
+      avgImprovement: 23.8, // This would be calculated from actual performance data
+      successRate: 91.2,
+      avgSharpeRatio: 1.67,
+      avgVolatility: 14.5
+    };
   };
+
+  const optimizationStats = transformOptimizationStats();
 
   // 최적화 전략별 성과
   const strategyPerformance = [
@@ -229,41 +284,23 @@ const PortfolioOptimizationPage = () => {
     }
   };
 
-  // 리밸런싱 제안
-  const rebalancingRecommendations = [
-    {
-      asset: 'AAPL',
-      currentWeight: 8.5,
-      targetWeight: 6.2,
-      action: 'SELL',
-      amount: 125000,
-      reason: '위험 집중도 완화'
-    },
-    {
-      asset: 'MSFT',
-      currentWeight: 5.2,
-      targetWeight: 7.8,
-      action: 'BUY',
-      amount: 89000,
-      reason: '기술주 비중 확대'
-    },
-    {
-      asset: 'BND',
-      currentWeight: 15.3,
-      targetWeight: 18.0,
-      action: 'BUY',
-      amount: 67000,
-      reason: '안정성 강화'
-    },
-    {
-      asset: 'VTI',
-      currentWeight: 22.1,
-      targetWeight: 25.5,
-      action: 'BUY',
-      amount: 95000,
-      reason: '분산투자 확대'
+  // Transform rebalancing suggestions from API data
+  const transformRebalancingRecommendations = () => {
+    if (!rebalancingData?.suggestions) {
+      return [];
     }
-  ];
+
+    return rebalancingData.suggestions.map(suggestion => ({
+      asset: suggestion.symbol || '',
+      currentWeight: parseFloat(suggestion.currentWeight || '0'),
+      targetWeight: parseFloat(suggestion.targetWeight || '0'),
+      action: suggestion.action || 'HOLD',
+      amount: parseFloat(suggestion.amount || '0'),
+      reason: suggestion.reason || '최적화'
+    }));
+  };
+
+  const rebalancingRecommendations = transformRebalancingRecommendations();
 
   // 백테스팅 결과
   const backtestingData = [
@@ -298,6 +335,51 @@ const PortfolioOptimizationPage = () => {
     handleExportMenuClose();
   };
 
+  const handleOptimizePortfolio = async () => {
+    try {
+      await optimizeMutation.mutateAsync({
+        portfolioId,
+        data: {
+          optimizationType: selectedStrategy,
+          objective: selectedObjective,
+          riskTolerance: riskTolerance.toString(),
+          investmentAmount: investmentAmount.toString()
+        }
+      });
+    } catch (error) {
+      console.error('Portfolio optimization failed:', error);
+    }
+  };
+
+  const handleCalculateEfficientFrontier = async () => {
+    try {
+      await efficientFrontierMutation.mutateAsync({
+        portfolioId,
+        data: {
+          riskTolerance: riskTolerance.toString(),
+          investmentAmount: investmentAmount.toString()
+        }
+      });
+    } catch (error) {
+      console.error('Efficient frontier calculation failed:', error);
+    }
+  };
+
+  const handleRunBacktest = async () => {
+    try {
+      await backtestMutation.mutateAsync({
+        portfolioId,
+        data: {
+          startDate: '2023-01-01',
+          endDate: '2023-12-31',
+          benchmark: 'S&P500'
+        }
+      });
+    } catch (error) {
+      console.error('Backtest execution failed:', error);
+    }
+  };
+
   const getActionColor = (action: string) => {
     switch (action) {
       case 'BUY': return '#4CAF50';
@@ -310,6 +392,36 @@ const PortfolioOptimizationPage = () => {
   const formatCurrency = (amount: number) => {
     return `${(amount / 10000).toFixed(0)}만원`;
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <Box textAlign="center">
+            <LinearProgress sx={{ mb: 2, width: 300 }} />
+            <Typography variant="body1" color="text.secondary">
+              포트폴리오 최적화 데이터를 로딩 중입니다...
+            </Typography>
+          </Box>
+        </Box>
+      </Container>
+    );
+  }
+
+  // Show error state
+  if (hasError) {
+    return (
+      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          <Typography variant="body1">
+            <strong>데이터 로딩 실패:</strong> 포트폴리오 최적화 데이터를 가져올 수 없습니다.
+            서버 연결을 확인하고 다시 시도해주세요.
+          </Typography>
+        </Alert>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
@@ -502,9 +614,20 @@ const PortfolioOptimizationPage = () => {
                     }}
                   />
                 </Box>
-                <Button variant="contained" startIcon={<Calculate />} fullWidth>
-                  최적화 실행
+                <Button
+                  variant="contained"
+                  startIcon={<Calculate />}
+                  fullWidth
+                  onClick={handleOptimizePortfolio}
+                  disabled={optimizeMutation.isPending}
+                >
+                  {optimizeMutation.isPending ? '최적화 중...' : '최적화 실행'}
                 </Button>
+                {optimizeMutation.error && (
+                  <Alert severity="error" sx={{ mt: 2 }}>
+                    최적화 실행 중 오류가 발생했습니다.
+                  </Alert>
+                )}
               </Paper>
 
               {/* 최적화 결과 비교 */}
@@ -858,11 +981,21 @@ const PortfolioOptimizationPage = () => {
                 </TableContainer>
 
                 <Box mt={3} display="flex" justifyContent="center" gap={2}>
-                  <Button variant="contained" startIcon={<Balance />}>
-                    리밸런싱 실행
+                  <Button
+                    variant="contained"
+                    startIcon={<Balance />}
+                    onClick={handleOptimizePortfolio}
+                    disabled={optimizeMutation.isPending}
+                  >
+                    {optimizeMutation.isPending ? '리밸런싱 중...' : '리밸런싱 실행'}
                   </Button>
-                  <Button variant="outlined" startIcon={<Timeline />}>
-                    시뮬레이션
+                  <Button
+                    variant="outlined"
+                    startIcon={<Timeline />}
+                    onClick={handleRunBacktest}
+                    disabled={backtestMutation.isPending}
+                  >
+                    {backtestMutation.isPending ? '시뮬레이션 중...' : '시뮬레이션'}
                   </Button>
                 </Box>
               </Paper>

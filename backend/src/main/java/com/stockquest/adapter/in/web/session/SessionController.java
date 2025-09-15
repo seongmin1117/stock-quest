@@ -5,8 +5,12 @@ import com.stockquest.application.order.port.in.PlaceOrderUseCase;
 import com.stockquest.application.order.port.in.PlaceOrderUseCase.PlaceOrderCommand;
 import com.stockquest.application.session.port.in.CloseChallengeUseCase;
 import com.stockquest.application.session.port.in.GetSessionDetailUseCase;
+import com.stockquest.application.session.port.in.GetPortfolioUseCase;
+import com.stockquest.application.session.port.in.GetOrdersUseCase;
 import com.stockquest.application.session.port.in.CloseChallengeUseCase.CloseChallengeCommand;
 import com.stockquest.application.session.dto.GetSessionDetailQuery;
+import com.stockquest.application.session.dto.GetPortfolioQuery;
+import com.stockquest.application.session.dto.GetOrdersQuery;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +32,8 @@ import jakarta.validation.constraints.Positive;
 public class SessionController {
     
     private final GetSessionDetailUseCase getSessionDetailUseCase;
+    private final GetPortfolioUseCase getPortfolioUseCase;
+    private final GetOrdersUseCase getOrdersUseCase;
     private final PlaceOrderUseCase placeOrderUseCase;
     private final CloseChallengeUseCase closeChallengeUseCase;
     
@@ -43,7 +49,33 @@ public class SessionController {
         
         return ResponseEntity.ok(SessionDetailResponse.from(result));
     }
-    
+
+    @GetMapping("/{sessionId}/portfolio")
+    @Operation(summary = "포트폴리오 조회", description = "챌린지 세션의 포트폴리오를 조회합니다")
+    public ResponseEntity<PortfolioResponse> getPortfolio(
+            @PathVariable @NotNull @Positive Long sessionId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = getUserId(userDetails);
+        var query = new GetPortfolioQuery(sessionId, userId);
+        var result = getPortfolioUseCase.getPortfolio(query);
+
+        return ResponseEntity.ok(PortfolioResponse.from(result));
+    }
+
+    @GetMapping("/{sessionId}/orders")
+    @Operation(summary = "주문 내역 조회", description = "챌린지 세션의 주문 내역을 조회합니다")
+    public ResponseEntity<OrdersResponse> getOrders(
+            @PathVariable @NotNull @Positive Long sessionId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = getUserId(userDetails);
+        var query = new GetOrdersQuery(sessionId, userId);
+        var result = getOrdersUseCase.getOrders(query);
+
+        return ResponseEntity.ok(OrdersResponse.from(result));
+    }
+
     @PostMapping("/{sessionId}/orders")
     @Operation(summary = "주문 실행", description = "챌린지 세션에서 주문을 실행합니다")
     public ResponseEntity<PlaceOrderResponse> placeOrder(
