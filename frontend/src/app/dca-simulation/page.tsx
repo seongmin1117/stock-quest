@@ -51,6 +51,9 @@ import { Company } from '@/shared/api/company-client';
 import CompanyAutocomplete from '@/shared/components/CompanyAutocomplete/CompanyAutocomplete';
 import DatePresets from '@/shared/components/DatePresets/DatePresets';
 import InvestmentAmountPresets from '@/shared/components/InvestmentAmountPresets/InvestmentAmountPresets';
+import InvestmentStrategyTemplates, {
+  type InvestmentStrategy
+} from '@/shared/components/InvestmentStrategyTemplates/InvestmentStrategyTemplates';
 import type {
   DCASimulationRequest,
   DCASimulationResponse,
@@ -70,6 +73,7 @@ const DCASimulationPage = () => {
   // UI 상태 추가
   const [selectedDatePreset, setSelectedDatePreset] = useState<string>('');
   const [selectedAmountPreset, setSelectedAmountPreset] = useState<string>('');
+  const [selectedStrategy, setSelectedStrategy] = useState<string>('');
 
   // 시뮬레이션 상태
   const [isLoading, setIsLoading] = useState(false);
@@ -118,6 +122,22 @@ const DCASimulationPage = () => {
       delete newErrors.amount;
       return newErrors;
     });
+  };
+
+  const handleStrategySelect = (strategy: InvestmentStrategy) => {
+    // 전략에 따라 모든 폼 값 설정
+    setMonthlyInvestmentAmount(strategy.monthlyAmount.toString());
+    setFrequency(strategy.frequency);
+
+    // 날짜 설정
+    const [startDateStr, endDateStr] = strategy.duration.split(',');
+    setStartDate(startDateStr);
+    setEndDate(endDateStr);
+
+    setSelectedStrategy(strategy.id);
+
+    // 모든 검증 에러 클리어
+    setValidationErrors({});
   };
 
   // 폼 검증 함수
@@ -204,9 +224,29 @@ const DCASimulationPage = () => {
     document.body.removeChild(link);
   };
 
-  // PDF 리포트 다운로드 (임시 구현)
-  const handleDownloadPDF = () => {
-    alert('PDF 리포트 기능은 추후 구현 예정입니다.');
+  // PDF 리포트 다운로드 (완전 구현)
+  const handleDownloadPDF = async () => {
+    if (!simulationResult) return;
+
+    try {
+      // 동적 import로 PDF 생성 모듈 로드
+      const { PDFReportGenerator } = await import('@/shared/utils/pdf-report-generator');
+
+      const generator = new PDFReportGenerator();
+      await generator.generateReport({
+        simulationResult,
+        selectedCompany,
+        chartElement: chartRef.current,
+        includeChart: true,
+        includeDetailedTable: true,
+      });
+
+      const filename = `DCA-Report-${simulationResult.symbol}-${new Date().toISOString().split('T')[0]}.pdf`;
+      generator.save(filename);
+    } catch (error) {
+      console.error('PDF 생성 중 오류:', error);
+      alert('PDF 리포트 생성 중 오류가 발생했습니다.');
+    }
   };
 
   // 차트 데이터 변환
@@ -236,6 +276,55 @@ const DCASimulationPage = () => {
     return `${value.toFixed(2)}%`;
   };
 
+  // Advanced risk metrics calculation
+  const calculateRiskMetrics = (result: DCASimulationResponse) => {
+    if (!result.investmentRecords.length) return null;
+
+    // Calculate monthly returns
+    const returns: number[] = [];
+    for (let i = 1; i < result.investmentRecords.length; i++) {
+      const prevValue = result.investmentRecords[i - 1].portfolioValue;
+      const currValue = result.investmentRecords[i].portfolioValue;
+      const investmentAmount = result.investmentRecords[i].investmentAmount;
+
+      const adjustedPrevValue = prevValue + investmentAmount;
+      const monthlyReturn = (currValue - adjustedPrevValue) / adjustedPrevValue;
+      returns.push(monthlyReturn);
+    }
+
+    if (returns.length === 0) return null;
+
+    const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+
+    // Volatility (annualized standard deviation)
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+    const volatility = Math.sqrt(variance) * Math.sqrt(12) * 100;
+
+    // Sharpe Ratio (assuming 2% risk-free rate)
+    const riskFreeRate = 0.02 / 12;
+    const excessReturn = avgReturn - riskFreeRate;
+    const sharpeRatio = variance > 0 ? (excessReturn / Math.sqrt(variance)) * Math.sqrt(12) : 0;
+
+    // Maximum Drawdown
+    let peak = result.investmentRecords[0].portfolioValue;
+    let maxDrawdown = 0;
+
+    result.investmentRecords.forEach(record => {
+      if (record.portfolioValue > peak) {
+        peak = record.portfolioValue;
+      } else {
+        const drawdown = (peak - record.portfolioValue) / peak * 100;
+        maxDrawdown = Math.max(maxDrawdown, drawdown);
+      }
+    });
+
+    return {
+      volatility,
+      sharpeRatio,
+      maxDrawdown,
+    };
+  };
+
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       {/* 페이지 헤더 */}
@@ -257,6 +346,14 @@ const DCASimulationPage = () => {
             <Typography variant="h6" gutterBottom>
               시뮬레이션 설정
             </Typography>
+
+            {/* 투자 전략 템플릿 */}
+            <InvestmentStrategyTemplates
+              onSelect={handleStrategySelect}
+              selectedStrategyId={selectedStrategy}
+            />
+
+            <Divider sx={{ my: 3 }} />
 
             {/* 회사 선택 */}
             <CompanyAutocomplete
@@ -474,6 +571,91 @@ const DCASimulationPage = () => {
                   </Button>
                 </Box>
               </Paper>
+
+              {/* 고급 위험 지표 */}
+              {(() => {
+                const riskMetrics = calculateRiskMetrics(simulationResult);
+                return riskMetrics && (
+                  <Paper sx={{ p: 3, mb: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      ⚠️ 위험 분석
+                    </Typography>
+
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} sm={4}>
+                        <Card variant="outlined">
+                          <CardContent sx={{ textAlign: 'center' }}>
+                            <Typography variant="h6" color={
+                              riskMetrics.volatility > 25 ? 'error.main' :
+                              riskMetrics.volatility > 15 ? 'warning.main' : 'success.main'
+                            }>
+                              {formatPercent(riskMetrics.volatility)}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              변동성 (연간)
+                            </Typography>
+                            <Typography variant="caption" display="block" mt={1}>
+                              {riskMetrics.volatility > 25 ? '높음' :
+                               riskMetrics.volatility > 15 ? '보통' : '낮음'}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+
+                      <Grid item xs={12} sm={4}>
+                        <Card variant="outlined">
+                          <CardContent sx={{ textAlign: 'center' }}>
+                            <Typography variant="h6" color={
+                              riskMetrics.sharpeRatio > 1 ? 'success.main' :
+                              riskMetrics.sharpeRatio > 0 ? 'warning.main' : 'error.main'
+                            }>
+                              {riskMetrics.sharpeRatio.toFixed(2)}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              샤프 비율
+                            </Typography>
+                            <Typography variant="caption" display="block" mt={1}>
+                              {riskMetrics.sharpeRatio > 1 ? '우수' :
+                               riskMetrics.sharpeRatio > 0 ? '양호' : '부족'}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+
+                      <Grid item xs={12} sm={4}>
+                        <Card variant="outlined">
+                          <CardContent sx={{ textAlign: 'center' }}>
+                            <Typography variant="h6" color={
+                              riskMetrics.maxDrawdown > 30 ? 'error.main' :
+                              riskMetrics.maxDrawdown > 15 ? 'warning.main' : 'success.main'
+                            }>
+                              -{formatPercent(riskMetrics.maxDrawdown)}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              최대 낙폭
+                            </Typography>
+                            <Typography variant="caption" display="block" mt={1}>
+                              {riskMetrics.maxDrawdown > 30 ? '위험' :
+                               riskMetrics.maxDrawdown > 15 ? '주의' : '안전'}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+
+                    <Box mt={2}>
+                      <Alert severity="info" sx={{ fontSize: '0.85em' }}>
+                        <Typography variant="caption">
+                          <strong>위험 지표 설명:</strong><br/>
+                          • <strong>변동성</strong>: 투자 수익률의 변동 정도 (낮을수록 안정적)<br/>
+                          • <strong>샤프 비율</strong>: 위험 대비 수익률 (1 이상이면 우수)<br/>
+                          • <strong>최대 낙폭</strong>: 투자 기간 중 최대 손실 구간
+                        </Typography>
+                      </Alert>
+                    </Box>
+                  </Paper>
+                );
+              })()}
 
               {/* 차트 */}
               <Paper sx={{ p: 3, mb: 3 }}>
