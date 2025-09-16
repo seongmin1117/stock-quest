@@ -26,9 +26,9 @@ public class DCASimulationParametersValidator {
 
         // 테스트 2: 투자 기간 계산
         System.out.println("\n테스트 2: 투자 기간 계산");
-        long years = parameters.getInvestmentPeriodInYears();
+        double years = parameters.getInvestmentPeriodInYears();
         System.out.println("투자 기간: " + years + "년");
-        assert years == 5 : "5년 투자 기간이 올바르게 계산되어야 함";
+        assert Math.abs(years - 5.0) < 0.1 : "5년 투자 기간이 올바르게 계산되어야 함";
 
         // 테스트 3: 총 투자 횟수 계산 (월별)
         System.out.println("\n테스트 3: 총 투자 횟수 계산 (월별)");

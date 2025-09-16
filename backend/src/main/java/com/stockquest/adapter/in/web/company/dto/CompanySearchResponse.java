@@ -1,21 +1,26 @@
 package com.stockquest.adapter.in.web.company.dto;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
 
 import java.util.List;
 
 /**
- * 회사 검색 응답 DTO
+ * Company Search Response DTO - Web Layer
+ *
+ * Response DTO for company search operations including pagination metadata.
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Schema(description = "회사 검색 응답")
-public class CompanySearchResponse {
-
-    @Schema(description = "검색된 회사 목록")
-    private List<CompanyDto> companies;
+@Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public record CompanySearchResponse(
+    List<CompanyResponse> companies,
+    long totalCount,
+    int limit,
+    int offset,
+    boolean hasMore,
+    int currentPage,
+    int totalPages,
+    String searchQuery,
+    List<String> appliedCategories
+) {
 }

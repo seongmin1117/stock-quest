@@ -129,7 +129,169 @@ public class DCASimulationResultValidator {
             assert "포트폴리오 가치는 0 이상이어야 합니다".equals(e.getMessage()) : "올바른 예외 메시지가 나와야 함";
         }
 
+        // 테스트 10: 짧은 투자 기간 (3개월) - Edge Case
+        System.out.println("\n테스트 10: 짧은 투자 기간 (3개월) - Edge Case");
+        testShortPeriodInvestment();
+
+        // 테스트 11: 매우 짧은 투자 기간 (1주) - Edge Case
+        System.out.println("\n테스트 11: 매우 짧은 투자 기간 (1주) - Edge Case");
+        testVeryShortPeriodInvestment();
+
+        // 테스트 12: 손실 상황에서의 계산
+        System.out.println("\n테스트 12: 손실 상황에서의 계산");
+        testLossScenario();
+
         System.out.println("\n✅ 모든 테스트가 통과했습니다!");
         System.out.println("DCASimulationResult가 올바르게 구현되었습니다.");
+    }
+
+    private static void testShortPeriodInvestment() {
+        // 3개월 투자 - 이전에 NaN 오류가 발생했던 케이스
+        DCASimulationParameters parameters = new DCASimulationParameters(
+            "AAPL",
+            new BigDecimal("100000"),
+            LocalDateTime.of(2020, 1, 1, 0, 0),
+            LocalDateTime.of(2020, 4, 1, 0, 0), // 3개월
+            InvestmentFrequency.MONTHLY
+        );
+
+        List<MonthlyInvestmentRecord> records = Arrays.asList(
+            new MonthlyInvestmentRecord(
+                LocalDateTime.of(2020, 1, 1, 0, 0),
+                new BigDecimal("100000"),
+                new BigDecimal("100"),
+                new BigDecimal("1000.00"),
+                new BigDecimal("110000")
+            ),
+            new MonthlyInvestmentRecord(
+                LocalDateTime.of(2020, 2, 1, 0, 0),
+                new BigDecimal("100000"),
+                new BigDecimal("105"),
+                new BigDecimal("952.38"),
+                new BigDecimal("225000")
+            ),
+            new MonthlyInvestmentRecord(
+                LocalDateTime.of(2020, 3, 1, 0, 0),
+                new BigDecimal("100000"),
+                new BigDecimal("110"),
+                new BigDecimal("909.09"),
+                new BigDecimal("330000")
+            )
+        );
+
+        DCASimulationResult result = new DCASimulationResult(
+            parameters,
+            new BigDecimal("300000"), // 총 투자금
+            new BigDecimal("330000"), // 최종 가치 (10% 수익)
+            records,
+            BigDecimal.ZERO,
+            BigDecimal.ZERO
+        );
+
+        BigDecimal totalReturn = result.getTotalReturnPercentage();
+        BigDecimal annualizedReturn = result.getAnnualizedReturn();
+
+        System.out.println("투자기간: " + parameters.getInvestmentPeriodInYears() + "년");
+        System.out.println("총 수익률: " + totalReturn + "%");
+        System.out.println("연평균 수익률: " + annualizedReturn + "%");
+
+        assert totalReturn.equals(new BigDecimal("10.00")) : "총 수익률이 10%가 되어야 함";
+        assert !annualizedReturn.toString().contains("NaN") : "연평균 수익률이 NaN이 되면 안됨";
+        assert !annualizedReturn.toString().contains("Infinity") : "연평균 수익률이 Infinity가 되면 안됨";
+        // 3개월 (0.249년) 투자의 연평균 수익률: (1.10)^(1/0.249) - 1 = 약 46.60%
+        assert Math.abs(annualizedReturn.doubleValue() - 46.60) < 1.0 : "3개월 10% 수익의 연평균 수익률은 약 46.60%가 되어야 함";
+    }
+
+    private static void testVeryShortPeriodInvestment() {
+        // 1주 투자 - 매우 짧은 기간
+        DCASimulationParameters parameters = new DCASimulationParameters(
+            "AAPL",
+            new BigDecimal("100000"),
+            LocalDateTime.of(2020, 1, 1, 0, 0),
+            LocalDateTime.of(2020, 1, 8, 0, 0), // 1주
+            InvestmentFrequency.WEEKLY
+        );
+
+        List<MonthlyInvestmentRecord> records = Arrays.asList(
+            new MonthlyInvestmentRecord(
+                LocalDateTime.of(2020, 1, 1, 0, 0),
+                new BigDecimal("100000"),
+                new BigDecimal("100"),
+                new BigDecimal("1000.00"),
+                new BigDecimal("105000")
+            )
+        );
+
+        DCASimulationResult result = new DCASimulationResult(
+            parameters,
+            new BigDecimal("100000"), // 총 투자금
+            new BigDecimal("105000"), // 최종 가치 (5% 수익)
+            records,
+            BigDecimal.ZERO,
+            BigDecimal.ZERO
+        );
+
+        BigDecimal totalReturn = result.getTotalReturnPercentage();
+        BigDecimal annualizedReturn = result.getAnnualizedReturn();
+
+        System.out.println("투자기간: " + parameters.getInvestmentPeriodInYears() + "년");
+        System.out.println("총 수익률: " + totalReturn + "%");
+        System.out.println("연평균 수익률: " + annualizedReturn + "%");
+
+        assert totalReturn.equals(new BigDecimal("5.00")) : "총 수익률이 5%가 되어야 함";
+        assert !annualizedReturn.toString().contains("NaN") : "연평균 수익률이 NaN이 되면 안됨";
+        assert !annualizedReturn.toString().contains("Infinity") : "연평균 수익률이 Infinity가 되면 안됨";
+        // 1주 (0.0192년) 5% 수익의 연평균: (1.05)^(1/0.0192) - 1 = 약 1175%
+        assert Math.abs(annualizedReturn.doubleValue() - 1175.34) < 50.0 : "1주 5% 수익의 연평균 수익률은 약 1175%가 되어야 함";
+    }
+
+    private static void testLossScenario() {
+        // 손실 상황에서의 계산
+        DCASimulationParameters parameters = new DCASimulationParameters(
+            "AAPL",
+            new BigDecimal("100000"),
+            LocalDateTime.of(2020, 1, 1, 0, 0),
+            LocalDateTime.of(2020, 7, 1, 0, 0), // 6개월
+            InvestmentFrequency.MONTHLY
+        );
+
+        List<MonthlyInvestmentRecord> records = Arrays.asList(
+            new MonthlyInvestmentRecord(
+                LocalDateTime.of(2020, 1, 1, 0, 0),
+                new BigDecimal("100000"),
+                new BigDecimal("100"),
+                new BigDecimal("1000.00"),
+                new BigDecimal("90000")
+            ),
+            new MonthlyInvestmentRecord(
+                LocalDateTime.of(2020, 6, 1, 0, 0),
+                new BigDecimal("100000"),
+                new BigDecimal("80"),
+                new BigDecimal("1250.00"),
+                new BigDecimal("480000")
+            )
+        );
+
+        DCASimulationResult result = new DCASimulationResult(
+            parameters,
+            new BigDecimal("600000"), // 총 투자금
+            new BigDecimal("480000"), // 최종 가치 (20% 손실)
+            records,
+            BigDecimal.ZERO,
+            BigDecimal.ZERO
+        );
+
+        BigDecimal totalReturn = result.getTotalReturnPercentage();
+        BigDecimal annualizedReturn = result.getAnnualizedReturn();
+
+        System.out.println("투자기간: " + parameters.getInvestmentPeriodInYears() + "년");
+        System.out.println("총 수익률: " + totalReturn + "%");
+        System.out.println("연평균 수익률: " + annualizedReturn + "%");
+
+        assert totalReturn.equals(new BigDecimal("-20.00")) : "총 수익률이 -20%가 되어야 함";
+        assert !annualizedReturn.toString().contains("NaN") : "연평균 수익률이 NaN이 되면 안됨";
+        assert !annualizedReturn.toString().contains("Infinity") : "연평균 수익률이 Infinity가 되면 안됨";
+        // 6개월 (0.5년) -20% 손실의 연평균: (0.80)^(1/0.5) - 1 = 약 -36%
+        assert Math.abs(annualizedReturn.doubleValue() - (-36.0)) < 5.0 : "6개월 -20% 손실의 연평균 수익률은 약 -36%가 되어야 함";
     }
 }

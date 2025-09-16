@@ -30,10 +30,14 @@ public class DCAController {
      * @return 시뮬레이션 결과
      */
     @PostMapping("/simulate")
-    public ResponseEntity<DCASimulationResponse> simulate(@Valid @RequestBody DCASimulationRequest request) {
+    public ResponseEntity<DCASimulationResponse> simulate(@RequestBody DCASimulationRequest request) {
+        System.err.println("=== DCA Controller simulate method called ===");
+        System.err.println("Request: " + request);
         try {
+            System.err.println("Converting to command...");
             // 웹 요청을 애플리케이션 커맨드로 변환
             DCASimulationCommand command = convertToCommand(request);
+            System.err.println("Command created successfully: " + command);
 
             // 애플리케이션 서비스 호출
             DCASimulationResponse response = dcaSimulationService.simulate(command);
@@ -41,12 +45,25 @@ public class DCAController {
             return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {
+            System.err.println("DCA Validation Error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                 .body(createErrorResponse(e.getMessage()));
         } catch (Exception e) {
+            System.err.println("DCA General Error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError()
                 .body(createErrorResponse("시뮬레이션 처리 중 오류가 발생했습니다"));
         }
+    }
+
+    /**
+     * Test endpoint to debug basic controller functionality
+     */
+    @GetMapping("/test")
+    public ResponseEntity<String> testEndpoint() {
+        System.err.println("=== DCA Test endpoint called ===");
+        return ResponseEntity.ok("DCA Controller is working!");
     }
 
     /**

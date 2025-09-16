@@ -124,7 +124,10 @@ public class SecurityConfig {
                 // 읽기 전용 작업
                 .requestMatchers(HttpMethod.GET, "/api/challenges/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/companies/**").permitAll()
-                
+
+                // DCA 시뮬레이션 API (테스트 목적으로 공개)
+                .requestMatchers("/api/v1/dca/**").permitAll()
+
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
             )

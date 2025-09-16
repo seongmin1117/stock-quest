@@ -74,9 +74,36 @@ public class DCASimulationResult {
     public BigDecimal getAnnualizedReturn() {
         double finalValue = finalPortfolioValue.doubleValue();
         double initialValue = totalInvestmentAmount.doubleValue();
+
+        // 투자 원금이 0이면 0% 반환
+        if (initialValue == 0.0) {
+            return BigDecimal.ZERO;
+        }
+
+        // 실제 투자 기간을 일수로 계산하여 연단위로 변환
         double years = parameters.getInvestmentPeriodInYears();
 
-        double cagr = Math.pow(finalValue / initialValue, 1.0 / years) - 1;
+        // 투자 기간이 0이거나 매우 짧으면 단순 수익률 반환
+        if (years <= 0.0 || years < 0.01) { // 약 3.6일 미만
+            double simpleReturn = (finalValue - initialValue) / initialValue;
+            return new BigDecimal(simpleReturn * 100).setScale(2, RoundingMode.HALF_UP);
+        }
+
+        // CAGR 계산
+        double growthRatio = finalValue / initialValue;
+        if (growthRatio <= 0.0) {
+            return new BigDecimal(-100.0).setScale(2, RoundingMode.HALF_UP);
+        }
+
+        double cagr = Math.pow(growthRatio, 1.0 / years) - 1;
+
+        // NaN이나 Infinity 체크
+        if (Double.isNaN(cagr) || Double.isInfinite(cagr)) {
+            // 단순 수익률로 대체
+            double simpleReturn = (finalValue - initialValue) / initialValue;
+            return new BigDecimal(simpleReturn * 100).setScale(2, RoundingMode.HALF_UP);
+        }
+
         return new BigDecimal(cagr * 100).setScale(2, RoundingMode.HALF_UP);
     }
 

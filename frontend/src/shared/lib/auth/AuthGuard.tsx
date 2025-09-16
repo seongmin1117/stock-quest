@@ -25,6 +25,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     '/auth/signup',
     '/auth/forgot-password',
     '/',
+    '/dca-simulation',
   ];
 
   const isPublicPage = publicPages.includes(pathname);

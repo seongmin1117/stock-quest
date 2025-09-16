@@ -63,10 +63,11 @@ public class DCASimulationParameters {
     }
 
     /**
-     * 투자 기간을 연 단위로 계산
+     * 투자 기간을 연 단위로 계산 (소수점 포함)
      */
-    public long getInvestmentPeriodInYears() {
-        return ChronoUnit.YEARS.between(startDate, endDate);
+    public double getInvestmentPeriodInYears() {
+        long totalDays = ChronoUnit.DAYS.between(startDate, endDate);
+        return totalDays / 365.25; // 윤년 고려
     }
 
     /**
@@ -89,7 +90,7 @@ public class DCASimulationParameters {
     @Override
     public String toString() {
         return String.format(
-            "DCA 시뮬레이션 - 종목: %s, 투자금액: %s원, 주기: %s, 기간: %d년 (%s ~ %s)",
+            "DCA 시뮬레이션 - 종목: %s, 투자금액: %s원, 주기: %s, 기간: %.2f년 (%s ~ %s)",
             symbol,
             monthlyInvestmentAmount,
             frequency.getDescription(),

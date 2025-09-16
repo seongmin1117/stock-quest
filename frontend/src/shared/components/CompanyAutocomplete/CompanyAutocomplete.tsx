@@ -81,12 +81,21 @@ export default function CompanyAutocomplete({
       if (searchQuery.trim() === '' && selectedCategory === '') {
         // 검색어가 없고 카테고리도 선택 안됨 -> 인기 회사 표시
         const popularAsCompanies: Company[] = popularCompanies.map(p => ({
+          id: p.id,
           symbol: p.symbol,
           nameKr: p.nameKr,
           nameEn: p.nameEn,
           sector: p.sector,
+          marketCap: p.marketCap,
+          marketCapDisplay: p.marketCapDisplay,
           logoPath: p.logoPath,
-          marketCapDisplay: p.marketCap
+          descriptionKr: '',
+          descriptionEn: '',
+          exchange: 'KRX',
+          currency: 'KRW',
+          isActive: true,
+          popularityScore: p.popularityScore,
+          categories: p.categories
         }));
         setOptions(popularAsCompanies);
         return;
@@ -96,7 +105,7 @@ export default function CompanyAutocomplete({
       try {
         const response = await companyClient.search({
           q: searchQuery.trim() || undefined,
-          category: selectedCategory || undefined,
+          categories: selectedCategory ? [selectedCategory] : undefined,
           limit: 10
         });
         setOptions(response.companies);
@@ -122,12 +131,21 @@ export default function CompanyAutocomplete({
         try {
           const company = await companyClient.getBySymbol(value);
           const companyData: Company = {
+            id: company.id,
             symbol: company.symbol,
             nameKr: company.nameKr,
             nameEn: company.nameEn,
             sector: company.sector,
+            marketCap: company.marketCap,
+            marketCapDisplay: company.marketCapDisplay,
             logoPath: company.logoPath,
-            marketCapDisplay: company.marketCapDisplay
+            descriptionKr: company.descriptionKr,
+            descriptionEn: company.descriptionEn,
+            exchange: company.exchange,
+            currency: company.currency,
+            isActive: company.isActive,
+            popularityScore: company.popularityScore,
+            categories: company.categories
           };
           setSelectedCompany(companyData);
         } catch (error) {
@@ -147,12 +165,21 @@ export default function CompanyAutocomplete({
 
   const handlePopularCompanyClick = (company: PopularCompany) => {
     const companyData: Company = {
+      id: company.id,
       symbol: company.symbol,
       nameKr: company.nameKr,
       nameEn: company.nameEn,
       sector: company.sector,
+      marketCap: company.marketCap,
+      marketCapDisplay: company.marketCapDisplay,
       logoPath: company.logoPath,
-      marketCapDisplay: company.marketCap
+      descriptionKr: '',
+      descriptionEn: '',
+      exchange: 'KRX',
+      currency: 'KRW',
+      isActive: true,
+      popularityScore: company.popularityScore,
+      categories: company.categories
     };
     handleCompanySelect(companyData);
   };
@@ -193,14 +220,14 @@ export default function CompanyAutocomplete({
         <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
           {categories.map((category) => (
             <Chip
-              key={category.id}
-              label={`${category.name} (${category.count})`}
+              key={category.categoryId}
+              label={`${category.nameKr} (${category.companyCount})`}
               size="small"
-              variant={selectedCategory === category.id ? "filled" : "outlined"}
-              onClick={() => handleCategoryClick(category.id)}
-              data-testid={`category-filter-${category.id}`}
+              variant={selectedCategory === category.categoryId ? "filled" : "outlined"}
+              onClick={() => handleCategoryClick(category.categoryId)}
+              data-testid={`category-filter-${category.categoryId}`}
               sx={{
-                borderColor: selectedCategory === category.id ? 'primary.main' : 'divider'
+                borderColor: selectedCategory === category.categoryId ? 'primary.main' : 'divider'
               }}
             />
           ))}

@@ -183,6 +183,11 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleJsonParseError(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        System.err.println("=== JSON PARSE ERROR ===");
+        System.err.println("Request URI: " + request.getRequestURI());
+        System.err.println("Error message: " + ex.getMessage());
+        System.err.println("Root cause: " + (ex.getCause() != null ? ex.getCause().getMessage() : "null"));
+        ex.printStackTrace();
         logError(ex, request, "JSON_PARSE_ERROR");
         
         String message = "잘못된 JSON 형식입니다.";
