@@ -100,4 +100,26 @@ public interface CompanyRepositoryPort {
      * @return paginated list of companies
      */
     List<Company> findAll(int page, int size);
+
+    /**
+     * Update company's market cap
+     *
+     * @param symbol the stock symbol
+     * @param marketCap updated market cap value
+     */
+    void updateMarketCap(String symbol, Long marketCap);
+
+    /**
+     * Save company sync log
+     *
+     * @param syncLog the sync log to save
+     */
+    void saveSyncLog(com.stockquest.application.company.CompanySyncLog syncLog);
+
+    /**
+     * Save batch sync log
+     *
+     * @param batchLog the batch sync log to save
+     */
+    void saveSyncBatchLog(com.stockquest.application.company.CompanySyncBatchLog batchLog);
 }

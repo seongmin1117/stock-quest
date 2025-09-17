@@ -1,5 +1,6 @@
 package com.stockquest.domain.market;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -83,6 +84,13 @@ public class PriceCandle {
         if (volume == null || volume < 0) {
             throw new IllegalArgumentException("거래량은 0 이상이어야 합니다");
         }
+    }
+
+    /**
+     * symbol 대신 ticker를 사용하는 경우를 위한 메서드
+     */
+    public String getSymbol() {
+        return ticker;
     }
     
     /**

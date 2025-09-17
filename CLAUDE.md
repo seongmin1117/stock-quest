@@ -2,6 +2,32 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Development Workflow Requirements
+
+### Build & Commit Protocol
+**CRITICAL**: Always verify compilation and build success before any commit or next step.
+
+#### Pre-Commit Checklist
+1. ✅ **Backend Compilation**: `JAVA_HOME=/Users/seongmin/Library/Java/JavaVirtualMachines/temurin-21.0.5/Contents/Home ./gradlew compileJava`
+2. ✅ **Backend Build**: `JAVA_HOME=/Users/seongmin/Library/Java/JavaVirtualMachines/temurin-21.0.5/Contents/Home ./gradlew build -x test`
+3. ✅ **Backend Server Start**: `JAVA_HOME=/Users/seongmin/Library/Java/JavaVirtualMachines/temurin-21.0.5/Contents/Home ./gradlew bootRun --dry-run`
+4. ✅ **Frontend Type Check**: `npm run type-check`
+5. ✅ **Frontend Build**: `npm run build`
+6. ✅ **Database Migration**: Verify all Flyway migrations apply cleanly
+7. ✅ **API Integration**: Test that frontend can retrieve data from backend
+8. ✅ **External Dependencies**: Ensure no external API calls cause server startup failures
+
+#### Task Planning Requirements
+- **Always create TodoWrite checklist** for multi-step tasks
+- **Track progress in real-time** with status updates
+- **Plan next steps** before completing current tasks
+- **Document blockers** and resolution paths
+
+### External API Integration Guidelines
+- **Yahoo Finance API**: Keep as simulated for development - never block server startup
+- **Real API integration**: Plan for future implementation without breaking current functionality
+- **Error handling**: Graceful fallback when external services are unavailable
+
 ## Common Development Commands
 
 ### Backend (Spring Boot + Java 21)
@@ -127,6 +153,20 @@ The system implements real-time features through:
 4. WebSocket notification to client
 5. Event publishing for analytics
 
+### Company Data Synchronization (NEW)
+1. **Automated Sync**: Scheduled at 9:00 AM and 3:30 PM daily
+2. **Manual Sync**: Admin-triggered via REST API endpoints
+3. **Data Source**: Yahoo Finance API (simulated for development)
+4. **Updates**: Market cap calculations based on latest stock prices
+5. **Logging**: Sync results tracked in database for audit
+
+### DCA (Dollar Cost Averaging) Simulation
+1. User configures investment parameters (amount, frequency, period)
+2. System simulates historical performance with real market data
+3. Generates detailed reports with metrics and visualizations
+4. Supports Korean companies with proper encoding (UTF-8)
+5. PDF report generation with comprehensive analytics
+
 ### Authentication & Security
 - JWT-based authentication with Spring Security
 - Role-based access control (USER, ADMIN)
@@ -159,8 +199,64 @@ The database includes carefully designed indexes for:
 - Contract tests for API compatibility
 - Performance tests for critical paths
 - Test containers for database testing
+- **Note**: Some legacy tests may have compilation issues and are being refactored
 
 ### Frontend Tests
 - Component unit tests with Jest
 - E2E tests with Playwright
 - MSW for API mocking during development
+
+## Recent Implementations
+
+### Company Synchronization Service (2025-01)
+- **CompanySyncService**: Synchronizes company market data from external sources
+- **YahooFinanceMarketDataClient**: Fetches real-time stock prices (simulated)
+- **CompanySyncWebAdapter**: REST endpoints for admin-triggered sync
+- **Scheduling**: Automated sync at market open/close times
+- **TDD Approach**: Test-first development with comprehensive test coverage
+
+### DCA Simulation Features (2024-12)
+- Complete hexagonal architecture implementation
+- Korean company data support with proper UTF-8 encoding
+- Comprehensive E2E tests for simulation workflows
+- Frontend API client integration
+- Advanced analytics and reporting capabilities
+
+## New API Endpoints
+
+### Company Synchronization (Admin Only)
+```bash
+# Sync single company
+POST /api/v1/companies/sync/{symbol}
+Authorization: Bearer <admin-token>
+
+# Sync all companies
+POST /api/v1/companies/sync/all
+Authorization: Bearer <admin-token>
+
+# Trigger scheduled sync manually
+POST /api/v1/companies/sync/scheduled
+Authorization: Bearer <admin-token>
+
+# Get sync status
+GET /api/v1/companies/sync/status
+Authorization: Bearer <admin-token>
+```
+
+### Company Search & Information
+```bash
+# Search companies
+GET /api/v1/companies/search?q=삼성&limit=10
+
+# Get company by symbol
+GET /api/v1/companies/{symbol}
+
+# Get top companies
+GET /api/v1/companies/top?limit=10
+
+# Get companies by category
+GET /api/v1/companies/category/{categoryId}
+
+# Get all categories
+GET /api/v1/companies/categories
+```
