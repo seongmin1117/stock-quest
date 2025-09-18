@@ -90,8 +90,11 @@ export const companyClient = {
   }): Promise<CompanySearchResponse> {
     console.log('🌐 [company-client] Searching companies with params:', params);
     const response = await apiClient.get('/api/v1/companies/search', { params });
-    console.log('✅ [company-client] Search response:', response.data);
-    return response.data;
+
+    // API client가 이미 .data를 추출했으므로 response 자체가 데이터
+    const data = response.data || response;
+    console.log('✅ [company-client] Search response:', data);
+    return data;
   },
 
   /**
@@ -102,9 +105,17 @@ export const companyClient = {
     const response = await apiClient.get('/api/v1/companies/top', {
       params: { limit }
     });
-    console.log('✅ [company-client] Popular companies response:', response.data.length, 'companies');
+
+    // API client가 이미 .data를 추출했으므로 response 자체가 데이터
+    const data = response.data || response;
+    console.log('✅ [company-client] Popular companies response:', Array.isArray(data) ? data.length : 0, 'companies');
+
     // Convert Company[] to PopularCompany[] for backward compatibility
-    return response.data.map((company: Company): PopularCompany => ({
+    if (!Array.isArray(data)) {
+      console.warn('⚠️ [company-client] Invalid popular companies response data:', data);
+      return [];
+    }
+    return data.map((company: Company): PopularCompany => ({
       id: company.id,
       symbol: company.symbol,
       nameKr: company.nameKr,
@@ -124,8 +135,16 @@ export const companyClient = {
   async getCategories(): Promise<CompanyCategory[]> {
     console.log('🌐 [company-client] Getting categories');
     const response = await apiClient.get('/api/v1/companies/categories');
-    console.log('✅ [company-client] Categories response:', response.data.length, 'categories');
-    return response.data;
+
+    // API client가 이미 .data를 추출했으므로 response 자체가 데이터
+    const data = response.data || response;
+    console.log('✅ [company-client] Categories response:', Array.isArray(data) ? data.length : 0, 'categories');
+
+    if (!Array.isArray(data)) {
+      console.warn('⚠️ [company-client] Invalid categories response data:', data);
+      return [];
+    }
+    return data;
   },
 
   /**

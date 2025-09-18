@@ -60,16 +60,16 @@ export const apiClient = <T = any>(config: AxiosRequestConfig): Promise<T> =>
 const extendedApiClient = Object.assign(apiClient, {
   get: <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> =>
     axiosInstance.get(url, config).then(({ data }) => data),
-  
+
   post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> =>
     axiosInstance.post(url, data, config).then(({ data }) => data),
-  
+
   put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> =>
     axiosInstance.put(url, data, config).then(({ data }) => data),
-  
+
   patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> =>
     axiosInstance.patch(url, data, config).then(({ data }) => data),
-  
+
   delete: <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> =>
     axiosInstance.delete(url, config).then(({ data }) => data),
 });

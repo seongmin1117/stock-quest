@@ -53,6 +53,17 @@ export default function CompanyAutocomplete({
 
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // 디버깅용 로깅
+  console.log('🔍 [CompanyAutocomplete] Component render state:', {
+    categoriesCount: categories?.length || 0,
+    popularCompaniesCount: popularCompanies?.length || 0,
+    optionsCount: options?.length || 0,
+    loading,
+    searchQuery,
+    selectedCategory,
+    open
+  });
+
   // 인기 회사와 카테고리 로드
   useEffect(() => {
     const loadInitialData = async () => {
@@ -62,10 +73,10 @@ export default function CompanyAutocomplete({
           companyClient.getPopular(8),
           companyClient.getCategories()
         ]);
-        console.log('✅ [CompanyAutocomplete] Popular companies loaded:', popularData.length);
-        console.log('✅ [CompanyAutocomplete] Categories loaded:', categoriesData.length);
-        setPopularCompanies(popularData);
-        setCategories(categoriesData);
+        console.log('✅ [CompanyAutocomplete] Popular companies loaded:', popularData?.length || 0);
+        console.log('✅ [CompanyAutocomplete] Categories loaded:', categoriesData?.length || 0);
+        setPopularCompanies(Array.isArray(popularData) ? popularData : []);
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } catch (error: any) {
         console.error('❌ [CompanyAutocomplete] Failed to load initial data:', error);
         if (error.response) {
@@ -89,7 +100,7 @@ export default function CompanyAutocomplete({
     searchTimeoutRef.current = setTimeout(async () => {
       if (searchQuery.trim() === '' && selectedCategory === '') {
         // 검색어가 없고 카테고리도 선택 안됨 -> 인기 회사 표시
-        const popularAsCompanies: Company[] = popularCompanies.map(p => ({
+        const popularAsCompanies: Company[] = (popularCompanies || []).map(p => ({
           id: p.id,
           symbol: p.symbol,
           nameKr: p.nameKr,
@@ -276,18 +287,28 @@ export default function CompanyAutocomplete({
     </Box>
   );
 
-  const renderCustomDropdown = () => (
-    <Paper sx={{ mt: 1, maxHeight: 400, overflow: 'hidden' }}>
+
+  return (
+    <Box>
       {/* 카테고리 필터 */}
-      <Box p={2}>
+      <Box mb={2}>
         <Typography variant="caption" color="text.secondary" gutterBottom>
-          카테고리
+          카테고리 선택
         </Typography>
         <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-          {categories.map((category) => (
+          <Chip
+            label="전체"
+            size="small"
+            variant={selectedCategory === '' ? "filled" : "outlined"}
+            onClick={() => handleCategoryClick('')}
+            sx={{
+              borderColor: selectedCategory === '' ? 'primary.main' : 'divider'
+            }}
+          />
+          {(categories || []).map((category) => (
             <Chip
               key={category.categoryId}
-              label={`${category.nameKr} (${category.companyCount})`}
+              label={category.nameKr}
               size="small"
               variant={selectedCategory === category.categoryId ? "filled" : "outlined"}
               onClick={() => handleCategoryClick(category.categoryId)}
@@ -300,17 +321,15 @@ export default function CompanyAutocomplete({
         </Box>
       </Box>
 
-      <Divider />
-
-      {/* 검색어가 없을 때 인기 종목 표시 */}
+      {/* 인기 종목 (검색어가 없을 때) */}
       {searchQuery.trim() === '' && selectedCategory === '' && (
-        <Box p={2}>
+        <Box mb={2}>
           <Typography variant="caption" color="text.secondary" gutterBottom>
             인기 종목
           </Typography>
           <Grid container spacing={1} mt={1}>
-            {popularCompanies.map((company) => (
-              <Grid item xs={6} key={company.symbol}>
+            {(popularCompanies || []).map((company) => (
+              <Grid item xs={6} sm={4} md={3} key={company.symbol}>
                 <Box
                   data-testid={`popular-company-${company.symbol}`}
                   onClick={() => handlePopularCompanyClick(company)}
@@ -335,7 +354,7 @@ export default function CompanyAutocomplete({
                         {company.nameKr}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" noWrap>
-                        {company.marketCap}
+                        {company.marketCapDisplay}
                       </Typography>
                     </Box>
                   </Box>
@@ -346,32 +365,6 @@ export default function CompanyAutocomplete({
         </Box>
       )}
 
-      {/* 검색 결과 */}
-      {(searchQuery.trim() !== '' || selectedCategory !== '') && (
-        <Box>
-          {loading ? (
-            <Box display="flex" justifyContent="center" p={2}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : (
-            <Box sx={{ maxHeight: 240, overflow: 'auto' }}>
-              {options.map((option) => renderOption({ onClick: () => handleCompanySelect(option) }, option))}
-              {options.length === 0 && (
-                <Box p={2} textAlign="center">
-                  <Typography variant="body2" color="text.secondary">
-                    검색 결과가 없습니다
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          )}
-        </Box>
-      )}
-    </Paper>
-  );
-
-  return (
-    <Box>
       <Autocomplete
         open={open}
         onOpen={() => setOpen(true)}
@@ -424,11 +417,6 @@ export default function CompanyAutocomplete({
               ),
             }}
           />
-        )}
-        PaperComponent={() => (
-          <div data-testid="company-autocomplete-dropdown">
-            {renderCustomDropdown()}
-          </div>
         )}
         sx={{ mb: 2 }}
       />
