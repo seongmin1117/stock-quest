@@ -12,8 +12,10 @@ import {
   Paper,
   Grid,
   Divider,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
-import { Business, TrendingUp } from '@mui/icons-material';
+import { Business, TrendingUp, Search } from '@mui/icons-material';
 import { companyClient, Company, PopularCompany, CompanyCategory } from '@/shared/api/company-client';
 
 interface CompanyAutocompleteProps {
@@ -55,14 +57,21 @@ export default function CompanyAutocomplete({
   useEffect(() => {
     const loadInitialData = async () => {
       try {
+        console.log('🔍 [CompanyAutocomplete] Loading initial data...');
         const [popularData, categoriesData] = await Promise.all([
           companyClient.getPopular(8),
           companyClient.getCategories()
         ]);
+        console.log('✅ [CompanyAutocomplete] Popular companies loaded:', popularData.length);
+        console.log('✅ [CompanyAutocomplete] Categories loaded:', categoriesData.length);
         setPopularCompanies(popularData);
         setCategories(categoriesData);
-      } catch (error) {
-        console.error('Failed to load initial data:', error);
+      } catch (error: any) {
+        console.error('❌ [CompanyAutocomplete] Failed to load initial data:', error);
+        if (error.response) {
+          console.error('Response status:', error.response.status);
+          console.error('Response data:', error.response.data);
+        }
       }
     };
 
@@ -103,14 +112,21 @@ export default function CompanyAutocomplete({
 
       setLoading(true);
       try {
-        const response = await companyClient.search({
+        const searchParams = {
           q: searchQuery.trim() || undefined,
           categories: selectedCategory ? [selectedCategory] : undefined,
           limit: 10
-        });
+        };
+        console.log('🔍 [CompanyAutocomplete] Searching with params:', searchParams);
+        const response = await companyClient.search(searchParams);
+        console.log('✅ [CompanyAutocomplete] Search results:', response.companies.length, 'companies');
         setOptions(response.companies);
-      } catch (error) {
-        console.error('Search failed:', error);
+      } catch (error: any) {
+        console.error('❌ [CompanyAutocomplete] Search failed:', error);
+        if (error.response) {
+          console.error('Response status:', error.response.status);
+          console.error('Response data:', error.response.data);
+        }
         setOptions([]);
       } finally {
         setLoading(false);
@@ -124,38 +140,51 @@ export default function CompanyAutocomplete({
     };
   }, [searchQuery, selectedCategory, open, popularCompanies]);
 
-  // value prop이 변경될 때 선택된 회사 찾기
+  // value prop이 변경될 때만 선택된 회사 찾기
   useEffect(() => {
-    if (value && value !== selectedCompany?.symbol) {
-      const findCompany = async () => {
-        try {
-          const company = await companyClient.getBySymbol(value);
-          const companyData: Company = {
-            id: company.id,
-            symbol: company.symbol,
-            nameKr: company.nameKr,
-            nameEn: company.nameEn,
-            sector: company.sector,
-            marketCap: company.marketCap,
-            marketCapDisplay: company.marketCapDisplay,
-            logoPath: company.logoPath,
-            descriptionKr: company.descriptionKr,
-            descriptionEn: company.descriptionEn,
-            exchange: company.exchange,
-            currency: company.currency,
-            isActive: company.isActive,
-            popularityScore: company.popularityScore,
-            categories: company.categories
-          };
-          setSelectedCompany(companyData);
-        } catch (error) {
-          console.error('Failed to find company:', error);
-          setSelectedCompany(null);
-        }
-      };
-      findCompany();
+    if (!value) {
+      if (selectedCompany) {
+        setSelectedCompany(null);
+      }
+      return;
     }
-  }, [value, selectedCompany]);
+
+    // 이미 올바른 회사가 선택되어 있으면 API 호출 안함
+    if (selectedCompany?.symbol === value) {
+      return;
+    }
+
+    const findCompany = async () => {
+      try {
+        console.log('🔍 [CompanyAutocomplete] Loading company details for:', value);
+        const company = await companyClient.getBySymbol(value);
+        const companyData: Company = {
+          id: company.id,
+          symbol: company.symbol,
+          nameKr: company.nameKr,
+          nameEn: company.nameEn,
+          sector: company.sector,
+          marketCap: company.marketCap,
+          marketCapDisplay: company.marketCapDisplay,
+          logoPath: company.logoPath,
+          descriptionKr: company.descriptionKr,
+          descriptionEn: company.descriptionEn,
+          exchange: company.exchange,
+          currency: company.currency,
+          isActive: company.isActive,
+          popularityScore: company.popularityScore,
+          categories: company.categories
+        };
+        console.log('✅ [CompanyAutocomplete] Company details loaded:', companyData.nameKr);
+        setSelectedCompany(companyData);
+      } catch (error) {
+        console.error('❌ [CompanyAutocomplete] Failed to find company:', error);
+        setSelectedCompany(null);
+      }
+    };
+
+    findCompany();
+  }, [value]); // value가 변경될 때만 실행
 
   const handleCompanySelect = (company: Company | null) => {
     setSelectedCompany(company);
@@ -186,6 +215,43 @@ export default function CompanyAutocomplete({
 
   const handleCategoryClick = (categoryId: string) => {
     setSelectedCategory(selectedCategory === categoryId ? '' : categoryId);
+  };
+
+  // 명시적 검색 실행 함수 (사용자 경험 개선)
+  const handleExplicitSearch = () => {
+    if (!open) {
+      setOpen(true);
+    }
+
+    // 이미 검색어가 있다면 즉시 검색
+    if (searchQuery.trim()) {
+      // 디바운스 타이머 취소하고 즉시 검색 실행
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      setLoading(true);
+      const performSearch = async () => {
+        try {
+          const searchParams = {
+            q: searchQuery.trim(),
+            categories: selectedCategory ? [selectedCategory] : undefined,
+            limit: 10
+          };
+          console.log('🔍 [CompanyAutocomplete] 명시적 검색 실행:', searchParams);
+          const response = await companyClient.search(searchParams);
+          console.log('✅ [CompanyAutocomplete] 명시적 검색 결과:', response.companies.length, 'companies');
+          setOptions(response.companies);
+        } catch (error: any) {
+          console.error('❌ [CompanyAutocomplete] 명시적 검색 실패:', error);
+          setOptions([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      performSearch();
+    }
   };
 
   const renderOption = (props: any, option: Company) => (
@@ -328,11 +394,31 @@ export default function CompanyAutocomplete({
             placeholder={placeholder}
             error={error}
             helperText={helperText}
+            onKeyDown={(e) => {
+              // 엔터 키로 검색 실행
+              if (e.key === 'Enter' && !e.defaultPrevented) {
+                e.preventDefault();
+                handleExplicitSearch();
+              }
+            }}
             InputProps={{
               ...params.InputProps,
               endAdornment: (
                 <>
                   {loading && <CircularProgress color="inherit" size={20} />}
+                  {!loading && (
+                    <Tooltip title="검색 실행 (Enter 또는 클릭)">
+                      <IconButton
+                        size="small"
+                        onClick={handleExplicitSearch}
+                        edge="end"
+                        sx={{ mr: 1 }}
+                        data-testid="company-search-button"
+                      >
+                        <Search fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   {params.InputProps.endAdornment}
                 </>
               ),

@@ -40,7 +40,7 @@ services:
     container_name: stockquest-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:mysql://mysql:3306/stockquest?serverTimezone=UTC&characterEncoding=UTF-8}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:mysql://mysql:3306/stockquest?serverTimezone=UTC&characterEncoding=UTF-8&useUnicode=true&allowPublicKeyRetrieval=true&useSSL=false&autoReconnect=true&useLocalSessionState=true&rewriteBatchedStatements=true}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-stockquest}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-stockquest123}
       SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}

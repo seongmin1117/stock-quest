@@ -17,6 +17,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 7. ✅ **API Integration**: Test that frontend can retrieve data from backend
 8. ✅ **External Dependencies**: Ensure no external API calls cause server startup failures
 
+#### Development Quality Gates
+**For New Features**:
+- ✅ **TDD Implementation**: Write tests before implementation (following company sync service example)
+- ✅ **Hexagonal Architecture**: Maintain domain purity (no Spring dependencies in domain layer)
+- ✅ **API Contract**: Frontend-backend integration tested with real API calls
+- ✅ **Error Handling**: Graceful fallbacks when external services unavailable
+
+**For Frontend Components**:
+- ✅ **Real Data Integration**: No mock data in production paths
+- ✅ **WebSocket Connection**: Real-time features properly connected
+- ✅ **Mobile Responsive**: Test on mobile viewport
+- ✅ **Accessibility**: WCAG compliance for new UI components
+
 #### Task Planning Requirements
 - **Always create TodoWrite checklist** for multi-step tasks
 - **Track progress in real-time** with status updates
@@ -206,16 +219,24 @@ The database includes carefully designed indexes for:
 - E2E tests with Playwright
 - MSW for API mocking during development
 
+## Current Development Focus
+
+### Active Development Areas
+- **Company Data Management**: Synchronization and category integration
+- **API Endpoints**: Company search, sync, and category endpoints
+- **Frontend Integration**: Connecting React components to real backend data
+- **WebSocket Implementation**: Real-time market data and portfolio updates
+
 ## Recent Implementations
 
-### Company Synchronization Service (2025-01)
+### Company Synchronization Service
 - **CompanySyncService**: Synchronizes company market data from external sources
 - **YahooFinanceMarketDataClient**: Fetches real-time stock prices (simulated)
 - **CompanySyncWebAdapter**: REST endpoints for admin-triggered sync
 - **Scheduling**: Automated sync at market open/close times
 - **TDD Approach**: Test-first development with comprehensive test coverage
 
-### DCA Simulation Features (2024-12)
+### DCA Simulation Features
 - Complete hexagonal architecture implementation
 - Korean company data support with proper UTF-8 encoding
 - Comprehensive E2E tests for simulation workflows
@@ -260,3 +281,110 @@ GET /api/v1/companies/category/{categoryId}
 # Get all categories
 GET /api/v1/companies/categories
 ```
+
+## Korean Language Encoding Configuration
+
+### **CRITICAL**: UTF-8 Encoding Standards
+All environments MUST use consistent UTF-8 encoding to support Korean text (한글). Any deviation causes data corruption that requires manual database fixes.
+
+#### Environment Configuration Requirements
+
+**1. Development Environment (application-dev.yml)**
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/stockquest?serverTimezone=UTC&characterEncoding=UTF-8&useUnicode=true&allowPublicKeyRetrieval=true&useSSL=false&autoReconnect=true&useLocalSessionState=true&rewriteBatchedStatements=true
+    hikari:
+      connection-init-sql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+```
+
+**2. Docker Environment (docker-compose.yml)**
+```yaml
+SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/stockquest?serverTimezone=UTC&characterEncoding=UTF-8&useUnicode=true&allowPublicKeyRetrieval=true&useSSL=false&autoReconnect=true&useLocalSessionState=true&rewriteBatchedStatements=true
+```
+
+**3. MySQL Server Configuration (docker-compose.yml)**
+```yaml
+command:
+  - --character-set-server=utf8mb4
+  - --collation-server=utf8mb4_unicode_ci
+  - --default-time-zone=+09:00
+```
+
+#### **REQUIRED** MySQL Connection Parameters
+These parameters are **MANDATORY** in ALL environments:
+- `characterEncoding=UTF-8` - Sets client character encoding
+- `useUnicode=true` - **CRITICAL**: Enables Unicode support
+- `serverTimezone=UTC` - Prevents timezone issues
+- `allowPublicKeyRetrieval=true` - For secure connections
+- `useSSL=false` - Development environment setting
+- `autoReconnect=true` - Connection reliability
+- `useLocalSessionState=true` - Performance optimization
+- `rewriteBatchedStatements=true` - Batch operation optimization
+
+#### Encoding Verification Commands
+
+**Database Encoding Status**:
+```bash
+# Check MySQL server charset configuration
+docker exec stockquest-mysql mysql -u root -prootpassword -e "SHOW VARIABLES LIKE '%char%';"
+
+# Verify table and column encodings
+docker exec stockquest-mysql mysql -u root -prootpassword stockquest -e "SHOW TABLE STATUS WHERE Name='company';"
+
+# Check actual data encoding
+docker exec stockquest-mysql mysql -u root -prootpassword stockquest -e "SELECT symbol, name_kr, HEX(name_kr) FROM company WHERE symbol='005930';"
+```
+
+**API Response Verification**:
+```bash
+# Test Korean company data (should show clear Korean text)
+curl -X GET "http://localhost:8080/api/v1/companies/005930" -H "Content-Type: application/json"
+
+# Test category data (should show clear Korean text)
+curl -X GET "http://localhost:8080/api/v1/companies/categories" -H "Content-Type: application/json"
+```
+
+#### Troubleshooting Korean Text Issues
+
+**Symptoms of Encoding Problems**:
+- Korean text appears as: `ì‚¼ì„±ì „ìž` instead of `삼성전자`
+- API responses show corrupted characters
+- Database contains double-encoded UTF-8 bytes
+
+**Root Cause Analysis Checklist**:
+1. ✅ Verify `useUnicode=true` in ALL database connection URLs
+2. ✅ Check MySQL server charset is `utf8mb4`
+3. ✅ Confirm HikariCP `connection-init-sql` is set
+4. ✅ Validate environment variable consistency between dev/docker
+5. ✅ Test with fresh data insertion (not corrupted legacy data)
+
+**Recovery Steps for Corrupted Data**:
+1. Fix connection string configuration
+2. Use `CompanySyncService` to refresh data from external sources
+3. For manual fixes, use direct Korean text (not hex encoding)
+4. Clear application cache after data fixes
+5. Restart application to ensure new connections use correct encoding
+
+#### Prevention Guidelines
+
+**For All New Features**:
+- Test Korean text handling in development environment
+- Verify Docker environment uses identical database connection parameters
+- Add Korean text to automated tests
+- Document any Korean-specific requirements
+
+**For Database Changes**:
+- Always specify `utf8mb4` charset for new tables
+- Use `utf8mb4_unicode_ci` collation for Korean text columns
+- Test migration scripts with Korean sample data
+- Verify foreign key relationships preserve encoding
+
+**For Production Deployment**:
+- Validate encoding configuration in production environment variables
+- Test Korean data flow end-to-end before deployment
+- Monitor for encoding-related errors in logs
+- Maintain backup of Korean data before major updates
+
+#### Historical Context
+This configuration was established after resolving Korean text corruption issues in January 2025. The root cause was `useUnicode=true` missing from Docker environment database connection, while development environment had correct settings. This led to Korean text being double-encoded and corrupted during JSON serialization.

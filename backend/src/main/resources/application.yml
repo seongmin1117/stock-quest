@@ -39,10 +39,16 @@ spring:
     default-property-inclusion: non_null
     serialization:
       write-dates-as-timestamps: false
+    charset: UTF-8
 
 # 서버 설정
 server:
   port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 # JWT 설정
 jwt:

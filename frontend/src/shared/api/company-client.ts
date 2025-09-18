@@ -88,7 +88,9 @@ export const companyClient = {
     limit?: number;
     offset?: number;
   }): Promise<CompanySearchResponse> {
-    const response = await apiClient.get('/companies/search', { params });
+    console.log('🌐 [company-client] Searching companies with params:', params);
+    const response = await apiClient.get('/api/v1/companies/search', { params });
+    console.log('✅ [company-client] Search response:', response.data);
     return response.data;
   },
 
@@ -96,9 +98,11 @@ export const companyClient = {
    * 인기 회사 목록 조회 (Top companies by popularity)
    */
   async getPopular(limit: number = 10): Promise<PopularCompany[]> {
-    const response = await apiClient.get('/companies/top', {
+    console.log('🌐 [company-client] Getting popular companies with limit:', limit);
+    const response = await apiClient.get('/api/v1/companies/top', {
       params: { limit }
     });
+    console.log('✅ [company-client] Popular companies response:', response.data.length, 'companies');
     // Convert Company[] to PopularCompany[] for backward compatibility
     return response.data.map((company: Company): PopularCompany => ({
       id: company.id,
@@ -118,7 +122,9 @@ export const companyClient = {
    * 카테고리 목록 조회
    */
   async getCategories(): Promise<CompanyCategory[]> {
-    const response = await apiClient.get('/companies/categories');
+    console.log('🌐 [company-client] Getting categories');
+    const response = await apiClient.get('/api/v1/companies/categories');
+    console.log('✅ [company-client] Categories response:', response.data.length, 'categories');
     return response.data;
   },
 
@@ -126,7 +132,7 @@ export const companyClient = {
    * 카테고리별 회사 목록 조회
    */
   async getByCategory(categoryId: string, limit: number = 50): Promise<Company[]> {
-    const response = await apiClient.get(`/companies/category/${categoryId}`);
+    const response = await apiClient.get(`/api/v1/companies/category/${categoryId}`);
     return response.data;
   },
 
@@ -134,7 +140,7 @@ export const companyClient = {
    * 회사 상세 정보 조회
    */
   async getBySymbol(symbol: string): Promise<CompanyDetail> {
-    const response = await apiClient.get(`/companies/${symbol}`);
+    const response = await apiClient.get(`/api/v1/companies/${symbol}`);
     return response.data;
   },
 
@@ -142,7 +148,7 @@ export const companyClient = {
    * 한국 시장 회사 목록 조회 (Search with Korean market filter)
    */
   async getKoreanMarket(limit: number = 100): Promise<CompanySearchResponse> {
-    const response = await apiClient.get('/companies/search', {
+    const response = await apiClient.get('/api/v1/companies/search', {
       params: {
         limit,
         q: '', // Empty query to get all companies
@@ -157,7 +163,7 @@ export const companyClient = {
    * 섹터별 회사 목록 조회 (Search by sector)
    */
   async getBySector(sector: string, limit: number = 50): Promise<CompanySearchResponse> {
-    const response = await apiClient.get('/companies/search', {
+    const response = await apiClient.get('/api/v1/companies/search', {
       params: {
         sector,
         limit,
