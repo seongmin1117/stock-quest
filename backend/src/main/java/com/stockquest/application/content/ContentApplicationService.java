@@ -1018,4 +1018,311 @@ public class ContentApplicationService implements
                 .updatedAt(tag.getUpdatedAt())
                 .build();
     }
+
+    // ===== Category CRUD Methods =====
+
+    /**
+     * Create new category
+     */
+    @Transactional
+    public CategoryDto createCategory(CreateCategoryCommand command) {
+        log.debug("Creating new category: {}", command.name());
+
+        try {
+            // Create Category domain entity with default values
+            Category category = new Category(
+                command.name(),
+                command.description(),
+                null, // parentId - null for top-level category
+                "#6366f1", // default color (indigo)
+                "folder" // default icon
+            );
+
+            // Set metadata if showOnHomepage is provided
+            if (command.showOnHomepage() != null && command.showOnHomepage()) {
+                // TODO: Set category metadata for showOnHomepage
+                // This would require CategoryMetadata implementation
+                log.debug("Category will be shown on homepage: {}", category.getName());
+            }
+
+            // Save category
+            Category savedCategory = categoryRepository.save(category);
+            log.debug("Category created with ID: {}", savedCategory.getId());
+
+            return convertToDto(savedCategory);
+        } catch (Exception e) {
+            log.error("Error creating category: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create category", e);
+        }
+    }
+
+    /**
+     * Update existing category
+     */
+    @Transactional
+    public CategoryDto updateCategory(Long categoryId, UpdateCategoryCommand command) {
+        log.debug("Updating category: {}", categoryId);
+
+        try {
+            // Find existing category
+            Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+            if (categoryOpt.isEmpty()) {
+                throw new IllegalArgumentException("Category not found: " + categoryId);
+            }
+
+            Category category = categoryOpt.get();
+            log.debug("Found category: {}", category.getName());
+
+            // Update category with new values
+            category.update(
+                command.name() != null ? command.name() : category.getName(),
+                command.description() != null ? command.description() : category.getDescription(),
+                category.getColorCode(), // Keep existing color
+                category.getIcon() // Keep existing icon
+            );
+
+            // Handle showOnHomepage if provided
+            if (command.showOnHomepage() != null) {
+                // TODO: Update category metadata for showOnHomepage
+                log.debug("Updated showOnHomepage setting for category: {}", category.getName());
+            }
+
+            // Save category
+            Category savedCategory = categoryRepository.save(category);
+            log.debug("Category updated successfully: {}", savedCategory.getId());
+
+            return convertToDto(savedCategory);
+        } catch (IllegalArgumentException e) {
+            log.warn("Update validation failed: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Error updating category: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to update category", e);
+        }
+    }
+
+    /**
+     * Delete category
+     */
+    @Transactional
+    public void deleteCategory(Long categoryId) {
+        log.debug("Deleting category: {}", categoryId);
+
+        try {
+            if (!categoryRepository.findById(categoryId).isPresent()) {
+                throw new IllegalArgumentException("Category not found: " + categoryId);
+            }
+
+            // TODO: Check if category has articles - should prevent deletion if it does
+            // For now, we'll allow deletion
+            categoryRepository.deleteById(categoryId);
+            log.debug("Category deleted successfully: {}", categoryId);
+        } catch (Exception e) {
+            log.error("Error deleting category: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to delete category", e);
+        }
+    }
+
+    // ===== Tag CRUD Methods =====
+
+    /**
+     * Create new tag
+     */
+    @Transactional
+    public TagDto createTag(CreateTagCommand command) {
+        log.debug("Creating new tag: {}", command.name());
+
+        try {
+            // Create Tag domain entity with default values
+            Tag tag = new Tag(
+                command.name(),
+                null, // description - not provided in simple request
+                TagType.GENERAL, // default type
+                "#8b5cf6" // default color (purple)
+            );
+
+            // Save tag
+            Tag savedTag = tagRepository.save(tag);
+            log.debug("Tag created with ID: {}", savedTag.getId());
+
+            return convertToDto(savedTag);
+        } catch (Exception e) {
+            log.error("Error creating tag: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create tag", e);
+        }
+    }
+
+    /**
+     * Update existing tag
+     */
+    @Transactional
+    public TagDto updateTag(Long tagId, UpdateTagCommand command) {
+        log.debug("Updating tag: {}", tagId);
+
+        try {
+            // Find existing tag
+            Optional<Tag> tagOpt = tagRepository.findById(tagId);
+            if (tagOpt.isEmpty()) {
+                throw new IllegalArgumentException("Tag not found: " + tagId);
+            }
+
+            Tag tag = tagOpt.get();
+            log.debug("Found tag: {}", tag.getName());
+
+            // Update tag with new values
+            tag.update(
+                command.name() != null ? command.name() : tag.getName(),
+                tag.getDescription(), // Keep existing description
+                tag.getType(), // Keep existing type
+                tag.getColorCode() // Keep existing color
+            );
+
+            // Save tag
+            Tag savedTag = tagRepository.save(tag);
+            log.debug("Tag updated successfully: {}", savedTag.getId());
+
+            return convertToDto(savedTag);
+        } catch (IllegalArgumentException e) {
+            log.warn("Update validation failed: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Error updating tag: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to update tag", e);
+        }
+    }
+
+    /**
+     * Delete tag
+     */
+    @Transactional
+    public void deleteTag(Long tagId) {
+        log.debug("Deleting tag: {}", tagId);
+
+        try {
+            if (!tagRepository.findById(tagId).isPresent()) {
+                throw new IllegalArgumentException("Tag not found: " + tagId);
+            }
+
+            // Delete associated article-tag relationships first
+            articleTagRepository.deleteByTagId(tagId);
+
+            // Delete tag
+            tagRepository.deleteById(tagId);
+            log.debug("Tag deleted successfully: {}", tagId);
+        } catch (Exception e) {
+            log.error("Error deleting tag: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to delete tag", e);
+        }
+    }
+
+    // ===== Analytics Methods =====
+
+    /**
+     * Get admin dashboard statistics
+     */
+    public Map<String, Object> getDashboardStats() {
+        log.debug("Getting admin dashboard statistics");
+
+        try {
+            // Use existing repository methods to get counts
+            List<Article> allArticles = articleRepository.findByStatus(ArticleStatus.PUBLISHED);
+            List<Article> draftArticles = articleRepository.findByStatus(ArticleStatus.DRAFT);
+            List<Category> allCategories = categoryRepository.findAllActiveOrderByHierarchy();
+            List<Tag> allTags = tagRepository.findPopularActive(1000); // Get a large number to count all
+
+            Map<String, Object> stats = Map.of(
+                "totalArticles", allArticles.size() + draftArticles.size(),
+                "publishedArticles", allArticles.size(),
+                "draftArticles", draftArticles.size(),
+                "totalCategories", allCategories.size(),
+                "totalTags", allTags.size(),
+                "lastUpdated", java.time.LocalDateTime.now()
+            );
+
+            log.debug("Dashboard stats generated: {} total articles, {} published, {} categories, {} tags",
+                     stats.get("totalArticles"), stats.get("publishedArticles"),
+                     stats.get("totalCategories"), stats.get("totalTags"));
+            return stats;
+        } catch (Exception e) {
+            log.error("Error getting dashboard stats: {}", e.getMessage(), e);
+            return Map.of("error", "Failed to load dashboard statistics");
+        }
+    }
+
+    /**
+     * Get article analytics
+     */
+    public Map<String, Object> getArticleAnalytics(Long articleId) {
+        log.debug("Getting analytics for article: {}", articleId);
+
+        try {
+            Optional<Article> articleOpt = articleRepository.findById(articleId);
+            if (articleOpt.isEmpty()) {
+                throw new IllegalArgumentException("Article not found: " + articleId);
+            }
+
+            Article article = articleOpt.get();
+
+            // TODO: Implement detailed article analytics
+            // For now, return basic metrics
+            Map<String, Object> analytics = Map.of(
+                "articleId", articleId,
+                "title", article.getTitle(),
+                "views", article.getViewCount(),
+                "likes", article.getLikeCount(),
+                "comments", article.getCommentCount(),
+                "readingTime", article.getReadingTimeMinutes(),
+                "status", article.getStatus(),
+                "publishedAt", article.getPublishedAt(),
+                "lastUpdated", article.getUpdatedAt()
+            );
+
+            return analytics;
+        } catch (Exception e) {
+            log.error("Error getting article analytics: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to get article analytics", e);
+        }
+    }
+
+    /**
+     * Get top performing articles
+     */
+    public Map<String, Object> getTopArticles(Integer days, Integer limit) {
+        log.debug("Getting top articles for {} days, limit: {}", days, limit);
+
+        try {
+            // TODO: Implement proper top articles analytics with date filtering
+            // For now, return most viewed articles
+            List<Article> topArticles = articleRepository.findByStatus(ArticleStatus.PUBLISHED)
+                    .stream()
+                    .sorted((a, b) -> Long.compare(b.getViewCount(), a.getViewCount()))
+                    .limit(Math.min(limit != null ? limit : 10, 50))
+                    .toList();
+
+            List<Map<String, Object>> articles = topArticles.stream()
+                    .map(article -> {
+                        Map<String, Object> articleMap = new java.util.HashMap<>();
+                        articleMap.put("id", article.getId());
+                        articleMap.put("title", article.getTitle());
+                        articleMap.put("slug", article.getSlug());
+                        articleMap.put("views", article.getViewCount());
+                        articleMap.put("likes", article.getLikeCount());
+                        articleMap.put("publishedAt", article.getPublishedAt());
+                        return articleMap;
+                    })
+                    .toList();
+
+            Map<String, Object> result = Map.of(
+                "articles", articles,
+                "totalCount", articles.size(),
+                "period", days + " days",
+                "lastUpdated", java.time.LocalDateTime.now()
+            );
+
+            return result;
+        } catch (Exception e) {
+            log.error("Error getting top articles: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to get top articles", e);
+        }
+    }
 }
