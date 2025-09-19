@@ -56,7 +56,7 @@ jobs:
         ./gradlew test jacocoTestReport
       
     - name: Upload Code Coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         file: backend/build/reports/jacoco/test/jacocoTestReport.xml
         flags: backend
@@ -104,7 +104,7 @@ jobs:
         npm run test -- --coverage
         
     - name: Upload Frontend Coverage
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         file: frontend/coverage/lcov.info
         flags: frontend
