@@ -54,10 +54,14 @@ public class DCAWebAdapterValidator {
             assert response.getStatusCode().is2xxSuccessful() : "HTTP 200 응답이어야 함";
             assert response.getBody() != null : "응답 본문이 있어야 함";
 
-            DCASimulationResponse body = response.getBody();
-            assert body.getSymbol().equals("AAPL") : "종목 코드가 올바르게 반환되어야 함";
-            assert body.getTotalInvestmentAmount().equals(new BigDecimal("500000")) : "총 투자금액이 올바르게 반환되어야 함";
-            assert body.getInvestmentRecords().size() == 5 : "투자 기록이 5개여야 함";
+            // 성공 응답인 경우 DCASimulationResponse로 캐스팅
+            if (response.getBody() instanceof DCASimulationResponse body) {
+                assert body.getSymbol().equals("AAPL") : "종목 코드가 올바르게 반환되어야 함";
+                assert body.getTotalInvestmentAmount().equals(new BigDecimal("500000")) : "총 투자금액이 올바르게 반환되어야 함";
+                assert body.getInvestmentRecords().size() == 5 : "투자 기록이 5개여야 함";
+            } else {
+                assert false : "성공 응답은 DCASimulationResponse 타입이어야 함";
+            }
         } catch (Exception e) {
             System.out.println("예외 발생: " + e.getMessage());
             e.printStackTrace();

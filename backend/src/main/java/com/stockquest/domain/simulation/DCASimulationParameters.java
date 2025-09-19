@@ -42,23 +42,33 @@ public class DCASimulationParameters {
             InvestmentFrequency freq) {
 
         if (symbol == null || symbol.trim().isEmpty()) {
-            throw new IllegalArgumentException("심볼은 필수입니다");
+            throw new IllegalArgumentException("종목 코드는 필수입니다. 예: '005930' (삼성전자)");
         }
 
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("투자 금액은 0보다 커야 합니다");
+            throw new IllegalArgumentException(
+                String.format("월 투자 금액은 0보다 커야 합니다. 입력값: %s",
+                             amount != null ? amount + "원" : "null")
+            );
         }
 
         if (start == null || end == null) {
-            throw new IllegalArgumentException("시작일과 종료일은 필수입니다");
+            throw new IllegalArgumentException(
+                String.format("시작일과 종료일은 필수입니다. 시작일: %s, 종료일: %s",
+                             start != null ? start.toLocalDate() : "null",
+                             end != null ? end.toLocalDate() : "null")
+            );
         }
 
         if (!start.isBefore(end)) {
-            throw new IllegalArgumentException("시작일은 종료일보다 빨라야 합니다");
+            throw new IllegalArgumentException(
+                String.format("시작일(%s)은 종료일(%s)보다 빨라야 합니다",
+                             start.toLocalDate(), end.toLocalDate())
+            );
         }
 
         if (freq == null) {
-            throw new IllegalArgumentException("투자 주기는 필수입니다");
+            throw new IllegalArgumentException("투자 주기는 필수입니다. 가능한 값: DAILY, WEEKLY, MONTHLY");
         }
     }
 

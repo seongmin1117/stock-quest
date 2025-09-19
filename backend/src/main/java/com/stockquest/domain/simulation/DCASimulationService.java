@@ -52,7 +52,13 @@ public class DCASimulationService {
         );
 
         if (priceDataList.isEmpty()) {
-            throw new IllegalArgumentException("해당 기간의 주가 데이터를 찾을 수 없습니다");
+            throw new IllegalArgumentException(
+                String.format("해당 기간(%s ~ %s)의 '%s' 종목 주가 데이터를 찾을 수 없습니다. " +
+                             "데이터가 있는 종목과 기간을 확인해주세요.",
+                             parameters.getStartDate().toLocalDate(),
+                             parameters.getEndDate().toLocalDate(),
+                             parameters.getSymbol())
+            );
         }
 
         // 월별 투자 실행 및 기록 생성
