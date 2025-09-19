@@ -18,6 +18,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   // 인증이 필요하지 않은 페이지들
   const publicPages = [
@@ -33,19 +34,26 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   // Zustand persist 상태 복원 대기
   useEffect(() => {
     // 클라이언트 사이드에서만 실행되도록 보장
-    setIsHydrated(true);
+    const timer = setTimeout(() => {
+      setIsHydrated(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     // 상태가 복원된 후에만 리다이렉트 로직 실행
-    if (isHydrated && !isPublicPage && !isAuthenticated) {
+    if (isHydrated && !isPublicPage && !isAuthenticated && !hasRedirected) {
+      console.log('AuthGuard: Redirecting to login', { pathname, isAuthenticated });
+      setHasRedirected(true);
       const returnUrl = encodeURIComponent(pathname);
-      router.push(`/auth/login?returnUrl=${returnUrl}`);
+      router.replace(`/auth/login?returnUrl=${returnUrl}`);
     }
-  }, [isAuthenticated, isPublicPage, pathname, router, isHydrated]);
+  }, [isAuthenticated, isPublicPage, pathname, router, isHydrated, hasRedirected]);
 
   // 상태가 아직 복원되지 않은 경우 로딩 표시
   if (!isHydrated) {
+    console.log('AuthGuard: Not hydrated yet');
     return (
       <Box
         display="flex"
@@ -60,10 +68,12 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
   // 공개 페이지이거나 인증된 경우 children 렌더링
   if (isPublicPage || isAuthenticated) {
+    console.log('AuthGuard: Rendering children', { isPublicPage, isAuthenticated });
     return <>{children}</>;
   }
 
-  // 인증 체크 중일 때 로딩 표시
+  // 리다이렉트 중일 때 로딩 표시
+  console.log('AuthGuard: Showing loading for redirect', { hasRedirected });
   return (
     <Box
       display="flex"

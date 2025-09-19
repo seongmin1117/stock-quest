@@ -16,19 +16,12 @@ import {
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { TrendingUp, Speed, DateRange } from '@mui/icons-material';
-import apiClient from "@/shared/api/api-client";
-
-// 임시 타입 정의 (실제로는 생성된 타입 사용)
-interface Challenge {
-  id: number;
-  title: string;
-  description: string;
-  periodStart: string;
-  periodEnd: string;
-  speedFactor: number;
-  status: 'DRAFT' | 'ACTIVE' | 'COMPLETED';
-  createdAt: string;
-}
+import challengeApi, {
+  Challenge,
+  ChallengeStatus,
+  ChallengeDifficulty,
+  ChallengeType
+} from "@/shared/api/challenge-client";
 
 /**
  * 챌린지 목록 페이지
@@ -50,9 +43,14 @@ export default function ChallengesPage() {
       setLoading(true);
       setError(null);
 
-      // ✅ axios 사용 (인터셉터가 Authorization/401-재시도 처리)
-      const data = await apiClient.get<{ challenges: Challenge[] }>('/api/challenges');
-      setChallenges(data?.challenges ?? []);
+      const response = await challengeApi.getChallenges({
+        status: ChallengeStatus.ACTIVE,
+        page: 0,
+        size: 20,
+        sortBy: 'featured',
+        sortDirection: 'DESC'
+      });
+      setChallenges(response.challenges ?? []);
     } catch (err: any) {
       const msg =
           err?.response?.data?.message ||
@@ -67,12 +65,8 @@ export default function ChallengesPage() {
   const handleStartChallenge = async (challengeId: number) => {
     try {
       setError(null);
-      // ✅ 헤더 수동 설정/로컬스토리지 접근 불필요
-      const session = await apiClient.post<{ id: number }>(
-          `/api/challenges/${challengeId}/start`
-      );
-
-      router.push(`/challenges/${challengeId}/session/${session.id}`);
+      const response = await challengeApi.startChallenge(challengeId);
+      router.push(`/challenges/${challengeId}/session/${response.sessionId}`);
     } catch (err: any) {
       const msg =
           err?.response?.data?.message ||
@@ -84,12 +78,16 @@ export default function ChallengesPage() {
 
   const getStatusColor = (status: Challenge['status']) => {
     switch (status) {
-      case 'ACTIVE':
+      case ChallengeStatus.ACTIVE:
         return 'success';
-      case 'COMPLETED':
+      case ChallengeStatus.COMPLETED:
         return 'default';
-      case 'DRAFT':
+      case ChallengeStatus.DRAFT:
         return 'warning';
+      case ChallengeStatus.PAUSED:
+        return 'warning';
+      case ChallengeStatus.ARCHIVED:
+        return 'default';
       default:
         return 'default';
     }
@@ -97,12 +95,16 @@ export default function ChallengesPage() {
 
   const getStatusText = (status: Challenge['status']) => {
     switch (status) {
-      case 'ACTIVE':
+      case ChallengeStatus.ACTIVE:
         return '진행중';
-      case 'COMPLETED':
+      case ChallengeStatus.COMPLETED:
         return '완료';
-      case 'DRAFT':
+      case ChallengeStatus.DRAFT:
         return '준비중';
+      case ChallengeStatus.PAUSED:
+        return '일시정지';
+      case ChallengeStatus.ARCHIVED:
+        return '보관됨';
       default:
         return status;
     }
@@ -157,19 +159,30 @@ export default function ChallengesPage() {
                       </Typography>
 
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <DateRange fontSize="small" color="action" />
-                          <Typography variant="body2" color="text.secondary">
-                            {challenge.periodStart} ~ {challenge.periodEnd}
-                          </Typography>
-                        </Box>
+                        {challenge.startDate && challenge.endDate && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <DateRange fontSize="small" color="action" />
+                            <Typography variant="body2" color="text.secondary">
+                              {new Date(challenge.startDate).toLocaleDateString()} ~ {new Date(challenge.endDate).toLocaleDateString()}
+                            </Typography>
+                          </Box>
+                        )}
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Speed fontSize="small" color="action" />
                           <Typography variant="body2" color="text.secondary">
-                            {challenge.speedFactor}배속 재생
+                            기간: {challenge.durationDays}일
                           </Typography>
                         </Box>
+
+                        {challenge.currentParticipants !== undefined && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              👥 참가자: {challenge.currentParticipants}명
+                              {challenge.maxParticipants && ` / ${challenge.maxParticipants}명`}
+                            </Typography>
+                          </Box>
+                        )}
                       </Box>
                     </CardContent>
 
@@ -179,9 +192,9 @@ export default function ChallengesPage() {
                           variant="contained"
                           startIcon={<TrendingUp />}
                           onClick={() => handleStartChallenge(challenge.id)}
-                          disabled={challenge.status !== 'ACTIVE'}
+                          disabled={challenge.status !== ChallengeStatus.ACTIVE}
                       >
-                        {challenge.status === 'ACTIVE' ? '챌린지 시작' : '참여 불가'}
+                        {challenge.status === ChallengeStatus.ACTIVE ? '챌린지 시작' : '참여 불가'}
                       </Button>
                     </CardActions>
                   </Card>

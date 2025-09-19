@@ -65,7 +65,24 @@ export interface DCASimulationResponse {
 }
 
 /**
- * DCA API 에러 응답 타입
+ * DCA 시뮬레이션 에러 응답 타입 (백엔드 DCASimulationErrorResponse와 매칭)
+ */
+export interface DCASimulationErrorResponse {
+  /** 에러 코드 (예: VALIDATION_ERROR, INTERNAL_ERROR) */
+  errorCode: string;
+  /** 사용자에게 표시할 에러 메시지 */
+  message: string;
+  /** 개발자용 상세 에러 정보 (옵션) */
+  details?: string;
+  /** 에러 발생 시간 */
+  timestamp: string;
+  /** 요청된 경로 */
+  path: string;
+}
+
+/**
+ * DCA API 에러 응답 타입 (기존 호환성)
+ * @deprecated DCASimulationErrorResponse 사용을 권장
  */
 export interface DCAApiError {
   /** 에러 메시지 */

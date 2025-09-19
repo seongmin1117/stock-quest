@@ -26,40 +26,42 @@ import {
   ArrowBack
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
+import { adminChallengeApi, ChallengeDifficulty, ChallengeType } from '@/shared/api/admin-challenge-client';
+import { useAuth } from '@/shared/lib/auth/auth-store';
 
 // 초기 폼 데이터
 interface ChallengeFormData {
   title: string;
   description: string;
-  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
-  challengeType: 'PRACTICE' | 'COMPETITION' | 'GUIDED';
-  status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
+  difficulty: ChallengeDifficulty;
+  challengeType: ChallengeType;
   initialBalance: number;
   durationDays: number;
-  estimatedDurationMinutes: number;
+  estimatedTimeMinutes: number;
   maxParticipants?: number;
   tags: string[];
-  isFeatured: boolean;
   learningObjectives: string;
-  marketScenario: string;
+  marketScenarioDescription: string;
   availableInstruments: string[];
+  riskLevel: number;
+  categoryId: number;
 }
 
 const initialFormData: ChallengeFormData = {
   title: '',
   description: '',
-  difficulty: 'BEGINNER',
-  challengeType: 'PRACTICE',
-  status: 'DRAFT',
+  difficulty: ChallengeDifficulty.BEGINNER,
+  challengeType: ChallengeType.EDUCATIONAL,
   initialBalance: 100000,
   durationDays: 30,
-  estimatedDurationMinutes: 60,
+  estimatedTimeMinutes: 60,
   maxParticipants: undefined,
   tags: [],
-  isFeatured: false,
   learningObjectives: '',
-  marketScenario: '',
-  availableInstruments: ['STOCKS', 'ETF', 'CASH']
+  marketScenarioDescription: '',
+  availableInstruments: ['STOCKS', 'ETF', 'CASH'],
+  riskLevel: 3,
+  categoryId: 1
 };
 
 const availableTagOptions = [
@@ -82,6 +84,7 @@ const instrumentOptions = [
 
 export default function NewChallengePage() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState<ChallengeFormData>(initialFormData);
   const [saving, setSaving] = useState(false);
@@ -149,10 +152,28 @@ export default function NewChallengePage() {
         return;
       }
 
-      // TODO: 실제 API 호출
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 실제 API 호출
+      const challengeData = {
+        title: formData.title,
+        description: formData.description,
+        categoryId: formData.categoryId,
+        difficulty: formData.difficulty,
+        challengeType: formData.challengeType,
+        initialBalance: formData.initialBalance,
+        durationDays: formData.durationDays,
+        maxParticipants: formData.maxParticipants,
+        availableInstruments: formData.availableInstruments,
+        learningObjectives: formData.learningObjectives,
+        marketScenarioDescription: formData.marketScenarioDescription,
+        riskLevel: formData.riskLevel,
+        estimatedTimeMinutes: formData.estimatedTimeMinutes,
+        tags: formData.tags,
+        createdBy: user?.id || 1 // 임시로 1 사용
+      };
 
-      setSuccess('챌린지가 성공적으로 생성되었습니다.');
+      const createdChallenge = await adminChallengeApi.createChallenge(challengeData);
+
+      setSuccess(`챌린지 "${createdChallenge.title}"가 성공적으로 생성되었습니다.`);
 
       // 2초 후 챌린지 목록으로 이동
       setTimeout(() => {
@@ -243,9 +264,10 @@ export default function NewChallengePage() {
                         onChange={(e) => handleInputChange('difficulty', e.target.value)}
                         label="난이도"
                       >
-                        <MenuItem value="BEGINNER">초급</MenuItem>
-                        <MenuItem value="INTERMEDIATE">중급</MenuItem>
-                        <MenuItem value="ADVANCED">고급</MenuItem>
+                        <MenuItem value={ChallengeDifficulty.BEGINNER}>초급</MenuItem>
+                        <MenuItem value={ChallengeDifficulty.INTERMEDIATE}>중급</MenuItem>
+                        <MenuItem value={ChallengeDifficulty.ADVANCED}>고급</MenuItem>
+                        <MenuItem value={ChallengeDifficulty.EXPERT}>전문가</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
@@ -258,25 +280,32 @@ export default function NewChallengePage() {
                         onChange={(e) => handleInputChange('challengeType', e.target.value)}
                         label="유형"
                       >
-                        <MenuItem value="PRACTICE">연습</MenuItem>
-                        <MenuItem value="COMPETITION">경쟁</MenuItem>
-                        <MenuItem value="GUIDED">가이드</MenuItem>
+                        <MenuItem value={ChallengeType.MARKET_CRASH}>마켓 크래시</MenuItem>
+                        <MenuItem value={ChallengeType.BULL_MARKET}>상승장</MenuItem>
+                        <MenuItem value={ChallengeType.SECTOR_ROTATION}>섹터 로테이션</MenuItem>
+                        <MenuItem value={ChallengeType.VOLATILITY}>변동성 거래</MenuItem>
+                        <MenuItem value={ChallengeType.ESG}>ESG 투자</MenuItem>
+                        <MenuItem value={ChallengeType.INTERNATIONAL}>해외 시장</MenuItem>
+                        <MenuItem value={ChallengeType.OPTIONS}>옵션 거래</MenuItem>
+                        <MenuItem value={ChallengeType.RISK_MANAGEMENT}>리스크 관리</MenuItem>
+                        <MenuItem value={ChallengeType.TOURNAMENT}>토너먼트</MenuItem>
+                        <MenuItem value={ChallengeType.EDUCATIONAL}>교육용</MenuItem>
+                        <MenuItem value={ChallengeType.COMMUNITY}>커뮤니티</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
 
                   <Grid item xs={12} sm={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>상태</InputLabel>
-                      <Select
-                        value={formData.status}
-                        onChange={(e) => handleInputChange('status', e.target.value)}
-                        label="상태"
-                      >
-                        <MenuItem value="DRAFT">초안</MenuItem>
-                        <MenuItem value="ACTIVE">진행중</MenuItem>
-                      </Select>
-                    </FormControl>
+                    <TextField
+                      fullWidth
+                      label="리스크 레벨"
+                      type="number"
+                      value={formData.riskLevel}
+                      onChange={(e) => handleInputChange('riskLevel', parseInt(e.target.value) || 1)}
+                      inputProps={{ min: 1, max: 10 }}
+                      helperText="1(낮음) ~ 10(높음)"
+                      margin="normal"
+                    />
                   </Grid>
                 </Grid>
               </CardContent>
@@ -325,8 +354,8 @@ export default function NewChallengePage() {
                       fullWidth
                       label="예상 소요 시간"
                       type="number"
-                      value={formData.estimatedDurationMinutes}
-                      onChange={(e) => handleInputChange('estimatedDurationMinutes', parseInt(e.target.value) || 0)}
+                      value={formData.estimatedTimeMinutes}
+                      onChange={(e) => handleInputChange('estimatedTimeMinutes', parseInt(e.target.value) || 0)}
                       InputProps={{
                         endAdornment: <InputAdornment position="end">분</InputAdornment>,
                       }}
@@ -350,17 +379,15 @@ export default function NewChallengePage() {
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-                    <Box sx={{ mt: 2 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.isFeatured}
-                            onChange={(e) => handleInputChange('isFeatured', e.target.checked)}
-                          />
-                        }
-                        label="피처드 챌린지로 설정"
-                      />
-                    </Box>
+                    <TextField
+                      fullWidth
+                      label="카테고리 ID"
+                      type="number"
+                      value={formData.categoryId}
+                      onChange={(e) => handleInputChange('categoryId', parseInt(e.target.value) || 1)}
+                      margin="normal"
+                      helperText="카테고리 ID (임시)"
+                    />
                   </Grid>
                 </Grid>
               </CardContent>
@@ -388,8 +415,8 @@ export default function NewChallengePage() {
                 <TextField
                   fullWidth
                   label="시장 시나리오"
-                  value={formData.marketScenario}
-                  onChange={(e) => handleInputChange('marketScenario', e.target.value)}
+                  value={formData.marketScenarioDescription}
+                  onChange={(e) => handleInputChange('marketScenarioDescription', e.target.value)}
                   margin="normal"
                   multiline
                   rows={3}

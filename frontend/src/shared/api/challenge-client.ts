@@ -8,10 +8,11 @@ import apiClient from './api-client';
 // Enums
 export enum ChallengeStatus {
   DRAFT = 'DRAFT',
+  SCHEDULED = 'SCHEDULED',
   ACTIVE = 'ACTIVE',
-  PAUSED = 'PAUSED',
   COMPLETED = 'COMPLETED',
-  ARCHIVED = 'ARCHIVED'
+  ARCHIVED = 'ARCHIVED',
+  CANCELLED = 'CANCELLED'
 }
 
 export enum ChallengeDifficulty {
@@ -22,12 +23,27 @@ export enum ChallengeDifficulty {
 }
 
 export enum ChallengeType {
-  STOCK_PICKING = 'STOCK_PICKING',
-  PORTFOLIO_MANAGEMENT = 'PORTFOLIO_MANAGEMENT',
+  MARKET_CRASH = 'MARKET_CRASH',
+  BULL_MARKET = 'BULL_MARKET',
+  SECTOR_ROTATION = 'SECTOR_ROTATION',
+  VOLATILITY = 'VOLATILITY',
+  ESG = 'ESG',
+  INTERNATIONAL = 'INTERNATIONAL',
+  OPTIONS = 'OPTIONS',
   RISK_MANAGEMENT = 'RISK_MANAGEMENT',
-  OPTIONS_TRADING = 'OPTIONS_TRADING',
-  SECTOR_ANALYSIS = 'SECTOR_ANALYSIS',
-  TECHNICAL_ANALYSIS = 'TECHNICAL_ANALYSIS'
+  TOURNAMENT = 'TOURNAMENT',
+  EDUCATIONAL = 'EDUCATIONAL',
+  COMMUNITY = 'COMMUNITY'
+}
+
+// User Session Types (based on ChallengeDetailResponse.UserSession)
+export interface UserSession {
+  sessionId: number;
+  status: 'READY' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'ENDED';
+  currentBalance: number;
+  returnRate: number;
+  startedAt: string;
+  completedAt?: string;
 }
 
 // Types
@@ -35,33 +51,51 @@ export interface Challenge {
   id: number;
   title: string;
   description: string;
-  categoryId: number;
   difficulty: ChallengeDifficulty;
-  challengeType: ChallengeType;
+  challengeType?: ChallengeType;
   status: ChallengeStatus;
   initialBalance: number;
   durationDays: number;
+  startDate?: string;
+  endDate?: string;
+  instruments?: string[];
+  userSession?: UserSession;
+
+  // Optional legacy/extended fields for backward compatibility
+  categoryId?: number;
   maxParticipants?: number;
-  currentParticipants: number;
-  availableInstruments: string[];
+  currentParticipants?: number;
+  availableInstruments?: string[];
   tradingRestrictions?: Record<string, any>;
   successCriteria?: Record<string, any>;
   entryRequirements?: Record<string, any>;
   learningObjectives?: string;
   marketScenarioDescription?: string;
-  riskLevel: number;
+  riskLevel?: number;
   estimatedTimeMinutes?: number;
-  tags: string[];
-  featured: boolean;
+  estimatedDurationMinutes?: number;
+  tags?: string[];
+  featured?: boolean;
+  isFeatured?: boolean;
   averageRating?: number;
-  totalRatings: number;
-  createdBy: number;
-  createdAt: string;
-  updatedAt: string;
-  startDate?: string;
-  endDate?: string;
+  totalRatings?: number;
+  totalReviews?: number;
+  createdBy?: number;
+  createdAt?: string;
+  updatedAt?: string;
 
-  // User-specific fields
+  // Additional backend fields
+  templateId?: number;
+  marketPeriodId?: number;
+  periodStart?: string;
+  periodEnd?: string;
+  speedFactor?: number;
+  marketScenario?: Record<string, any>;
+  sortOrder?: number;
+  lastModifiedBy?: number;
+  version?: number;
+
+  // User-specific fields (legacy)
   userParticipated?: boolean;
   userCanParticipate?: boolean;
   userActiveSession?: ChallengeSession;
@@ -119,12 +153,14 @@ export interface ChallengeListParams {
 
 export interface ChallengeListResponse {
   challenges: Challenge[];
-  totalElements: number;
-  totalPages: number;
+  totalCount: number;
+  totalElements?: number; // Backward compatibility
+  totalPages?: number;    // Backward compatibility
+  page: number;
   size: number;
-  number: number;
-  first: boolean;
-  last: boolean;
+  number?: number;       // Backward compatibility
+  first?: boolean;       // Backward compatibility
+  last?: boolean;        // Backward compatibility
 }
 
 export interface StartChallengeResponse {

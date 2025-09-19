@@ -7,6 +7,7 @@ import axios, { AxiosResponse } from 'axios';
 import {
   DCASimulationRequest,
   DCASimulationResponse,
+  DCASimulationErrorResponse,
   DCAApiError,
   InvestmentFrequency
 } from './types/dca-types';
@@ -99,7 +100,7 @@ export class DCAClient {
   }
 
   /**
-   * API 에러 처리
+   * API 에러 처리 (새로운 구조화된 에러 응답 형식 지원)
    *
    * @param error 발생한 에러
    * @returns 처리된 에러 객체
@@ -108,7 +109,16 @@ export class DCAClient {
     if (error.response) {
       // HTTP 에러 응답
       const status = error.response.status;
-      const message = error.response.data?.message || `HTTP Error: ${status}`;
+      const errorData = error.response.data;
+
+      // 새로운 구조화된 에러 응답 형식 확인
+      if (this.isStructuredErrorResponse(errorData)) {
+        const structuredError = errorData as DCASimulationErrorResponse;
+        return new Error(structuredError.message);
+      }
+
+      // 기존 에러 응답 형식 지원
+      const message = errorData?.message || `HTTP Error: ${status}`;
       return new Error(message);
     } else if (error.request) {
       // 네트워크 에러
@@ -117,6 +127,20 @@ export class DCAClient {
       // 기타 에러
       return error instanceof Error ? error : new Error('알 수 없는 오류가 발생했습니다');
     }
+  }
+
+  /**
+   * 구조화된 에러 응답인지 확인
+   *
+   * @param errorData 에러 데이터
+   * @returns 구조화된 에러 응답 여부
+   */
+  private isStructuredErrorResponse(errorData: any): boolean {
+    return errorData &&
+           typeof errorData.errorCode === 'string' &&
+           typeof errorData.message === 'string' &&
+           typeof errorData.timestamp === 'string' &&
+           typeof errorData.path === 'string';
   }
 }
 

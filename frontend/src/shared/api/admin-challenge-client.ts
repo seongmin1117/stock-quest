@@ -14,20 +14,26 @@ export enum ChallengeDifficulty {
 }
 
 export enum ChallengeType {
-  STOCK_PICKING = 'STOCK_PICKING',
-  PORTFOLIO_MANAGEMENT = 'PORTFOLIO_MANAGEMENT',
+  MARKET_CRASH = 'MARKET_CRASH',
+  BULL_MARKET = 'BULL_MARKET',
+  SECTOR_ROTATION = 'SECTOR_ROTATION',
+  VOLATILITY = 'VOLATILITY',
+  ESG = 'ESG',
+  INTERNATIONAL = 'INTERNATIONAL',
+  OPTIONS = 'OPTIONS',
   RISK_MANAGEMENT = 'RISK_MANAGEMENT',
-  OPTIONS_TRADING = 'OPTIONS_TRADING',
-  SECTOR_ANALYSIS = 'SECTOR_ANALYSIS',
-  TECHNICAL_ANALYSIS = 'TECHNICAL_ANALYSIS'
+  TOURNAMENT = 'TOURNAMENT',
+  EDUCATIONAL = 'EDUCATIONAL',
+  COMMUNITY = 'COMMUNITY'
 }
 
 export enum ChallengeStatus {
   DRAFT = 'DRAFT',
+  SCHEDULED = 'SCHEDULED',
   ACTIVE = 'ACTIVE',
-  PAUSED = 'PAUSED',
   COMPLETED = 'COMPLETED',
-  ARCHIVED = 'ARCHIVED'
+  ARCHIVED = 'ARCHIVED',
+  CANCELLED = 'CANCELLED'
 }
 
 // Request/Response Types
@@ -86,35 +92,72 @@ export interface ChallengeSearchParams {
   size?: number;
 }
 
+// Admin Challenge Response Interfaces (based on AdminChallengeResponse)
+export interface InstrumentInfo {
+  id: number;
+  instrumentKey: string;
+  actualTicker: string;
+  hiddenName: string;
+  actualName: string;
+  type: string;
+}
+
+export interface AnalyticsInfo {
+  totalParticipants: number;
+  completedParticipants: number;
+  averageReturnRate: number;
+  successRatePercentage: number;
+  ratingAverage: number;
+  ratingCount: number;
+  lastCalculatedAt: string;
+}
+
 export interface Challenge {
   id: number;
   title: string;
   description: string;
-  categoryId: number;
+  categoryId?: number;
+  categoryName?: string;
+  templateId?: number;
+  templateName?: string;
+  marketPeriodId?: number;
+  marketPeriodName?: string;
   difficulty: ChallengeDifficulty;
   challengeType: ChallengeType;
   status: ChallengeStatus;
   initialBalance: number;
-  durationDays: number;
-  maxParticipants?: number;
-  currentParticipants: number;
-  availableInstruments: string[];
-  tradingRestrictions?: Record<string, any>;
+  estimatedDurationMinutes?: number;
+  periodStart?: string;
+  periodEnd?: string;
+  speedFactor?: number;
+  tags?: string[];
   successCriteria?: Record<string, any>;
-  entryRequirements?: Record<string, any>;
+  marketScenario?: Record<string, any>;
   learningObjectives?: string;
-  marketScenarioDescription?: string;
-  riskLevel: number;
-  estimatedTimeMinutes?: number;
-  tags: string[];
-  featured: boolean;
-  averageRating?: number;
-  totalRatings: number;
-  createdBy: number;
-  createdAt: string;
-  updatedAt: string;
+  maxParticipants?: number;
+  currentParticipants?: number;
   startDate?: string;
   endDate?: string;
+  createdBy?: number;
+  createdByName?: string;
+  isFeatured?: boolean;
+  sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  instruments?: InstrumentInfo[];
+  analytics?: AnalyticsInfo;
+
+  // Legacy fields for backward compatibility
+  durationDays?: number;
+  availableInstruments?: string[];
+  tradingRestrictions?: Record<string, any>;
+  entryRequirements?: Record<string, any>;
+  marketScenarioDescription?: string;
+  riskLevel?: number;
+  estimatedTimeMinutes?: number;
+  featured?: boolean;
+  averageRating?: number;
+  totalRatings?: number;
 }
 
 export interface ChallengePage {

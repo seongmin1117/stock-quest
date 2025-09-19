@@ -31,25 +31,18 @@ import {
   Timeline,
   Assessment,
   PlayArrow,
+  Calculate,
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { useAuth } from '@/shared/lib/auth/auth-store';
 import { UserStatsCard } from '@/widgets/dashboard';
 import { GlobalLeaderboard } from '@/widgets/leaderboard';
 import { CommunityFeed } from '@/widgets/community';
-import apiClient from '@/shared/api/api-client';
-
-
-interface RecentSession {
-  id: number;
-  challengeTitle: string;
-  status: 'ACTIVE' | 'COMPLETED' | 'PAUSED';
-  progress: number;
-  currentBalance: number;
-  returnRate: number;
-  startedAt: string;
-  completedAt?: string;
-}
+import dashboardApi, {
+  RecentSession,
+  SessionStatus,
+  dashboardUtils
+} from '@/shared/api/dashboard-client';
 
 /**
  * 사용자 대시보드 페이지
@@ -72,71 +65,23 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
 
-      // 실제로는 별도의 대시보드 API가 있어야 하지만, 임시로 모의 데이터 사용
-      const mockSessions: RecentSession[] = [
-        {
-          id: 1,
-          challengeTitle: '2008 금융위기 극복 챌린지',
-          status: 'ACTIVE',
-          progress: 65,
-          currentBalance: 1245000,
-          returnRate: 24.5,
-          startedAt: '2024-01-15T10:30:00Z',
-        },
-        {
-          id: 2,
-          challengeTitle: '코로나 팬데믹 대응 챌린지',
-          status: 'COMPLETED',
-          progress: 100,
-          currentBalance: 1890000,
-          returnRate: 89.0,
-          startedAt: '2024-01-10T14:20:00Z',
-          completedAt: '2024-01-14T16:45:00Z',
-        },
-        {
-          id: 3,
-          challengeTitle: '닷컴 버블 시나리오',
-          status: 'COMPLETED',
-          progress: 100,
-          currentBalance: 750000,
-          returnRate: -25.0,
-          startedAt: '2024-01-05T09:15:00Z',
-          completedAt: '2024-01-08T11:30:00Z',
-        },
-      ];
-
-      setRecentSessions(mockSessions);
+      // 대시보드 API 클라이언트를 통해 실제 데이터 로드
+      const dashboardData = await dashboardApi.getDashboardData();
+      setRecentSessions(dashboardData.recentSessions);
     } catch (err: any) {
-      setError('대시보드 데이터를 불러오는데 실패했습니다');
+      const msg = err?.response?.data?.message || err?.message || '대시보드 데이터를 불러오는데 실패했습니다';
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'primary';
-      case 'COMPLETED':
-        return 'success';
-      case 'PAUSED':
-        return 'warning';
-      default:
-        return 'default';
-    }
+  const getStatusColor = (status: SessionStatus) => {
+    return dashboardUtils.getStatusColor(status);
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return '진행중';
-      case 'COMPLETED':
-        return '완료';
-      case 'PAUSED':
-        return '일시정지';
-      default:
-        return status;
-    }
+  const getStatusText = (status: SessionStatus) => {
+    return dashboardUtils.getStatusText(status);
   };
 
   const formatCurrency = (amount: number) => {
@@ -147,11 +92,11 @@ export default function DashboardPage() {
   };
 
   const formatPercentage = (rate: number) => {
-    const isPositive = rate > 0;
+    const formatted = dashboardUtils.formatReturnRate(rate);
     return {
-      value: `${isPositive ? '+' : ''}${rate.toFixed(1)}%`,
-      color: isPositive ? '#4CAF50' : rate < 0 ? '#F44336' : '#78828A',
-      icon: isPositive ? <TrendingUp sx={{ fontSize: 16 }} /> : 
+      value: formatted.value,
+      color: formatted.color,
+      icon: formatted.isPositive ? <TrendingUp sx={{ fontSize: 16 }} /> :
             rate < 0 ? <TrendingDown sx={{ fontSize: 16 }} /> : null,
     };
   };
@@ -307,7 +252,7 @@ export default function DashboardPage() {
                                   <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                                     {session.challengeTitle}
                                   </Typography>
-                                  {session.status === 'ACTIVE' && (
+                                  {session.status === SessionStatus.ACTIVE && (
                                     <LinearProgress
                                       variant="determinate"
                                       value={session.progress}
@@ -439,6 +384,24 @@ export default function DashboardPage() {
                         }}
                       >
                         커뮤니티 참여
+                      </Button>
+
+                      <Button
+                        component={Link}
+                        href="/dca-simulation"
+                        variant="outlined"
+                        fullWidth
+                        startIcon={<Calculate />}
+                        sx={{
+                          color: '#4CAF50',
+                          borderColor: '#4CAF50',
+                          '&:hover': {
+                            borderColor: '#66BB6A',
+                            backgroundColor: 'rgba(76, 175, 80, 0.08)',
+                          }
+                        }}
+                      >
+                        DCA 시뮬레이션
                       </Button>
                     </Box>
                   </CardContent>

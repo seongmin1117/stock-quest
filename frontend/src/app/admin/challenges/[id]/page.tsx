@@ -50,32 +50,8 @@ import {
   EmojiEvents
 } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
-
-// 임시 타입 정의
-interface Challenge {
-  id: number;
-  title: string;
-  description: string;
-  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
-  challengeType: 'PRACTICE' | 'COMPETITION' | 'GUIDED';
-  status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
-  initialBalance: number;
-  durationDays: number;
-  estimatedDurationMinutes: number;
-  startDate: string;
-  endDate: string;
-  currentParticipants: number;
-  maxParticipants?: number;
-  tags: string[];
-  isFeatured: boolean;
-  learningObjectives?: string;
-  marketScenario?: string;
-  successCriteria?: any;
-  availableInstruments?: string[];
-  createdBy?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { adminChallengeApi, Challenge, ChallengeDifficulty, ChallengeType, ChallengeStatus } from '@/shared/api/admin-challenge-client';
+import { useAuth } from '@/shared/lib/auth/auth-store';
 
 interface Participant {
   id: number;
@@ -88,81 +64,34 @@ interface Participant {
   rank: number;
 }
 
-// 임시 데이터
-const mockChallenge: Challenge = {
-  id: 1,
-  title: '2020년 코로나 시장 급락',
-  description: '코로나19 팬데믹 초기 시장 상황에서의 투자 전략을 학습합니다. 2020년 2월부터 4월까지의 급격한 시장 변동성 속에서 포트폴리오를 관리하고 리스크를 제어하는 방법을 배웁니다.',
-  difficulty: 'INTERMEDIATE',
-  challengeType: 'PRACTICE',
-  status: 'ACTIVE',
-  initialBalance: 100000,
-  durationDays: 30,
-  estimatedDurationMinutes: 45,
-  startDate: '2024-01-15T00:00:00',
-  endDate: '2024-02-15T23:59:59',
-  currentParticipants: 45,
-  maxParticipants: 100,
-  tags: ['market-crash', 'volatility', 'pandemic', 'risk-management'],
-  isFeatured: true,
-  learningObjectives: '• 시장 급락 상황에서의 심리적 대응\n• 포트폴리오 리밸런싱 전략\n• 방어주 선택 기준\n• 손실 제한 기법',
-  marketScenario: '2020년 2월 19일부터 3월 23일까지 S&P 500이 34% 급락한 기간을 시뮬레이션합니다.',
-  availableInstruments: ['STOCKS', 'ETF', 'BONDS', 'CASH'],
-  createdBy: 'admin@stockquest.com',
-  createdAt: '2024-01-01T09:00:00',
-  updatedAt: '2024-01-10T14:30:00'
-};
-
-const mockParticipants: Participant[] = [
-  {
-    id: 1,
-    username: 'trader_kim',
-    email: 'kim@example.com',
-    joinedAt: '2024-01-15T10:30:00',
-    status: 'ACTIVE',
-    currentBalance: 98500,
-    profitLoss: -1500,
-    rank: 1
-  },
-  {
-    id: 2,
-    username: 'investor_lee',
-    email: 'lee@example.com',
-    joinedAt: '2024-01-15T11:15:00',
-    status: 'ACTIVE',
-    currentBalance: 95000,
-    profitLoss: -5000,
-    rank: 2
-  },
-  {
-    id: 3,
-    username: 'portfolio_master',
-    email: 'master@example.com',
-    joinedAt: '2024-01-16T09:00:00',
-    status: 'COMPLETED',
-    currentBalance: 105000,
-    profitLoss: 5000,
-    rank: 1
-  }
-];
-
 const difficultyColors = {
-  BEGINNER: 'success',
-  INTERMEDIATE: 'warning',
-  ADVANCED: 'error'
+  [ChallengeDifficulty.BEGINNER]: 'success',
+  [ChallengeDifficulty.INTERMEDIATE]: 'warning',
+  [ChallengeDifficulty.ADVANCED]: 'error',
+  [ChallengeDifficulty.EXPERT]: 'error'
 } as const;
 
 const statusColors = {
-  DRAFT: 'default',
-  ACTIVE: 'primary',
-  COMPLETED: 'success',
-  ARCHIVED: 'secondary'
+  [ChallengeStatus.DRAFT]: 'default',
+  [ChallengeStatus.SCHEDULED]: 'warning',
+  [ChallengeStatus.ACTIVE]: 'primary',
+  [ChallengeStatus.COMPLETED]: 'success',
+  [ChallengeStatus.ARCHIVED]: 'secondary',
+  [ChallengeStatus.CANCELLED]: 'error'
 } as const;
 
 const typeColors = {
-  PRACTICE: 'info',
-  COMPETITION: 'warning',
-  GUIDED: 'success'
+  [ChallengeType.MARKET_CRASH]: 'error',
+  [ChallengeType.BULL_MARKET]: 'success',
+  [ChallengeType.SECTOR_ROTATION]: 'primary',
+  [ChallengeType.VOLATILITY]: 'warning',
+  [ChallengeType.ESG]: 'info',
+  [ChallengeType.INTERNATIONAL]: 'secondary',
+  [ChallengeType.OPTIONS]: 'error',
+  [ChallengeType.RISK_MANAGEMENT]: 'warning',
+  [ChallengeType.TOURNAMENT]: 'primary',
+  [ChallengeType.EDUCATIONAL]: 'info',
+  [ChallengeType.COMMUNITY]: 'secondary'
 } as const;
 
 interface TabPanelProps {
@@ -192,7 +121,8 @@ function TabPanel(props: TabPanelProps) {
 export default function ChallengeDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const challengeId = params.id as string;
+  const { user } = useAuth();
+  const challengeId = parseInt(params.id as string);
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -204,51 +134,68 @@ export default function ChallengeDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
-    // TODO: 실제 API 호출로 대체
     const fetchChallenge = async () => {
       try {
         setLoading(true);
-        // 임시 데이터 로딩 시뮬레이션
-        await new Promise(resolve => setTimeout(resolve, 500));
+        setError(null);
 
-        if (challengeId === '1') {
-          setChallenge(mockChallenge);
-          setParticipants(mockParticipants);
-        } else {
-          setError('챌린지를 찾을 수 없습니다.');
-        }
+        const challenge = await adminChallengeApi.getChallengeById(challengeId);
+        setChallenge(challenge);
+
+        // TODO: 참여자 목록 API 추가 시 연동
+        setParticipants([]);
       } catch (err) {
-        setError('챌린지 정보를 불러오는 중 오류가 발생했습니다.');
+        setError('챌린지 정보를 불러오는데 실패했습니다.');
+        console.error('Error fetching challenge:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchChallenge();
+    if (challengeId) {
+      fetchChallenge();
+    }
   }, [challengeId]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  const handleStatusChange = (newStatus: Challenge['status']) => {
-    if (challenge) {
-      // TODO: API 호출
-      setChallenge({ ...challenge, status: newStatus });
+  const handleStatusChange = async (newStatus: ChallengeStatus) => {
+    if (!challenge || !user) return;
+
+    try {
+      const updatedChallenge = await adminChallengeApi.changeStatus(challengeId, newStatus, user.id);
+      setChallenge(updatedChallenge);
+    } catch (err) {
+      console.error('Error changing status:', err);
+      setError('상태 변경에 실패했습니다.');
     }
   };
 
-  const toggleFeatured = () => {
-    if (challenge) {
-      // TODO: API 호출
-      setChallenge({ ...challenge, isFeatured: !challenge.isFeatured });
+  const toggleFeatured = async () => {
+    if (!challenge || !user) return;
+
+    try {
+      const updatedChallenge = await adminChallengeApi.setFeaturedChallenge(challengeId, !challenge.featured, user.id);
+      setChallenge(updatedChallenge);
+    } catch (err) {
+      console.error('Error toggling featured:', err);
+      setError('피처드 설정 변경에 실패했습니다.');
     }
   };
 
-  const handleDelete = () => {
-    // TODO: API 호출로 삭제
-    setDeleteDialogOpen(false);
-    router.push('/admin/challenges');
+  const handleDelete = async () => {
+    if (!user) return;
+
+    try {
+      // TODO: 삭제 API 호출 (현재 admin API에 삭제가 없음)
+      setDeleteDialogOpen(false);
+      router.push('/admin/challenges');
+    } catch (err) {
+      console.error('Error deleting challenge:', err);
+      setError('챌린지 삭제에 실패했습니다.');
+    }
   };
 
   if (loading) {
@@ -310,25 +257,36 @@ export default function ChallengeDetailPage() {
           </Button>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
             {challenge.title}
-            {challenge.isFeatured && (
+            {challenge.featured && (
               <Star sx={{ color: 'gold', ml: 1, fontSize: 30 }} />
             )}
           </Typography>
           <Box display="flex" gap={1} mb={2}>
             <Chip
-              label={challenge.status === 'DRAFT' ? '초안' :
-                    challenge.status === 'ACTIVE' ? '진행중' :
-                    challenge.status === 'COMPLETED' ? '완료' : '보관'}
+              label={challenge.status === ChallengeStatus.DRAFT ? '초안' :
+                    challenge.status === ChallengeStatus.SCHEDULED ? '예약됨' :
+                    challenge.status === ChallengeStatus.ACTIVE ? '진행중' :
+                    challenge.status === ChallengeStatus.COMPLETED ? '완료' :
+                    challenge.status === ChallengeStatus.CANCELLED ? '취소됨' : '보관'}
               color={statusColors[challenge.status]}
             />
             <Chip
-              label={challenge.difficulty === 'BEGINNER' ? '초급' :
-                    challenge.difficulty === 'INTERMEDIATE' ? '중급' : '고급'}
+              label={challenge.difficulty === ChallengeDifficulty.BEGINNER ? '초급' :
+                    challenge.difficulty === ChallengeDifficulty.INTERMEDIATE ? '중급' :
+                    challenge.difficulty === ChallengeDifficulty.ADVANCED ? '고급' : '전문가'}
               color={difficultyColors[challenge.difficulty]}
             />
             <Chip
-              label={challenge.challengeType === 'PRACTICE' ? '연습' :
-                    challenge.challengeType === 'COMPETITION' ? '경쟁' : '가이드'}
+              label={challenge.challengeType === ChallengeType.MARKET_CRASH ? '마켓 크래시' :
+                    challenge.challengeType === ChallengeType.BULL_MARKET ? '상승장' :
+                    challenge.challengeType === ChallengeType.SECTOR_ROTATION ? '섹터 로테이션' :
+                    challenge.challengeType === ChallengeType.VOLATILITY ? '변동성 거래' :
+                    challenge.challengeType === ChallengeType.ESG ? 'ESG 투자' :
+                    challenge.challengeType === ChallengeType.INTERNATIONAL ? '해외 시장' :
+                    challenge.challengeType === ChallengeType.OPTIONS ? '옵션 거래' :
+                    challenge.challengeType === ChallengeType.RISK_MANAGEMENT ? '리스크 관리' :
+                    challenge.challengeType === ChallengeType.TOURNAMENT ? '토너먼트' :
+                    challenge.challengeType === ChallengeType.EDUCATIONAL ? '교육용' : '커뮤니티'}
               color={typeColors[challenge.challengeType]}
             />
           </Box>
@@ -338,10 +296,10 @@ export default function ChallengeDetailPage() {
         <Box display="flex" gap={1}>
           <Button
             variant="outlined"
-            startIcon={challenge.isFeatured ? <StarBorder /> : <Star />}
+            startIcon={challenge.featured ? <StarBorder /> : <Star />}
             onClick={toggleFeatured}
           >
-            {challenge.isFeatured ? '피처드 해제' : '피처드 설정'}
+            {challenge.featured ? '피처드 해제' : '피처드 설정'}
           </Button>
           <Button
             variant="outlined"
@@ -350,20 +308,20 @@ export default function ChallengeDetailPage() {
           >
             수정
           </Button>
-          {challenge.status === 'DRAFT' && (
+          {challenge.status === ChallengeStatus.DRAFT && (
             <Button
               variant="contained"
               startIcon={<PlayArrow />}
-              onClick={() => handleStatusChange('ACTIVE')}
+              onClick={() => handleStatusChange(ChallengeStatus.ACTIVE)}
             >
               활성화
             </Button>
           )}
-          {challenge.status === 'ACTIVE' && (
+          {challenge.status === ChallengeStatus.ACTIVE && (
             <Button
               variant="outlined"
               startIcon={<Stop />}
-              onClick={() => handleStatusChange('COMPLETED')}
+              onClick={() => handleStatusChange(ChallengeStatus.COMPLETED)}
             >
               완료처리
             </Button>
@@ -371,7 +329,7 @@ export default function ChallengeDetailPage() {
           <Button
             variant="outlined"
             startIcon={<Archive />}
-            onClick={() => handleStatusChange('ARCHIVED')}
+            onClick={() => handleStatusChange(ChallengeStatus.ARCHIVED)}
           >
             보관
           </Button>
@@ -426,14 +384,14 @@ export default function ChallengeDetailPage() {
             )}
 
             {/* 시장 시나리오 */}
-            {challenge.marketScenario && (
+            {challenge.marketScenarioDescription && (
               <Card sx={{ mb: 3 }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
                     시장 시나리오
                   </Typography>
                   <Typography variant="body1">
-                    {challenge.marketScenario}
+                    {challenge.marketScenarioDescription}
                   </Typography>
                 </CardContent>
               </Card>
@@ -477,7 +435,7 @@ export default function ChallengeDetailPage() {
                     </ListItemIcon>
                     <ListItemText
                       primary="진행 기간"
-                      secondary={`${challenge.durationDays}일 (예상: ${challenge.estimatedDurationMinutes}분)`}
+                      secondary={`${challenge.durationDays}일 (예상: ${challenge.estimatedTimeMinutes || 0}분)`}
                     />
                   </ListItem>
                   <ListItem>

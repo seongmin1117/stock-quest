@@ -39,103 +39,38 @@ import {
   MoreVert,
   Visibility
 } from '@mui/icons-material';
-
-// 임시 타입 정의 (향후 API 타입으로 대체)
-interface Challenge {
-  id: number;
-  title: string;
-  description: string;
-  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
-  challengeType: 'PRACTICE' | 'COMPETITION' | 'GUIDED';
-  status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
-  initialBalance: number;
-  durationDays: number;
-  estimatedDurationMinutes: number;
-  startDate: string;
-  endDate: string;
-  currentParticipants: number;
-  maxParticipants?: number;
-  tags: string[];
-  isFeatured: boolean;
-}
-
-// 임시 데이터
-const mockChallenges: Challenge[] = [
-  {
-    id: 1,
-    title: '2020년 코로나 시장 급락',
-    description: '코로나19 팬데믹 초기 시장 상황에서의 투자 전략을 학습합니다.',
-    difficulty: 'INTERMEDIATE',
-    challengeType: 'PRACTICE',
-    status: 'ACTIVE',
-    initialBalance: 100000,
-    durationDays: 30,
-    estimatedDurationMinutes: 45,
-    startDate: '2024-01-15T00:00:00',
-    endDate: '2024-02-15T23:59:59',
-    currentParticipants: 45,
-    maxParticipants: 100,
-    tags: ['market-crash', 'volatility', 'pandemic'],
-    isFeatured: true
-  },
-  {
-    id: 2,
-    title: '2021년 밈주식 광풍',
-    description: 'GameStop, AMC 등 밈주식 현상을 통한 시장 동향 이해',
-    difficulty: 'ADVANCED',
-    challengeType: 'COMPETITION',
-    status: 'ACTIVE',
-    initialBalance: 50000,
-    durationDays: 14,
-    estimatedDurationMinutes: 60,
-    startDate: '2024-01-01T00:00:00',
-    endDate: '2024-01-15T23:59:59',
-    currentParticipants: 32,
-    maxParticipants: 50,
-    tags: ['meme-stocks', 'social-trading', 'volatility'],
-    isFeatured: false
-  },
-  {
-    id: 3,
-    title: '2022년 인플레이션 우려',
-    description: '금리 인상기 포트폴리오 관리 전략을 학습합니다.',
-    difficulty: 'BEGINNER',
-    challengeType: 'GUIDED',
-    status: 'COMPLETED',
-    initialBalance: 75000,
-    durationDays: 21,
-    estimatedDurationMinutes: 30,
-    startDate: '2023-12-01T00:00:00',
-    endDate: '2023-12-22T23:59:59',
-    currentParticipants: 28,
-    maxParticipants: 40,
-    tags: ['inflation', 'interest-rates', 'bonds'],
-    isFeatured: false
-  }
-];
+import { adminChallengeApi, Challenge, ChallengeDifficulty, ChallengeType, ChallengeStatus, ChallengeSearchParams } from '@/shared/api/admin-challenge-client';
+import { useAuth } from '@/shared/lib/auth/auth-store';
 
 const difficultyColors = {
-  BEGINNER: 'success',
-  INTERMEDIATE: 'warning',
-  ADVANCED: 'error'
+  [ChallengeDifficulty.BEGINNER]: 'success',
+  [ChallengeDifficulty.INTERMEDIATE]: 'warning',
+  [ChallengeDifficulty.ADVANCED]: 'error',
+  [ChallengeDifficulty.EXPERT]: 'error'
 } as const;
 
 const statusColors = {
-  DRAFT: 'default',
-  ACTIVE: 'primary',
-  COMPLETED: 'success',
-  ARCHIVED: 'secondary'
+  [ChallengeStatus.DRAFT]: 'default',
+  [ChallengeStatus.ACTIVE]: 'primary',
+  [ChallengeStatus.COMPLETED]: 'success',
+  [ChallengeStatus.ARCHIVED]: 'secondary',
+  [ChallengeStatus.PAUSED]: 'warning'
 } as const;
 
 const typeColors = {
-  PRACTICE: 'info',
-  COMPETITION: 'warning',
-  GUIDED: 'success'
+  [ChallengeType.STOCK_PICKING]: 'primary',
+  [ChallengeType.PORTFOLIO_MANAGEMENT]: 'secondary',
+  [ChallengeType.RISK_MANAGEMENT]: 'warning',
+  [ChallengeType.OPTIONS_TRADING]: 'error',
+  [ChallengeType.SECTOR_ANALYSIS]: 'info',
+  [ChallengeType.TECHNICAL_ANALYSIS]: 'success'
 } as const;
 
 export default function ChallengesPage() {
-  const [challenges, setChallenges] = useState<Challenge[]>(mockChallenges);
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // 검색 및 필터링 상태
@@ -157,27 +92,40 @@ export default function ChallengesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [challengeToDelete, setChallengeToDelete] = useState<Challenge | null>(null);
 
-  // 필터링된 챌린지 계산
-  const filteredChallenges = challenges.filter(challenge => {
-    const matchesSearch = challenge.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         challenge.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         challenge.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+  // 데이터 로딩 함수
+  const loadChallenges = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    const matchesStatus = statusFilter === 'all' || challenge.status === statusFilter;
-    const matchesDifficulty = difficultyFilter === 'all' || challenge.difficulty === difficultyFilter;
-    const matchesType = typeFilter === 'all' || challenge.challengeType === typeFilter;
-    const matchesFeatured = featuredFilter === 'all' ||
-                           (featuredFilter === 'featured' && challenge.isFeatured) ||
-                           (featuredFilter === 'not-featured' && !challenge.isFeatured);
+      const searchParams: ChallengeSearchParams = {
+        page,
+        size: rowsPerPage,
+        ...(searchQuery && { title: searchQuery }),
+        ...(statusFilter !== 'all' && { status: statusFilter as ChallengeStatus }),
+        ...(difficultyFilter !== 'all' && { difficulty: difficultyFilter as ChallengeDifficulty }),
+        ...(typeFilter !== 'all' && { challengeType: typeFilter as ChallengeType }),
+        ...(featuredFilter === 'featured' && { featured: true }),
+        ...(featuredFilter === 'not-featured' && { featured: false }),
+        sortBy: 'createdAt',
+        sortDirection: 'desc'
+      };
 
-    return matchesSearch && matchesStatus && matchesDifficulty && matchesType && matchesFeatured;
-  });
+      const response = await adminChallengeApi.getChallenges(searchParams);
+      setChallenges(response.content);
+      setTotalElements(response.totalElements);
+    } catch (err) {
+      setError('챌린지 목록을 불러오는데 실패했습니다.');
+      console.error('Error loading challenges:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // 페이지네이션 적용
-  const paginatedChallenges = filteredChallenges.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  // 초기 로딩 및 필터 변경 시 데이터 로딩
+  useEffect(() => {
+    loadChallenges();
+  }, [page, rowsPerPage, searchQuery, statusFilter, difficultyFilter, typeFilter, featuredFilter]);
 
   const handlePageChange = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -204,33 +152,41 @@ export default function ChallengesPage() {
     handleMenuClose();
   };
 
-  const confirmDelete = () => {
-    if (challengeToDelete) {
-      // TODO: API 호출로 챌린지 삭제
-      setChallenges(challenges.filter(c => c.id !== challengeToDelete.id));
-      setDeleteDialogOpen(false);
-      setChallengeToDelete(null);
+  const confirmDelete = async () => {
+    if (challengeToDelete && user) {
+      try {
+        await adminChallengeApi.archiveChallenge(challengeToDelete.id, user.id);
+        setDeleteDialogOpen(false);
+        setChallengeToDelete(null);
+        loadChallenges(); // 목록 새로고침
+      } catch (err) {
+        setError('챌린지 삭제에 실패했습니다.');
+      }
     }
   };
 
-  const toggleFeatured = (challenge: Challenge) => {
-    // TODO: API 호출로 피처드 상태 변경
-    setChallenges(challenges.map(c =>
-      c.id === challenge.id
-        ? { ...c, isFeatured: !c.isFeatured }
-        : c
-    ));
-    handleMenuClose();
+  const toggleFeatured = async (challenge: Challenge) => {
+    if (!user) return;
+
+    try {
+      await adminChallengeApi.setFeaturedChallenge(challenge.id, !challenge.featured, user.id);
+      handleMenuClose();
+      loadChallenges(); // 목록 새로고침
+    } catch (err) {
+      setError('피처드 상태 변경에 실패했습니다.');
+    }
   };
 
-  const changeStatus = (challenge: Challenge, newStatus: Challenge['status']) => {
-    // TODO: API 호출로 상태 변경
-    setChallenges(challenges.map(c =>
-      c.id === challenge.id
-        ? { ...c, status: newStatus }
-        : c
-    ));
-    handleMenuClose();
+  const changeStatus = async (challenge: Challenge, newStatus: ChallengeStatus) => {
+    if (!user) return;
+
+    try {
+      await adminChallengeApi.changeStatus(challenge.id, newStatus, user.id);
+      handleMenuClose();
+      loadChallenges(); // 목록 새로고침
+    } catch (err) {
+      setError('상태 변경에 실패했습니다.');
+    }
   };
 
   // 필터 초기화
@@ -252,7 +208,7 @@ export default function ChallengesPage() {
             챌린지 관리
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            {filteredChallenges.length}개의 챌린지 (전체 {challenges.length}개)
+{challenges.length}개의 챌린지 (전체 {totalElements}개)
           </Typography>
         </Box>
         <Button
@@ -293,10 +249,11 @@ export default function ChallengesPage() {
                   label="상태"
                 >
                   <MenuItem value="all">전체</MenuItem>
-                  <MenuItem value="DRAFT">초안</MenuItem>
-                  <MenuItem value="ACTIVE">진행중</MenuItem>
-                  <MenuItem value="COMPLETED">완료</MenuItem>
-                  <MenuItem value="ARCHIVED">보관</MenuItem>
+                  <MenuItem value={ChallengeStatus.DRAFT}>초안</MenuItem>
+                  <MenuItem value={ChallengeStatus.ACTIVE}>진행중</MenuItem>
+                  <MenuItem value={ChallengeStatus.PAUSED}>일시정지</MenuItem>
+                  <MenuItem value={ChallengeStatus.COMPLETED}>완료</MenuItem>
+                  <MenuItem value={ChallengeStatus.ARCHIVED}>보관</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -310,9 +267,10 @@ export default function ChallengesPage() {
                   label="난이도"
                 >
                   <MenuItem value="all">전체</MenuItem>
-                  <MenuItem value="BEGINNER">초급</MenuItem>
-                  <MenuItem value="INTERMEDIATE">중급</MenuItem>
-                  <MenuItem value="ADVANCED">고급</MenuItem>
+                  <MenuItem value={ChallengeDifficulty.BEGINNER}>초급</MenuItem>
+                  <MenuItem value={ChallengeDifficulty.INTERMEDIATE}>중급</MenuItem>
+                  <MenuItem value={ChallengeDifficulty.ADVANCED}>고급</MenuItem>
+                  <MenuItem value={ChallengeDifficulty.EXPERT}>전문가</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -326,9 +284,12 @@ export default function ChallengesPage() {
                   label="유형"
                 >
                   <MenuItem value="all">전체</MenuItem>
-                  <MenuItem value="PRACTICE">연습</MenuItem>
-                  <MenuItem value="COMPETITION">경쟁</MenuItem>
-                  <MenuItem value="GUIDED">가이드</MenuItem>
+                  <MenuItem value={ChallengeType.STOCK_PICKING}>주식 선택</MenuItem>
+                  <MenuItem value={ChallengeType.PORTFOLIO_MANAGEMENT}>포트폴리오 관리</MenuItem>
+                  <MenuItem value={ChallengeType.RISK_MANAGEMENT}>리스크 관리</MenuItem>
+                  <MenuItem value={ChallengeType.OPTIONS_TRADING}>옵션 거래</MenuItem>
+                  <MenuItem value={ChallengeType.SECTOR_ANALYSIS}>섹터 분석</MenuItem>
+                  <MenuItem value={ChallengeType.TECHNICAL_ANALYSIS}>기술적 분석</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -374,15 +335,15 @@ export default function ChallengesPage() {
               </Card>
             </Grid>
           ))
-        ) : paginatedChallenges.length > 0 ? (
-          paginatedChallenges.map((challenge) => (
+        ) : challenges.length > 0 ? (
+          challenges.map((challenge) => (
             <Grid item xs={12} sm={6} md={4} key={challenge.id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Box display="flex" justifyContent="space-between" alignItems="start" mb={1}>
                     <Typography variant="h6" fontWeight="bold" sx={{ flexGrow: 1, mr: 1 }}>
                       {challenge.title}
-                      {challenge.isFeatured && (
+                      {challenge.featured && (
                         <Star sx={{ color: 'gold', ml: 1, fontSize: 20 }} />
                       )}
                     </Typography>
@@ -400,21 +361,26 @@ export default function ChallengesPage() {
 
                   <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
                     <Chip
-                      label={challenge.status === 'DRAFT' ? '초안' :
-                            challenge.status === 'ACTIVE' ? '진행중' :
-                            challenge.status === 'COMPLETED' ? '완료' : '보관'}
+                      label={challenge.status === ChallengeStatus.DRAFT ? '초안' :
+                            challenge.status === ChallengeStatus.ACTIVE ? '진행중' :
+                            challenge.status === ChallengeStatus.PAUSED ? '일시정지' :
+                            challenge.status === ChallengeStatus.COMPLETED ? '완료' : '보관'}
                       color={statusColors[challenge.status]}
                       size="small"
                     />
                     <Chip
-                      label={challenge.difficulty === 'BEGINNER' ? '초급' :
-                            challenge.difficulty === 'INTERMEDIATE' ? '중급' : '고급'}
+                      label={challenge.difficulty === ChallengeDifficulty.BEGINNER ? '초급' :
+                            challenge.difficulty === ChallengeDifficulty.INTERMEDIATE ? '중급' :
+                            challenge.difficulty === ChallengeDifficulty.ADVANCED ? '고급' : '전문가'}
                       color={difficultyColors[challenge.difficulty]}
                       size="small"
                     />
                     <Chip
-                      label={challenge.challengeType === 'PRACTICE' ? '연습' :
-                            challenge.challengeType === 'COMPETITION' ? '경쟁' : '가이드'}
+                      label={challenge.challengeType === ChallengeType.STOCK_PICKING ? '주식 선택' :
+                            challenge.challengeType === ChallengeType.PORTFOLIO_MANAGEMENT ? '포트폴리오' :
+                            challenge.challengeType === ChallengeType.RISK_MANAGEMENT ? '리스크 관리' :
+                            challenge.challengeType === ChallengeType.OPTIONS_TRADING ? '옵션 거래' :
+                            challenge.challengeType === ChallengeType.SECTOR_ANALYSIS ? '섹터 분석' : '기술적 분석'}
                       color={typeColors[challenge.challengeType]}
                       size="small"
                     />
@@ -426,7 +392,7 @@ export default function ChallengesPage() {
                   </Typography>
 
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    기간: {challenge.durationDays}일 · 예상시간: {challenge.estimatedDurationMinutes}분
+                    기간: {challenge.durationDays}일 · 예상시간: {challenge.estimatedTimeMinutes || 0}분
                   </Typography>
 
                   <Typography variant="body2" color="text.secondary">
@@ -473,11 +439,11 @@ export default function ChallengesPage() {
       </Grid>
 
       {/* 페이지네이션 */}
-      {filteredChallenges.length > 0 && (
+      {totalElements > 0 && (
         <Box mt={3} display="flex" justifyContent="center">
           <TablePagination
             component="div"
-            count={filteredChallenges.length}
+            count={totalElements}
             page={page}
             onPageChange={handlePageChange}
             rowsPerPage={rowsPerPage}
@@ -508,7 +474,7 @@ export default function ChallengesPage() {
               수정하기
             </MenuItem>
             <MenuItem onClick={() => toggleFeatured(selectedChallenge)}>
-              {selectedChallenge.isFeatured ? (
+              {selectedChallenge.featured ? (
                 <>
                   <StarBorder sx={{ mr: 1 }} />
                   피처드 해제
@@ -520,19 +486,19 @@ export default function ChallengesPage() {
                 </>
               )}
             </MenuItem>
-            {selectedChallenge.status === 'DRAFT' && (
-              <MenuItem onClick={() => changeStatus(selectedChallenge, 'ACTIVE')}>
+            {selectedChallenge.status === ChallengeStatus.DRAFT && (
+              <MenuItem onClick={() => changeStatus(selectedChallenge, ChallengeStatus.ACTIVE)}>
                 <PlayArrow sx={{ mr: 1 }} />
                 활성화
               </MenuItem>
             )}
-            {selectedChallenge.status === 'ACTIVE' && (
-              <MenuItem onClick={() => changeStatus(selectedChallenge, 'COMPLETED')}>
+            {selectedChallenge.status === ChallengeStatus.ACTIVE && (
+              <MenuItem onClick={() => changeStatus(selectedChallenge, ChallengeStatus.COMPLETED)}>
                 <Stop sx={{ mr: 1 }} />
                 완료처리
               </MenuItem>
             )}
-            <MenuItem onClick={() => changeStatus(selectedChallenge, 'ARCHIVED')}>
+            <MenuItem onClick={() => changeStatus(selectedChallenge, ChallengeStatus.ARCHIVED)}>
               <Archive sx={{ mr: 1 }} />
               보관하기
             </MenuItem>

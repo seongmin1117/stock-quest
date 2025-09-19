@@ -31,42 +31,27 @@ import {
   Delete
 } from '@mui/icons-material';
 import { useParams, useRouter } from 'next/navigation';
+import { adminChallengeApi, Challenge, ChallengeDifficulty, ChallengeType, ChallengeStatus, UpdateChallengeRequest } from '@/shared/api/admin-challenge-client';
+import { useAuth } from '@/shared/lib/auth/auth-store';
 
-// 임시 타입 정의
+// 타입 정의
 interface ChallengeFormData {
   title: string;
   description: string;
-  difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
-  challengeType: 'PRACTICE' | 'COMPETITION' | 'GUIDED';
-  status: 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
+  difficulty: ChallengeDifficulty;
+  challengeType: ChallengeType;
   initialBalance: number;
   durationDays: number;
-  estimatedDurationMinutes: number;
+  estimatedTimeMinutes: number;
   maxParticipants?: number;
   tags: string[];
-  isFeatured: boolean;
   learningObjectives: string;
-  marketScenario: string;
+  marketScenarioDescription: string;
   availableInstruments: string[];
+  riskLevel: number;
+  categoryId: number;
 }
 
-// 초기 폼 데이터
-const mockFormData: ChallengeFormData = {
-  title: '2020년 코로나 시장 급락',
-  description: '코로나19 팬데믹 초기 시장 상황에서의 투자 전략을 학습합니다. 2020년 2월부터 4월까지의 급격한 시장 변동성 속에서 포트폴리오를 관리하고 리스크를 제어하는 방법을 배웁니다.',
-  difficulty: 'INTERMEDIATE',
-  challengeType: 'PRACTICE',
-  status: 'ACTIVE',
-  initialBalance: 100000,
-  durationDays: 30,
-  estimatedDurationMinutes: 45,
-  maxParticipants: 100,
-  tags: ['market-crash', 'volatility', 'pandemic', 'risk-management'],
-  isFeatured: true,
-  learningObjectives: '• 시장 급락 상황에서의 심리적 대응\n• 포트폴리오 리밸런싱 전략\n• 방어주 선택 기준\n• 손실 제한 기법',
-  marketScenario: '2020년 2월 19일부터 3월 23일까지 S&P 500이 34% 급락한 기간을 시뮬레이션합니다.',
-  availableInstruments: ['STOCKS', 'ETF', 'BONDS', 'CASH']
-};
 
 const availableTagOptions = [
   'market-crash', 'volatility', 'pandemic', 'risk-management', 'growth-stocks',
@@ -89,9 +74,11 @@ const instrumentOptions = [
 export default function ChallengeEditPage() {
   const params = useParams();
   const router = useRouter();
-  const challengeId = params.id as string;
+  const { user } = useAuth();
+  const challengeId = parseInt(params.id as string);
 
-  const [formData, setFormData] = useState<ChallengeFormData>(mockFormData);
+  const [originalChallenge, setOriginalChallenge] = useState<Challenge | null>(null);
+  const [formData, setFormData] = useState<ChallengeFormData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,59 +88,78 @@ export default function ChallengeEditPage() {
   const [newTag, setNewTag] = useState('');
 
   useEffect(() => {
-    // TODO: 실제 API 호출로 대체
     const fetchChallenge = async () => {
       try {
         setLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        setError(null);
 
-        if (challengeId === '1') {
-          setFormData(mockFormData);
-        } else {
-          setError('챌린지를 찾을 수 없습니다.');
-        }
+        const challenge = await adminChallengeApi.getChallengeById(challengeId);
+        setOriginalChallenge(challenge);
+
+        // Challenge 데이터를 ChallengeFormData로 변환
+        setFormData({
+          title: challenge.title,
+          description: challenge.description,
+          difficulty: challenge.difficulty,
+          challengeType: challenge.challengeType,
+          initialBalance: challenge.initialBalance,
+          durationDays: challenge.durationDays,
+          estimatedTimeMinutes: challenge.estimatedTimeMinutes || 0,
+          maxParticipants: challenge.maxParticipants,
+          tags: challenge.tags,
+          learningObjectives: challenge.learningObjectives || '',
+          marketScenarioDescription: challenge.marketScenarioDescription || '',
+          availableInstruments: challenge.availableInstruments,
+          riskLevel: challenge.riskLevel,
+          categoryId: challenge.categoryId
+        });
       } catch (err) {
-        setError('챌린지 정보를 불러오는 중 오류가 발생했습니다.');
+        setError('챌린지 정보를 불러오는데 실패했습니다.');
+        console.error('Error fetching challenge:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchChallenge();
+    if (challengeId) {
+      fetchChallenge();
+    }
   }, [challengeId]);
 
   const handleInputChange = (field: keyof ChallengeFormData, value: any) => {
-    setFormData(prev => ({
+    setFormData(prev => prev ? ({
       ...prev,
       [field]: value
-    }));
+    }) : null);
   };
 
   const handleTagAdd = (tag: string) => {
-    if (tag && !formData.tags.includes(tag)) {
-      setFormData(prev => ({
+    if (tag && formData && !formData.tags.includes(tag)) {
+      setFormData(prev => prev ? ({
         ...prev,
         tags: [...prev.tags, tag]
-      }));
+      }) : null);
     }
     setNewTag('');
   };
 
   const handleTagRemove = (tagToRemove: string) => {
-    setFormData(prev => ({
+    setFormData(prev => prev ? ({
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }));
+    }) : null);
   };
 
   const handleInstrumentChange = (instruments: string[]) => {
-    setFormData(prev => ({
+    setFormData(prev => prev ? ({
       ...prev,
       availableInstruments: instruments
-    }));
+    }) : null);
   };
 
   const handleSave = async () => {
+    if (!formData || !user) return;
+
     try {
       setSaving(true);
       setError(null);
@@ -176,18 +182,37 @@ export default function ChallengeEditPage() {
         return;
       }
 
-      // TODO: 실제 API 호출
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 실제 API 호출
+      const updateData: UpdateChallengeRequest = {
+        title: formData.title,
+        description: formData.description,
+        categoryId: formData.categoryId,
+        difficulty: formData.difficulty,
+        challengeType: formData.challengeType,
+        initialBalance: formData.initialBalance,
+        durationDays: formData.durationDays,
+        maxParticipants: formData.maxParticipants,
+        availableInstruments: formData.availableInstruments,
+        learningObjectives: formData.learningObjectives,
+        marketScenarioDescription: formData.marketScenarioDescription,
+        riskLevel: formData.riskLevel,
+        estimatedTimeMinutes: formData.estimatedTimeMinutes,
+        tags: formData.tags,
+        createdBy: user.id
+      };
 
-      setSuccess('챌린지가 성공적으로 수정되었습니다.');
+      const updatedChallenge = await adminChallengeApi.updateChallenge(challengeId, updateData);
 
-      // 3초 후 상세 페이지로 이동
+      setSuccess(`챌린지 "${updatedChallenge.title}"가 성공적으로 수정되었습니다.`);
+
+      // 2초 후 상세 페이지로 이동
       setTimeout(() => {
         router.push(`/admin/challenges/${challengeId}`);
       }, 2000);
 
     } catch (err) {
-      setError('챌린지 수정 중 오류가 발생했습니다.');
+      setError('챌린지 수정에 실패했습니다.');
+      console.error('Error updating challenge:', err);
     } finally {
       setSaving(false);
     }
@@ -216,7 +241,7 @@ export default function ChallengeEditPage() {
     );
   }
 
-  if (error && !formData.title) {
+  if (error && !formData) {
     return (
       <Box>
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -231,6 +256,10 @@ export default function ChallengeEditPage() {
         </Button>
       </Box>
     );
+  }
+
+  if (!formData) {
+    return null;
   }
 
   return (
@@ -304,9 +333,10 @@ export default function ChallengeEditPage() {
                         onChange={(e) => handleInputChange('difficulty', e.target.value)}
                         label="난이도"
                       >
-                        <MenuItem value="BEGINNER">초급</MenuItem>
-                        <MenuItem value="INTERMEDIATE">중급</MenuItem>
-                        <MenuItem value="ADVANCED">고급</MenuItem>
+                        <MenuItem value={ChallengeDifficulty.BEGINNER}>초급</MenuItem>
+                        <MenuItem value={ChallengeDifficulty.INTERMEDIATE}>중급</MenuItem>
+                        <MenuItem value={ChallengeDifficulty.ADVANCED}>고급</MenuItem>
+                        <MenuItem value={ChallengeDifficulty.EXPERT}>전문가</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
@@ -319,27 +349,32 @@ export default function ChallengeEditPage() {
                         onChange={(e) => handleInputChange('challengeType', e.target.value)}
                         label="유형"
                       >
-                        <MenuItem value="PRACTICE">연습</MenuItem>
-                        <MenuItem value="COMPETITION">경쟁</MenuItem>
-                        <MenuItem value="GUIDED">가이드</MenuItem>
+                        <MenuItem value={ChallengeType.MARKET_CRASH}>마켓 크래시</MenuItem>
+                        <MenuItem value={ChallengeType.BULL_MARKET}>상승장</MenuItem>
+                        <MenuItem value={ChallengeType.SECTOR_ROTATION}>섹터 로테이션</MenuItem>
+                        <MenuItem value={ChallengeType.VOLATILITY}>변동성 거래</MenuItem>
+                        <MenuItem value={ChallengeType.ESG}>ESG 투자</MenuItem>
+                        <MenuItem value={ChallengeType.INTERNATIONAL}>해외 시장</MenuItem>
+                        <MenuItem value={ChallengeType.OPTIONS}>옵션 거래</MenuItem>
+                        <MenuItem value={ChallengeType.RISK_MANAGEMENT}>리스크 관리</MenuItem>
+                        <MenuItem value={ChallengeType.TOURNAMENT}>토너먼트</MenuItem>
+                        <MenuItem value={ChallengeType.EDUCATIONAL}>교육용</MenuItem>
+                        <MenuItem value={ChallengeType.COMMUNITY}>커뮤니티</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
 
                   <Grid item xs={12} sm={4}>
-                    <FormControl fullWidth>
-                      <InputLabel>상태</InputLabel>
-                      <Select
-                        value={formData.status}
-                        onChange={(e) => handleInputChange('status', e.target.value)}
-                        label="상태"
-                      >
-                        <MenuItem value="DRAFT">초안</MenuItem>
-                        <MenuItem value="ACTIVE">진행중</MenuItem>
-                        <MenuItem value="COMPLETED">완료</MenuItem>
-                        <MenuItem value="ARCHIVED">보관</MenuItem>
-                      </Select>
-                    </FormControl>
+                    <TextField
+                      fullWidth
+                      label="리스크 레벨"
+                      type="number"
+                      value={formData.riskLevel}
+                      onChange={(e) => handleInputChange('riskLevel', parseInt(e.target.value) || 1)}
+                      inputProps={{ min: 1, max: 10 }}
+                      helperText="1(낮음) ~ 10(높음)"
+                      margin="normal"
+                    />
                   </Grid>
                 </Grid>
               </CardContent>
@@ -388,8 +423,8 @@ export default function ChallengeEditPage() {
                       fullWidth
                       label="예상 소요 시간"
                       type="number"
-                      value={formData.estimatedDurationMinutes}
-                      onChange={(e) => handleInputChange('estimatedDurationMinutes', parseInt(e.target.value) || 0)}
+                      value={formData.estimatedTimeMinutes}
+                      onChange={(e) => handleInputChange('estimatedTimeMinutes', parseInt(e.target.value) || 0)}
                       InputProps={{
                         endAdornment: <InputAdornment position="end">분</InputAdornment>,
                       }}
@@ -413,17 +448,15 @@ export default function ChallengeEditPage() {
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-                    <Box sx={{ mt: 2 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.isFeatured}
-                            onChange={(e) => handleInputChange('isFeatured', e.target.checked)}
-                          />
-                        }
-                        label="피처드 챌린지로 설정"
-                      />
-                    </Box>
+                    <TextField
+                      fullWidth
+                      label="카테고리 ID"
+                      type="number"
+                      value={formData.categoryId}
+                      onChange={(e) => handleInputChange('categoryId', parseInt(e.target.value) || 1)}
+                      margin="normal"
+                      helperText="카테고리 ID (임시)"
+                    />
                   </Grid>
                 </Grid>
               </CardContent>
@@ -450,8 +483,8 @@ export default function ChallengeEditPage() {
                 <TextField
                   fullWidth
                   label="시장 시나리오"
-                  value={formData.marketScenario}
-                  onChange={(e) => handleInputChange('marketScenario', e.target.value)}
+                  value={formData.marketScenarioDescription}
+                  onChange={(e) => handleInputChange('marketScenarioDescription', e.target.value)}
                   margin="normal"
                   multiline
                   rows={3}
