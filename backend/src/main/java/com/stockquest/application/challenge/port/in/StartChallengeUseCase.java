@@ -15,7 +15,8 @@ public interface StartChallengeUseCase {
     
     record StartChallengeCommand(
         Long userId,
-        Long challengeId
+        Long challengeId,
+        boolean forceRestart
     ) {}
     
     record StartChallengeResult(

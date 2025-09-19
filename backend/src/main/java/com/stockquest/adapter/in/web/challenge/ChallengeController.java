@@ -72,12 +72,13 @@ public class ChallengeController {
     @Operation(summary = "챌린지 시작", description = "새로운 챌린지 세션을 시작합니다")
     public ResponseEntity<StartChallengeResponse> startChallenge(
             @PathVariable Long challengeId,
+            @RequestParam(defaultValue = "false") boolean forceRestart,
             @AuthenticationPrincipal UserDetails userDetails) {
-        
+
         Long userId = getUserId(userDetails);
-        var command = new StartChallengeCommand(userId, challengeId);
+        var command = new StartChallengeCommand(userId, challengeId, forceRestart);
         var result = startChallengeUseCase.start(command);
-        
+
         return ResponseEntity.ok(StartChallengeResponse.from(result));
     }
 

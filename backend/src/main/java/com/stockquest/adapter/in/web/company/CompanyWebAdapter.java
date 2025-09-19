@@ -24,6 +24,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
@@ -162,10 +164,21 @@ public class CompanyWebAdapter {
             @Parameter(description = "Offset for pagination")
             @RequestParam(defaultValue = "0") @Min(0) int offset) {
 
-        log.info("GET /api/v1/companies/search - Searching companies with query: {}", q);
+        // URL 디코딩 처리 (한글 검색어 지원)
+        String decodedQuery = q;
+        if (q != null && !q.isEmpty()) {
+            try {
+                decodedQuery = URLDecoder.decode(q, StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                log.warn("Failed to decode query parameter: {}", q, e);
+                decodedQuery = q; // 디코딩 실패 시 원본 사용
+            }
+        }
+
+        log.info("GET /api/v1/companies/search - Searching companies with query: {} (decoded: {})", q, decodedQuery);
 
         CompanySearchQuery query = CompanySearchQuery.builder()
-                .query(q)
+                .query(decodedQuery)
                 .categories(categories)
                 .sector(sector)
                 .minPopularityScore(minPopularity)

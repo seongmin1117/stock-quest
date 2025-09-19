@@ -76,6 +76,7 @@ logging:
   level:
     root: INFO
     com.stockquest: DEBUG
+    com.stockquest.adapter.out.security.JwtTokenProvider: WARN
     org.springframework.security: DEBUG
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
     org.hibernate.SQL: DEBUG

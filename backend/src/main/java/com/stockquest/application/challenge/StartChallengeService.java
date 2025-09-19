@@ -44,13 +44,25 @@ public class StartChallengeService implements StartChallengeUseCase {
         
         // 3. 기존 세션 확인 및 처리
         var existingActiveSession = sessionRepository.findByUserIdAndChallengeIdAndStatus(
-            command.userId(), 
-            command.challengeId(), 
+            command.userId(),
+            command.challengeId(),
             ChallengeSession.SessionStatus.ACTIVE
         );
-        
+
         if (existingActiveSession.isPresent()) {
-            throw new IllegalStateException("이미 진행 중인 챌린지 세션이 있습니다. 세션 ID: " + existingActiveSession.get().getId());
+            if (command.forceRestart()) {
+                // 기존 세션을 강제 종료하고 새로 시작
+                var sessionToEnd = existingActiveSession.get();
+                sessionToEnd.end(); // 세션을 ENDED 상태로 변경
+                sessionRepository.save(sessionToEnd);
+            } else {
+                var session = existingActiveSession.get();
+                throw new IllegalStateException(
+                    String.format("이미 진행 중인 챌린지 세션이 있습니다. 세션 ID: %d, 시작일: %s. forceRestart=true로 재시작하거나 기존 세션을 먼저 종료하세요.",
+                        session.getId(),
+                        session.getStartedAt())
+                );
+            }
         }
         
         // 4. 기존 완료된 세션이 있는지 확인 (선택적 정보 제공)

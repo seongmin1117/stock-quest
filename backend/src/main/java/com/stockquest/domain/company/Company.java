@@ -57,15 +57,19 @@ public class Company {
     @Column(name = "description_en", columnDefinition = "TEXT")
     private String descriptionEn;
 
+    @Builder.Default
     @Column(name = "exchange", length = 10)
     private String exchange = "KRX";
 
+    @Builder.Default
     @Column(name = "currency", length = 3)
     private String currency = "KRW";
 
+    @Builder.Default
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Builder.Default
     @Column(name = "popularity_score")
     private Integer popularityScore = 0;
 
@@ -75,6 +79,7 @@ public class Company {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<CompanyCategoryMapping> categories = new ArrayList<>();
 
