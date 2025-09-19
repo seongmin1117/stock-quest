@@ -30,6 +30,7 @@ import {
   Menu as MenuIcon,
   Dashboard,
   ShowChart,
+  AdminPanelSettings,
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -70,6 +71,13 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
+
+  // 관리자 여부 확인 (임시로 특정 이메일로 확인, 추후 role 기반으로 변경)
+  const isAdmin = isAuthenticated && user && (
+    user.email === 'admin@example.com' ||
+    user.email === 'admin@stockquest.com' ||
+    user.nickname?.toLowerCase().includes('admin')
+  );
 
   const navigationItems = [
     { label: '홈', icon: <Home />, href: '/' },
@@ -133,9 +141,9 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
 
       <List>
         {authItems.map((item) => (
-          <ListItem 
-            key={item.href} 
-            component={Link} 
+          <ListItem
+            key={item.href}
+            component={Link}
             href={item.href}
             onClick={() => setMobileOpen(false)}
             sx={{
@@ -147,12 +155,33 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
             <ListItemIcon sx={{ color: '#2196F3' }}>
               {item.icon}
             </ListItemIcon>
-            <ListItemText 
-              primary={item.label} 
+            <ListItemText
+              primary={item.label}
               sx={{ '& .MuiListItemText-primary': { color: '#FFFFFF' } }}
             />
           </ListItem>
         ))}
+
+        {isAdmin && (
+          <ListItem
+            component={Link}
+            href="/admin"
+            onClick={() => setMobileOpen(false)}
+            sx={{
+              '&:hover': {
+                backgroundColor: 'rgba(255, 152, 0, 0.08)',
+              }
+            }}
+          >
+            <ListItemIcon sx={{ color: '#FF9800' }}>
+              <AdminPanelSettings />
+            </ListItemIcon>
+            <ListItemText
+              primary="관리자"
+              sx={{ '& .MuiListItemText-primary': { color: '#FF9800' } }}
+            />
+          </ListItem>
+        )}
 
         {isAuthenticated && user && (
           <ListItem 
@@ -254,6 +283,23 @@ export default function Navbar({ position = 'static' }: NavbarProps) {
                   >
                     대시보드
                   </Button>
+
+                  {isAdmin && (
+                    <Button
+                      component={Link}
+                      href="/admin"
+                      startIcon={<AdminPanelSettings />}
+                      sx={{
+                        color: '#B0BEC5',
+                        '&:hover': {
+                          color: '#FF9800',
+                          backgroundColor: 'rgba(255, 152, 0, 0.08)',
+                        },
+                      }}
+                    >
+                      관리자
+                    </Button>
+                  )}
                   
                   <IconButton
                     onClick={handleUserMenuOpen}

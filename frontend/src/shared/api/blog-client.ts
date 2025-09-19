@@ -152,37 +152,37 @@ export const blogApi = {
         offset: params.offset || 0
       }
     });
-    return response.data || response;
+    return response;
   },
 
   getArticleBySlug: async (slug: string): Promise<Article> => {
     const response = await apiClient.get<Article>(`/api/v1/content/articles/${slug}`);
-    return response.data || response;
+    return response;
   },
 
   getFeaturedArticles: async (limit = 5): Promise<Article[]> => {
     const response = await apiClient.get<Article[]>('/api/v1/content/articles/featured', {
       params: { limit }
     });
-    return response.data || response;
+    return response;
   },
 
   getRecentArticles: async (limit = 10): Promise<Article[]> => {
     const response = await apiClient.get<Article[]>('/api/v1/content/articles/recent', {
       params: { limit }
     });
-    return response.data || response;
+    return response;
   },
 
   // Category operations
   getAllCategories: async (): Promise<Category[]> => {
     const response = await apiClient.get<Category[]>('/api/v1/content/categories');
-    return response.data || response;
+    return response;
   },
 
   getCategoryBySlug: async (slug: string): Promise<Category> => {
     const response = await apiClient.get<Category>(`/api/v1/content/categories/${slug}`);
-    return response.data || response;
+    return response;
   },
 
   // Tag operations
@@ -190,12 +190,12 @@ export const blogApi = {
     const response = await apiClient.get<Tag[]>('/api/v1/content/tags/popular', {
       params: { limit }
     });
-    return response.data || response;
+    return response;
   },
 
   getTagsByType: async (type: TagType): Promise<Tag[]> => {
     const response = await apiClient.get<Tag[]>(`/api/v1/content/tags/by-type/${type}`);
-    return response.data || response;
+    return response;
   }
 };
 

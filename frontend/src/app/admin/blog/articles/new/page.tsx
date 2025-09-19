@@ -1,0 +1,523 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Checkbox,
+  Chip,
+  Alert,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Autocomplete,
+  Paper,
+  Divider,
+} from '@mui/material';
+import {
+  ExpandMore,
+  Save,
+  Preview,
+  Cancel,
+  Add,
+  Search,
+} from '@mui/icons-material';
+import { useRouter } from 'next/navigation';
+import {
+  blogAdminApi,
+  CreateArticleRequest,
+  blogAdminUtils,
+  handleBlogAdminError
+} from '@/shared/api/blog-admin-client';
+import {
+  Category,
+  Tag,
+  ArticleStatus,
+  ArticleDifficulty,
+  blogApi
+} from '@/shared/api/blog-client';
+
+export default function CreateArticlePage() {
+  const router = useRouter();
+
+  // Form state
+  const [formData, setFormData] = useState<CreateArticleRequest>({
+    title: '',
+    content: '',
+    summary: '',
+    categoryId: 0,
+    tagIds: [],
+    status: ArticleStatus.DRAFT,
+    featured: false,
+    difficulty: ArticleDifficulty.BEGINNER,
+    indexable: true,
+    followable: true,
+  });
+
+  // Supporting data
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showSeoFields, setShowSeoFields] = useState(false);
+
+  useEffect(() => {
+    loadSupportingData();
+  }, []);
+
+  const loadSupportingData = async () => {
+    try {
+      const [categoriesData, tagsData] = await Promise.all([
+        blogApi.getAllCategories(),
+        blogApi.getPopularTags(100), // Get more tags for selection
+      ]);
+      setCategories(categoriesData);
+      setTags(tagsData);
+    } catch (err) {
+      setError('카테고리와 태그 데이터를 불러오는 중 오류가 발생했습니다.');
+      console.error('Error loading supporting data:', err);
+    }
+  };
+
+  const handleInputChange = (field: keyof CreateArticleRequest) => (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | any
+  ) => {
+    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleTagsChange = (event: any, newValue: Tag[]) => {
+    setSelectedTags(newValue);
+    setFormData(prev => ({
+      ...prev,
+      tagIds: newValue.map(tag => tag.id)
+    }));
+  };
+
+  const handleSubmit = async (publishImmediately = false) => {
+    try {
+      setLoading(true);
+      setError(null);
+      setValidationErrors([]);
+
+      // Set status based on action
+      const submitData = {
+        ...formData,
+        status: publishImmediately ? ArticleStatus.PUBLISHED : formData.status
+      };
+
+      // Validate form data
+      const errors = blogAdminUtils.validateArticle(submitData);
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        return;
+      }
+
+      // Auto-generate slug if not provided
+      const submitDataWithSlug = {
+        ...submitData,
+        slug: blogAdminUtils.generateSlug(submitData.title)
+      };
+
+      // Create article
+      const createdArticle = await blogAdminApi.createArticle(submitDataWithSlug);
+
+      // Redirect to edit page or back to list
+      router.push(`/admin/blog/articles/${createdArticle.id}/edit`);
+
+    } catch (err) {
+      const blogError = handleBlogAdminError(err);
+      setError(blogError.message);
+      if (blogError.fieldErrors) {
+        const fieldErrorMessages = Object.values(blogError.fieldErrors).flat();
+        setValidationErrors(fieldErrorMessages);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    router.push('/admin/blog');
+  };
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" component="h1">
+          새 게시글 작성
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<Cancel />}
+            onClick={handleCancel}
+            disabled={loading}
+          >
+            취소
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Save />}
+            onClick={() => handleSubmit(false)}
+            disabled={loading}
+          >
+            임시저장
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Save />}
+            onClick={() => handleSubmit(true)}
+            disabled={loading}
+          >
+            게시하기
+          </Button>
+        </Box>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      {validationErrors.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            다음 사항을 확인해 주세요:
+          </Typography>
+          <ul style={{ margin: 0, paddingLeft: 20 }}>
+            {validationErrors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
+        </Alert>
+      )}
+
+      <Grid container spacing={3}>
+        {/* Main Content */}
+        <Grid item xs={12} md={8}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                기본 정보
+              </Typography>
+
+              <TextField
+                fullWidth
+                label="제목 *"
+                value={formData.title}
+                onChange={handleInputChange('title')}
+                margin="normal"
+                placeholder="게시글 제목을 입력하세요"
+              />
+
+              <TextField
+                fullWidth
+                label="요약"
+                value={formData.summary}
+                onChange={handleInputChange('summary')}
+                margin="normal"
+                multiline
+                rows={3}
+                placeholder="게시글 요약을 입력하세요 (검색 결과에 표시됩니다)"
+                helperText="SEO에 중요한 요약 설명입니다"
+              />
+
+              <TextField
+                fullWidth
+                label="내용 *"
+                value={formData.content}
+                onChange={handleInputChange('content')}
+                margin="normal"
+                multiline
+                rows={15}
+                placeholder="게시글 내용을 입력하세요. Markdown 형식을 지원합니다."
+              />
+            </CardContent>
+          </Card>
+
+          {/* SEO Settings */}
+          <Card sx={{ mt: 3 }}>
+            <Accordion expanded={showSeoFields} onChange={() => setShowSeoFields(!showSeoFields)}>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography variant="h6">
+                  SEO 설정 (Google AdSense 최적화)
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="SEO 제목"
+                      value={formData.seoTitle || ''}
+                      onChange={handleInputChange('seoTitle')}
+                      placeholder="검색 엔진에 표시될 제목"
+                      helperText="비워두면 기본 제목을 사용합니다"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="메타 설명"
+                      value={formData.metaDescription || ''}
+                      onChange={handleInputChange('metaDescription')}
+                      multiline
+                      rows={2}
+                      placeholder="검색 결과에 표시될 설명"
+                      helperText="150-160자 권장"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="SEO 키워드"
+                      value={formData.seoKeywords || ''}
+                      onChange={handleInputChange('seoKeywords')}
+                      placeholder="키워드1, 키워드2, 키워드3"
+                      helperText="쉼표로 구분하여 입력"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="정규 URL"
+                      value={formData.canonicalUrl || ''}
+                      onChange={handleInputChange('canonicalUrl')}
+                      placeholder="https://example.com/article"
+                      helperText="중복 콘텐츠 방지"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="스키마 타입"
+                      value={formData.schemaType || ''}
+                      onChange={handleInputChange('schemaType')}
+                      placeholder="Article, BlogPosting, NewsArticle"
+                      helperText="구조화된 데이터 타입"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Open Graph 설정
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="OG 제목"
+                      value={formData.ogTitle || ''}
+                      onChange={handleInputChange('ogTitle')}
+                      placeholder="소셜 미디어 공유 제목"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="OG 이미지 URL"
+                      value={formData.ogImageUrl || ''}
+                      onChange={handleInputChange('ogImageUrl')}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="OG 설명"
+                      value={formData.ogDescription || ''}
+                      onChange={handleInputChange('ogDescription')}
+                      multiline
+                      rows={2}
+                      placeholder="소셜 미디어 공유 설명"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Twitter 카드 설정
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Twitter 제목"
+                      value={formData.twitterTitle || ''}
+                      onChange={handleInputChange('twitterTitle')}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Twitter 이미지"
+                      value={formData.twitterImageUrl || ''}
+                      onChange={handleInputChange('twitterImageUrl')}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      label="Twitter 설명"
+                      value={formData.twitterDescription || ''}
+                      onChange={handleInputChange('twitterDescription')}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={formData.indexable}
+                            onChange={handleInputChange('indexable')}
+                          />
+                        }
+                        label="검색엔진 색인 허용"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={formData.followable}
+                            onChange={handleInputChange('followable')}
+                          />
+                        }
+                        label="링크 추적 허용"
+                      />
+                    </Box>
+                  </Grid>
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          </Card>
+        </Grid>
+
+        {/* Sidebar */}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                게시 설정
+              </Typography>
+
+              <FormControl fullWidth margin="normal">
+                <InputLabel>상태</InputLabel>
+                <Select
+                  value={formData.status}
+                  onChange={handleInputChange('status')}
+                  label="상태"
+                >
+                  <MenuItem value={ArticleStatus.DRAFT}>초안</MenuItem>
+                  <MenuItem value={ArticleStatus.PUBLISHED}>게시됨</MenuItem>
+                  <MenuItem value={ArticleStatus.ARCHIVED}>보관됨</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth margin="normal">
+                <InputLabel>카테고리 *</InputLabel>
+                <Select
+                  value={formData.categoryId}
+                  onChange={handleInputChange('categoryId')}
+                  label="카테고리 *"
+                >
+                  <MenuItem value={0}>카테고리 선택</MenuItem>
+                  {categories.map((category) => (
+                    <MenuItem key={category.id} value={category.id}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth margin="normal">
+                <InputLabel>난이도</InputLabel>
+                <Select
+                  value={formData.difficulty}
+                  onChange={handleInputChange('difficulty')}
+                  label="난이도"
+                >
+                  <MenuItem value={ArticleDifficulty.BEGINNER}>초급</MenuItem>
+                  <MenuItem value={ArticleDifficulty.INTERMEDIATE}>중급</MenuItem>
+                  <MenuItem value={ArticleDifficulty.ADVANCED}>고급</MenuItem>
+                </Select>
+              </FormControl>
+
+              <Autocomplete
+                multiple
+                id="tags-autocomplete"
+                options={tags}
+                getOptionLabel={(option) => option.name}
+                value={selectedTags}
+                onChange={handleTagsChange}
+                renderTags={(tagValue, getTagProps) =>
+                  tagValue.map((option, index) => (
+                    <Chip
+                      variant="outlined"
+                      label={option.name}
+                      {...getTagProps({ index })}
+                    />
+                  ))
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="태그"
+                    placeholder="태그를 검색하고 선택하세요"
+                    margin="normal"
+                  />
+                )}
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.featured}
+                    onChange={handleInputChange('featured')}
+                  />
+                }
+                label="추천 게시글"
+                sx={{ mt: 2 }}
+              />
+            </CardContent>
+          </Card>
+
+          <Card sx={{ mt: 2 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                도움말
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                <strong>SEO 최적화 팁:</strong>
+              </Typography>
+              <ul style={{ fontSize: '14px', color: '#666', margin: 0, paddingLeft: 16 }}>
+                <li>제목에 주요 키워드를 포함하세요</li>
+                <li>메타 설명은 150-160자로 작성하세요</li>
+                <li>이미지에는 alt 태그를 추가하세요</li>
+                <li>내부 링크를 적절히 활용하세요</li>
+                <li>읽기 쉬운 구조로 작성하세요</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+}
