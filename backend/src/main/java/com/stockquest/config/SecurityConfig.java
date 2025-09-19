@@ -125,6 +125,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/challenges/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/companies/**").permitAll()
 
+                // 블로그 콘텐츠 API (SEO 및 Google AdSense를 위한 공개 접근)
+                .requestMatchers(HttpMethod.GET, "/api/v1/content/**").permitAll()
+
                 // DCA 시뮬레이션 API (테스트 목적으로 공개)
                 .requestMatchers("/api/v1/dca/**").permitAll()
 

@@ -1,28 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { blogApi, Category } from '@/shared/api/blog-client';
+import { useGetApiV1ContentCategories } from '@/shared/api/generated/블로그-콘텐츠/블로그-콘텐츠';
+import type { CategoryResponse } from '@/shared/api/generated/model';
 
 export default function CategoryNavigation() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await blogApi.getAllCategories();
-        setCategories(data);
-      } catch (error) {
-        console.error('Failed to load categories:', error);
-        setCategories([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCategories();
-  }, []);
+  const { data: categories, isLoading: loading, error } = useGetApiV1ContentCategories(
+    undefined,
+    {
+      staleTime: 1000 * 60 * 10, // 10 minutes
+      cacheTime: 1000 * 60 * 30, // 30 minutes
+    }
+  );
 
   if (loading) {
     return (
@@ -34,6 +23,14 @@ export default function CategoryNavigation() {
             </div>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <p className="text-center text-red-500">카테고리를 불러오는 중 오류가 발생했습니다.</p>
       </div>
     );
   }

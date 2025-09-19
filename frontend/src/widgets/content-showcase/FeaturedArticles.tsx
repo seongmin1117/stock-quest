@@ -1,28 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { blogApi, Article } from '@/shared/api/blog-client';
+import { useGetApiV1ContentArticlesFeatured } from '@/shared/api/generated/블로그-콘텐츠/블로그-콘텐츠';
+import type { ArticleResponse } from '@/shared/api/generated/model';
 
 export default function FeaturedArticles() {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadFeaturedArticles = async () => {
-      try {
-        const data = await blogApi.getFeaturedArticles(6);
-        setArticles(data);
-      } catch (error) {
-        console.error('Failed to load featured articles:', error);
-        setArticles([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadFeaturedArticles();
-  }, []);
+  const { data: articles, isLoading: loading, error } = useGetApiV1ContentArticlesFeatured(
+    { limit: 6 },
+    {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      cacheTime: 1000 * 60 * 10, // 10 minutes
+    }
+  );
 
   if (loading) {
     return (
@@ -38,6 +27,14 @@ export default function FeaturedArticles() {
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 bg-red-50 rounded-lg">
+        <p className="text-red-500">추천 글을 불러오는 중 오류가 발생했습니다.</p>
       </div>
     );
   }

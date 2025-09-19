@@ -35,6 +35,8 @@ tags:
     description: "포트폴리오 리스크 관리 관련 API"
   - name: 포트폴리오 최적화
     description: "AI 기반 포트폴리오 최적화 관련 API"
+  - name: 블로그 콘텐츠
+    description: "블로그 글, 카테고리, 태그 관련 API"
 
 paths:
   # Authentication APIs
@@ -1037,6 +1039,280 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  # Blog Content APIs
+  /api/v1/content/articles:
+    get:
+      tags:
+        - 블로그 콘텐츠
+      summary: 블로그 글 검색
+      description: "게시된 블로그 글을 검색합니다"
+      parameters:
+        - name: query
+          in: query
+          description: "검색 키워드"
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: "카테고리 슬러그"
+          schema:
+            type: string
+        - name: tag
+          in: query
+          description: "태그 이름"
+          schema:
+            type: string
+        - name: difficulty
+          in: query
+          description: "난이도 필터"
+          schema:
+            type: string
+            enum: [BEGINNER, INTERMEDIATE, ADVANCED]
+        - name: page
+          in: query
+          description: "페이지 번호 (0부터 시작)"
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: "페이지 크기"
+          schema:
+            type: integer
+            default: 20
+        - name: sort
+          in: query
+          description: "정렬 방식"
+          schema:
+            type: string
+            default: "createdAt,desc"
+      responses:
+        '200':
+          description: "글 검색 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleSearchResponse'
+
+  /api/v1/content/articles/{slug}:
+    get:
+      tags:
+        - 블로그 콘텐츠
+      summary: 글 상세 조회
+      description: "슬러그로 특정 글의 상세 정보를 조회합니다"
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: "글 슬러그"
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "글 조회 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+        '404':
+          description: "글을 찾을 수 없음"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/content/articles/featured:
+    get:
+      tags:
+        - 블로그 콘텐츠
+      summary: 추천 글 목록
+      description: "추천 글 목록을 조회합니다"
+      parameters:
+        - name: limit
+          in: query
+          description: "조회할 글 수"
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: "추천 글 조회 성공"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArticleResponse'
+
+  /api/v1/content/articles/recent:
+    get:
+      tags:
+        - 블로그 콘텐츠
+      summary: 최신 글 목록
+      description: "최신 글 목록을 조회합니다"
+      parameters:
+        - name: limit
+          in: query
+          description: "조회할 글 수"
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: "최신 글 조회 성공"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArticleResponse'
+
+  /api/v1/content/articles/{articleId}/related:
+    get:
+      tags:
+        - 블로그 콘텐츠
+      summary: 관련 글 목록
+      description: "특정 글과 관련된 글 목록을 조회합니다"
+      parameters:
+        - name: articleId
+          in: path
+          required: true
+          description: "글 ID"
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          description: "조회할 글 수"
+          schema:
+            type: integer
+            default: 5
+      responses:
+        '200':
+          description: "관련 글 조회 성공"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArticleResponse'
+
+  /api/v1/content/categories:
+    get:
+      tags:
+        - 블로그 콘텐츠
+      summary: 카테고리 목록
+      description: "모든 활성 카테고리 목록을 조회합니다"
+      responses:
+        '200':
+          description: "카테고리 조회 성공"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+
+  /api/v1/content/categories/{slug}:
+    get:
+      tags:
+        - 블로그 콘텐츠
+      summary: 카테고리 상세 조회
+      description: "슬러그로 특정 카테고리 정보를 조회합니다"
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: "카테고리 슬러그"
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "카테고리 조회 성공"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '404':
+          description: "카테고리를 찾을 수 없음"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/content/categories/featured:
+    get:
+      tags:
+        - 블로그 콘텐츠
+      summary: 추천 카테고리 목록
+      description: "홈페이지 표시용 추천 카테고리 목록을 조회합니다"
+      responses:
+        '200':
+          description: "추천 카테고리 조회 성공"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+
+  /api/v1/content/tags:
+    get:
+      tags:
+        - 블로그 콘텐츠
+      summary: 태그 목록
+      description: "태그 목록을 조회합니다"
+      parameters:
+        - name: type
+          in: query
+          description: "태그 타입"
+          schema:
+            type: string
+            enum: [GENERAL, TECHNICAL, LEVEL, STRATEGY]
+        - name: query
+          in: query
+          description: "태그 검색 키워드"
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: "조회할 태그 수"
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: "태그 조회 성공"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TagResponse'
+
+  /api/v1/content/tags/popular:
+    get:
+      tags:
+        - 블로그 콘텐츠
+      summary: 인기 태그 목록
+      description: "인기 태그 목록을 조회합니다"
+      parameters:
+        - name: limit
+          in: query
+          description: "조회할 태그 수"
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: "인기 태그 조회 성공"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TagResponse'
 
 components:
   securitySchemes:
@@ -2548,3 +2824,365 @@ components:
           type: string
           description: "누적 수익률"
           example: "5.0"
+
+    # Blog Content Schemas
+    ArticleResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: "글 ID"
+          example: 1
+        title:
+          type: string
+          description: "제목"
+          example: "주식 투자 초보자를 위한 가이드"
+        slug:
+          type: string
+          description: "슬러그"
+          example: "stock-investment-guide-for-beginners"
+        summary:
+          type: string
+          description: "요약"
+          example: "주식 투자를 시작하는 초보자를 위한 기본 가이드입니다."
+        content:
+          type: string
+          description: "본문 내용"
+          example: "주식 투자는..."
+        authorId:
+          type: integer
+          format: int64
+          description: "작성자 ID"
+          example: 1
+        authorNickname:
+          type: string
+          description: "작성자 닉네임"
+          example: "투자전문가"
+        categoryId:
+          type: integer
+          format: int64
+          description: "카테고리 ID"
+          example: 1
+        categoryName:
+          type: string
+          description: "카테고리 이름"
+          example: "주식 기초"
+        status:
+          type: string
+          enum: [DRAFT, PUBLISHED, ARCHIVED]
+          description: "글 상태"
+          example: "PUBLISHED"
+        featured:
+          type: boolean
+          description: "추천 글 여부"
+          example: true
+        viewCount:
+          type: integer
+          format: int64
+          description: "조회수"
+          example: 1250
+        likeCount:
+          type: integer
+          format: int64
+          description: "좋아요 수"
+          example: 85
+        commentCount:
+          type: integer
+          format: int64
+          description: "댓글 수"
+          example: 12
+        readingTimeMinutes:
+          type: integer
+          description: "읽기 시간 (분)"
+          example: 5
+        readingTimeDisplay:
+          type: string
+          description: "읽기 시간 표시"
+          example: "5분 소요"
+        difficulty:
+          type: string
+          enum: [BEGINNER, INTERMEDIATE, ADVANCED]
+          description: "난이도"
+          example: "BEGINNER"
+        difficultyDisplay:
+          type: string
+          description: "난이도 표시"
+          example: "초급"
+        seoTitle:
+          type: string
+          description: "SEO 제목"
+          example: "주식 투자 초보자 가이드 - 기초부터 시작하는 투자 전략"
+        metaDescription:
+          type: string
+          description: "메타 설명"
+          example: "주식 투자를 처음 시작하는 초보자를 위한 완벽한 가이드. 기본 개념부터 실전 전략까지 단계별로 설명합니다."
+        seoKeywords:
+          type: string
+          description: "SEO 키워드"
+          example: "주식투자, 초보자, 투자가이드, 주식기초"
+        canonicalUrl:
+          type: string
+          description: "정규 URL"
+          example: "https://stockquest.com/blog/stock-investment-guide-for-beginners"
+        ogTitle:
+          type: string
+          description: "OpenGraph 제목"
+          example: "주식 투자 초보자를 위한 가이드"
+        ogDescription:
+          type: string
+          description: "OpenGraph 설명"
+          example: "주식 투자를 처음 시작하는 초보자를 위한 완벽한 가이드"
+        ogImageUrl:
+          type: string
+          description: "OpenGraph 이미지 URL"
+          example: "https://stockquest.com/images/stock-guide-cover.jpg"
+        twitterCardType:
+          type: string
+          description: "트위터 카드 타입"
+          example: "summary_large_image"
+        twitterTitle:
+          type: string
+          description: "트위터 제목"
+          example: "주식 투자 초보자를 위한 가이드"
+        twitterDescription:
+          type: string
+          description: "트위터 설명"
+          example: "주식 투자를 처음 시작하는 초보자를 위한 완벽한 가이드"
+        twitterImageUrl:
+          type: string
+          description: "트위터 이미지 URL"
+          example: "https://stockquest.com/images/stock-guide-twitter.jpg"
+        indexable:
+          type: boolean
+          description: "검색엔진 인덱싱 허용 여부"
+          example: true
+        followable:
+          type: boolean
+          description: "검색엔진 링크 따라가기 허용 여부"
+          example: true
+        schemaType:
+          type: string
+          description: "스키마 타입"
+          example: "Article"
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/TagResponse'
+          description: "태그 목록"
+        tagNames:
+          type: string
+          description: "태그 이름들 (쉼표로 구분)"
+          example: "주식, 투자, 기초, 초보자"
+        publishedAt:
+          type: string
+          format: date-time
+          description: "발행 일시"
+          example: "2024-01-15T09:00:00Z"
+        createdAt:
+          type: string
+          format: date-time
+          description: "생성 일시"
+          example: "2024-01-15T08:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: "수정 일시"
+          example: "2024-01-15T10:15:00Z"
+
+    ArticleSearchResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArticleResponse'
+          description: "글 목록"
+        totalElements:
+          type: integer
+          format: int64
+          description: "전체 글 수"
+          example: 156
+        totalPages:
+          type: integer
+          description: "전체 페이지 수"
+          example: 8
+        currentPage:
+          type: integer
+          description: "현재 페이지"
+          example: 0
+        size:
+          type: integer
+          description: "페이지 크기"
+          example: 20
+        first:
+          type: boolean
+          description: "첫 페이지 여부"
+          example: true
+        last:
+          type: boolean
+          description: "마지막 페이지 여부"
+          example: false
+        numberOfElements:
+          type: integer
+          description: "현재 페이지 글 수"
+          example: 20
+        empty:
+          type: boolean
+          description: "빈 페이지 여부"
+          example: false
+
+    CategoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: "카테고리 ID"
+          example: 1
+        name:
+          type: string
+          description: "카테고리 이름"
+          example: "주식 기초"
+        slug:
+          type: string
+          description: "카테고리 슬러그"
+          example: "stock-basics"
+        description:
+          type: string
+          description: "카테고리 설명"
+          example: "주식 투자의 기본 개념과 원리를 다루는 카테고리입니다."
+        parentId:
+          type: integer
+          format: int64
+          description: "부모 카테고리 ID"
+          example: null
+        parentName:
+          type: string
+          description: "부모 카테고리 이름"
+          example: null
+        colorCode:
+          type: string
+          description: "카테고리 색상 코드"
+          example: "#3B82F6"
+        icon:
+          type: string
+          description: "카테고리 아이콘"
+          example: "📈"
+        articleCount:
+          type: integer
+          format: int64
+          description: "글 수"
+          example: 23
+        articleCountDisplay:
+          type: string
+          description: "글 수 표시"
+          example: "23개 글"
+        sortOrder:
+          type: integer
+          description: "정렬 순서"
+          example: 1
+        active:
+          type: boolean
+          description: "활성 상태"
+          example: true
+        featuredOnHome:
+          type: boolean
+          description: "홈페이지 추천 여부"
+          example: true
+        seoTitle:
+          type: string
+          description: "SEO 제목"
+          example: "주식 기초 - 투자 초보자를 위한 필수 지식"
+        metaDescription:
+          type: string
+          description: "메타 설명"
+          example: "주식 투자의 기본 개념과 원리를 배우는 초보자를 위한 카테고리입니다."
+        seoKeywords:
+          type: string
+          description: "SEO 키워드"
+          example: "주식기초, 투자기초, 주식투자입문"
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryResponse'
+          description: "하위 카테고리 목록"
+        level:
+          type: integer
+          description: "카테고리 레벨"
+          example: 0
+        levelIndent:
+          type: string
+          description: "레벨 들여쓰기"
+          example: ""
+        createdAt:
+          type: string
+          format: date-time
+          description: "생성 일시"
+          example: "2024-01-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: "수정 일시"
+          example: "2024-01-15T10:30:00Z"
+
+    TagResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: "태그 ID"
+          example: 1
+        name:
+          type: string
+          description: "태그 이름"
+          example: "주식"
+        slug:
+          type: string
+          description: "태그 슬러그"
+          example: "stock"
+        description:
+          type: string
+          description: "태그 설명"
+          example: "주식 투자 관련 콘텐츠"
+        type:
+          type: string
+          enum: [GENERAL, TECHNICAL, LEVEL, STRATEGY]
+          description: "태그 타입"
+          example: "GENERAL"
+        typeDisplay:
+          type: string
+          description: "태그 타입 표시"
+          example: "일반"
+        colorCode:
+          type: string
+          description: "태그 색상 코드"
+          example: "#10B981"
+        articleCount:
+          type: integer
+          format: int64
+          description: "관련 글 수"
+          example: 45
+        articleCountDisplay:
+          type: string
+          description: "관련 글 수 표시"
+          example: "45개 글"
+        popularityScore:
+          type: integer
+          description: "인기도 점수"
+          example: 95
+        active:
+          type: boolean
+          description: "활성 상태"
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: "생성 일시"
+          example: "2024-01-01T00:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: "수정 일시"
+          example: "2024-01-15T10:30:00Z"

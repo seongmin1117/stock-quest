@@ -1,28 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { blogApi, Article } from '@/shared/api/blog-client';
+import { useGetApiV1ContentArticlesRecent } from '@/shared/api/generated/블로그-콘텐츠/블로그-콘텐츠';
+import type { ArticleResponse } from '@/shared/api/generated/model';
 
 export default function RecentArticles() {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadRecentArticles = async () => {
-      try {
-        const data = await blogApi.getRecentArticles(10);
-        setArticles(data);
-      } catch (error) {
-        console.error('Failed to load recent articles:', error);
-        setArticles([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadRecentArticles();
-  }, []);
+  const { data: articles, isLoading: loading, error } = useGetApiV1ContentArticlesRecent(
+    { limit: 10 },
+    {
+      staleTime: 1000 * 60 * 2, // 2 minutes
+      cacheTime: 1000 * 60 * 5, // 5 minutes
+    }
+  );
 
   if (loading) {
     return (
@@ -41,6 +30,14 @@ export default function RecentArticles() {
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 bg-red-50 rounded-lg">
+        <p className="text-red-500">최신 글을 불러오는 중 오류가 발생했습니다.</p>
       </div>
     );
   }
