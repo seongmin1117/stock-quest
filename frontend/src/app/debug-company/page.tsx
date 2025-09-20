@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Container, Typography, Button, CircularProgress, Alert } from '@mui/material';
 import { companyClient } from '@/shared/api/company-client';
-import { useAuthStore } from '@/shared/lib/auth/auth-store';
+import { useAuth, useAuthTokens } from '@/shared/lib/auth/auth-store';
 
 export default function DebugCompanyPage() {
   const [loading, setLoading] = useState(false);
@@ -11,8 +11,8 @@ export default function DebugCompanyPage() {
   const [error, setError] = useState<string>('');
 
   // Authentication debugging
-  const { getAccessToken, isTokenExpired } = useAuthStore();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user } = useAuth();
+  const { getAccessToken, isTokenExpired } = useAuthTokens();
 
   const testCategories = async () => {
     console.log('🔍 Testing categories API...');
