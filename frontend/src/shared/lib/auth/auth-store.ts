@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { useShallow } from 'zustand/react/shallow';
 import { AuthResponse } from '@/shared/api/generated/model/authResponse';
 
 /**
@@ -216,19 +217,40 @@ export const useAuthStore = create<AuthState>()(
 );
 
 /**
- * 인증 상태 셀렉터
+ * 인증 상태 셀렉터 (useShallow로 최적화)
  */
 export const useAuth = () => {
-  const { isAuthenticated, user, tokens } = useAuthStore();
-  return { isAuthenticated, user, tokens };
+  return useAuthStore(
+    useShallow((state) => ({
+      isAuthenticated: state.isAuthenticated,
+      user: state.user,
+      tokens: state.tokens,
+      isLoading: state.isLoading,
+      error: state.error,
+    }))
+  );
 };
 
 export const useAuthActions = () => {
-  const { login, logout, setTokens, setUser, setLoading, setError } = useAuthStore();
-  return { login, logout, setTokens, setUser, setLoading, setError };
+  return useAuthStore(
+    useShallow((state) => ({
+      login: state.login,
+      logout: state.logout,
+      setTokens: state.setTokens,
+      setUser: state.setUser,
+      setLoading: state.setLoading,
+      setError: state.setError,
+    }))
+  );
 };
 
 export const useAuthTokens = () => {
-  const { getAccessToken, getRefreshToken, isTokenExpired, isRefreshTokenExpired } = useAuthStore();
-  return { getAccessToken, getRefreshToken, isTokenExpired, isRefreshTokenExpired };
+  return useAuthStore(
+    useShallow((state) => ({
+      getAccessToken: state.getAccessToken,
+      getRefreshToken: state.getRefreshToken,
+      isTokenExpired: state.isTokenExpired,
+      isRefreshTokenExpired: state.isRefreshTokenExpired,
+    }))
+  );
 };

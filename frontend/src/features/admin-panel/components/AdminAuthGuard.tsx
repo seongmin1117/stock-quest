@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, CircularProgress, Typography, Alert } from '@mui/material';
-import { useAuthStore } from '@/shared/lib/auth/auth-store';
+import { useAuth } from '@/shared/lib/auth/auth-store';
 
 interface AdminAuthGuardProps {
   children: React.ReactNode;
@@ -11,7 +11,7 @@ interface AdminAuthGuardProps {
 
 export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
