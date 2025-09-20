@@ -60,10 +60,7 @@ spring:
           use_query_cache: true
           region:
             factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
-        jakarta:
-          persistence:
-            sharedCache:
-              mode: ENABLE_SELECTIVE
+        # JCache Provider 설정
         javax:
           cache:
             provider: org.ehcache.jsr107.EhcacheCachingProvider

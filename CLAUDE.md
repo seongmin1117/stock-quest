@@ -145,7 +145,8 @@ The system implements real-time features through:
    - Backtesting capabilities
 
 3. **Performance Optimization**:
-   - Multi-level caching (Caffeine + Redis)
+   - Multi-level caching (Hibernate L2C + Redis + Caffeine)
+   - Hibernate Second-level Cache with EhCache 3.10.8
    - Async processing with Spring Reactor
    - Database query optimization with custom indexes
    - Connection pooling and resource management
@@ -226,6 +227,7 @@ The database includes carefully designed indexes for:
 - **Dashboard API Integration**: ✅ Complete - Real backend data instead of mock data
 - **Challenge Start Enhancement**: ✅ Complete - Force restart logic and improved session management
 - **Code Quality Improvements**: ✅ Complete - Lombok fixes, logging optimization, Korean encoding
+- **Hibernate Second-level Cache**: ✅ Complete - EhCache 3.10.8 integration with 50-70% query reduction expected
 
 ### Active Development Areas
 - **User Challenge Participation**: Frontend components for users joining and participating in challenges
@@ -284,6 +286,18 @@ The database includes carefully designed indexes for:
 - **Error Handling**: Proper loading states, error handling, and validation
 - **API Endpoints**: Full CRUD operations including status management and featured challenges
 - **Frontend Integration**: Material-UI components with form validation and user authentication
+
+### Hibernate Second-level Cache Implementation (2025-09-20)
+- **EhCache 3.10.8 Integration**: Added JSR-107 compatible caching with Hibernate 6.x
+- **Comprehensive Cache Configuration**: Created ehcache.xml with 20 cache regions and 3 template strategies
+- **Core Entity Caching**: Applied @Cache annotations to ChallengeJpaEntity, UserJpaEntity, LeaderboardJpaEntity
+- **Performance Optimization**: Expected 50-70% reduction in database query load
+- **Template-based Policies**:
+  - read-mostly (2h TTL) for Challenge/User entities
+  - frequent-update (30min TTL) for Leaderboard entities
+  - default (1h TTL) for general entities
+- **Environment Configuration**: Separate dev/production cache settings with Jakarta Persistence compliance
+- **Cache Metrics**: L2C hit/miss tracking enabled for performance monitoring
 
 ## New API Endpoints
 

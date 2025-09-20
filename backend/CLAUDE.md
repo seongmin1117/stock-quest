@@ -62,16 +62,20 @@ src/main/java/com/stockquest/
 - **캐시 시스템 구성**: 20개 캐시 영역 + 성능 모니터링 활성화
 - **JPQL 쿼리 검증 완료**: 모든 Repository 쿼리 안정화
 
-### ⚠️ **개선이 필요한 영역들**
+### ✅ **완료된 주요 성능 최적화**
 
-#### **🔥 1단계: 즉시 해결 (Critical)**
+#### **🔥 1단계: 즉시 해결 (Critical) - ✅ 완료**
 - [x] **Redis Repository 설정 분리** - ✅ 완료: Spring Data 충돌 해결
 - [x] **백엔드 서버 실행 문제** - ✅ 완료: 모든 Bean 의존성 해결, 8.11초 안정적 시작
 - [x] **Bean 의존성 문제** - ✅ 완료: ChallengeRepository 도메인 구현체 생성
-- [ ] **캐시 워밍업 최적화** - 워밍업 실패는 비크리티컬하지만 개선 가능
 
-#### **🚀 2단계: 성능 최적화 (High Impact)**
-- [ ] **Hibernate Second-level Cache 활성화** - 데이터베이스 쿼리 부하 50-70% 감소 예상
+#### **🚀 2단계: 성능 최적화 (High Impact) - ✅ 주요 완료**
+- [x] **Hibernate Second-level Cache 활성화** - ✅ 완료: EhCache 3.10.8 통합, 50-70% 쿼리 감소 기대
+  - EhCache 설정 파일 생성 (20개 캐시 영역)
+  - 핵심 엔티티 캐싱: Challenge, User, Leaderboard
+  - Hibernate 6.x 호환 완전 설정
+  - 템플릿 기반 캐시 정책 (TTL: 10분-2시간)
+- [ ] **캐시 워밍업 최적화** - 워밍업 실패는 비크리티컬하지만 개선 가능
 - [ ] **Database Connection Pool 최적화** - HikariCP 설정 튜닝
 - [ ] **실시간 성능 모니터링 강화** - 캐시 히트율, API 응답시간, 메모리 사용률
 
@@ -87,9 +91,10 @@ src/main/java/com/stockquest/
 
 ### **📋 다음 우선순위 작업**
 1. **✅ 백엔드 서버 실행 문제 완전 해결** - 완료! 8.11초 안정적 시작
-2. **Hibernate Second-level Cache 활성화** - 데이터베이스 쿼리 50-70% 감소 예상
+2. **✅ Hibernate Second-level Cache 활성화** - 완료! EhCache 3.10.8 통합, 50-70% 쿼리 감소 기대
 3. **캐시 워밍업 최적화** - 비크리티컬이지만 성능 향상 가능
-4. **성능 모니터링 대시보드 구축** - 실시간 성능 추적
+4. **실시간 성능 모니터링 대시보드 구축** - 캐시 히트율, API 응답시간 추적
+5. **Database Connection Pool 최적화** - HikariCP 세부 튜닝
 
 ## Development Guidelines
 

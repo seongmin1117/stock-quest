@@ -20,6 +20,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        # Hibernate Second-level Cache 기본 설정 (환경별 오버라이드)
+        cache:
+          use_second_level_cache: false  # 환경별 파일에서 활성화
+          use_query_cache: false
+        # JCache Provider 설정 (환경별에서 활성화시에만 사용)
+        javax:
+          cache:
+            provider: org.ehcache.jsr107.EhcacheCachingProvider
+            uri: classpath:ehcache.xml
 
   # Redis 설정
   data:

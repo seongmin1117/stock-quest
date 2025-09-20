@@ -45,23 +45,17 @@ spring:
         generate_statistics: true
         order_inserts: true
         order_updates: true
-        # Hibernate Second-level Cache 활성화 (EhCache) - Hibernate 6.x 완전 설정
+        # Hibernate Second-level Cache 활성화 (EhCache) - Hibernate 6.x 설정
         cache:
           use_second_level_cache: true
           use_query_cache: true
           region:
             factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
-        jakarta:
-          persistence:
-            sharedCache:
-              mode: ENABLE_SELECTIVE
+        # JCache Provider 설정
         javax:
           cache:
             provider: org.ehcache.jsr107.EhcacheCachingProvider
             uri: classpath:ehcache.xml
-        # Hibernate 6.x 캐시 강제 활성화
-        cache_default_region: stockquest-default
-        format_sql: true
         jdbc:
           batch_size: 25
           fetch_size: 50
