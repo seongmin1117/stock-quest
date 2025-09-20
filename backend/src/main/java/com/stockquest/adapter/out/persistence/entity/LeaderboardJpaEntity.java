@@ -4,16 +4,20 @@ import com.stockquest.domain.leaderboard.LeaderboardEntry;
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
  * 리더보드 JPA 엔티티
+ * Hibernate Second-level Cache 적용 (READ_WRITE 전략)
  */
 @Entity
 @Table(name = "leaderboard")
 @EntityListeners(AuditingEntityListener.class)
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class LeaderboardJpaEntity {
     
     @Id

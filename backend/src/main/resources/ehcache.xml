@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.ehcache.org/v3"
+        xsi:schemaLocation="http://www.ehcache.org/v3
+                            http://www.ehcache.org/schema/ehcache-core-3.0.xsd">
+
+  <!-- EhCache Configuration for Hibernate Second-level Cache -->
+
+  <!-- Default Cache Template (공통 설정) -->
+  <cache-template name="default">
+    <expiry>
+      <ttl unit="hours">1</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+      <offheap unit="MB">10</offheap>
+    </resources>
+  </cache-template>
+
+  <!-- 읽기 전용 캐시 Template (자주 읽기, 가끔 쓰기) -->
+  <cache-template name="read-mostly">
+    <expiry>
+      <ttl unit="hours">2</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">2000</heap>
+      <offheap unit="MB">20</offheap>
+    </resources>
+  </cache-template>
+
+  <!-- 빈번한 업데이트 캐시 Template -->
+  <cache-template name="frequent-update">
+    <expiry>
+      <ttl unit="minutes">30</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">500</heap>
+      <offheap unit="MB">5</offheap>
+    </resources>
+  </cache-template>
+
+  <!-- 1. Challenge Entities (읽기 많음, 가끔 쓰기) -->
+  <cache alias="com.stockquest.adapter.out.persistence.entity.ChallengeJpaEntity"
+         uses-template="read-mostly"/>
+
+  <cache alias="com.stockquest.adapter.out.persistence.entity.ChallengeCategoryJpaEntity"
+         uses-template="read-mostly"/>
+
+  <cache alias="com.stockquest.adapter.out.persistence.entity.ChallengeTemplateJpaEntity"
+         uses-template="read-mostly"/>
+
+  <cache alias="com.stockquest.adapter.out.persistence.entity.ChallengeInstrumentJpaEntity"
+         uses-template="read-mostly"/>
+
+  <!-- 2. User Entity (자주 읽기, 가끔 쓰기) -->
+  <cache alias="com.stockquest.adapter.out.persistence.entity.UserJpaEntity"
+         uses-template="read-mostly"/>
+
+  <!-- 3. Price Data (매우 자주 읽기, 정기적 쓰기) -->
+  <cache alias="com.stockquest.adapter.out.persistence.entity.PriceCandleJpaEntity">
+    <expiry>
+      <ttl unit="minutes">15</ttl>  <!-- 가격 데이터는 빠른 갱신 필요 -->
+    </expiry>
+    <resources>
+      <heap unit="entries">5000</heap>
+      <offheap unit="MB">50</offheap>
+    </resources>
+  </cache>
+
+  <!-- 4. Leaderboard (자주 읽기, 중간 정도 쓰기) -->
+  <cache alias="com.stockquest.adapter.out.persistence.entity.LeaderboardJpaEntity"
+         uses-template="frequent-update"/>
+
+  <!-- 5. Challenge Sessions (중간 정도 읽기/쓰기) -->
+  <cache alias="com.stockquest.adapter.out.persistence.entity.ChallengeSessionJpaEntity"
+         uses-template="frequent-update"/>
+
+  <!-- 6. Community Entities (중간 정도 읽기/쓰기) -->
+  <cache alias="com.stockquest.adapter.out.persistence.entity.CommunityPostJpaEntity"
+         uses-template="default"/>
+
+  <cache alias="com.stockquest.adapter.out.persistence.entity.CommunityCommentJpaEntity"
+         uses-template="default"/>
+
+  <!-- 7. Refresh Token (보안상 짧은 TTL) -->
+  <cache alias="com.stockquest.adapter.out.persistence.entity.RefreshTokenJpaEntity">
+    <expiry>
+      <ttl unit="minutes">10</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+      <offheap unit="MB">5</offheap>
+    </resources>
+  </cache>
+
+  <!-- Query Cache (쿼리 결과 캐시) -->
+  <cache alias="default-query-results-region">
+    <expiry>
+      <ttl unit="minutes">30</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+      <offheap unit="MB">10</offheap>
+    </resources>
+  </cache>
+
+  <!-- Update Timestamps Cache (업데이트 타임스탬프) -->
+  <cache alias="default-update-timestamps-region">
+    <expiry>
+      <none/>  <!-- 무제한 - Hibernate가 관리 -->
+    </expiry>
+    <resources>
+      <heap unit="entries">5000</heap>
+    </resources>
+  </cache>
+
+</config>

@@ -54,10 +54,20 @@ spring:
         order_updates: true
         generate_statistics: false  # 운영 환경에서는 false
         
-        # 캐시 설정
+        # Hibernate Second-level Cache 활성화 (운영 환경) - Hibernate 6.x
         cache:
-          use_second_level_cache: false
-          use_query_cache: false
+          use_second_level_cache: true
+          use_query_cache: true
+          region:
+            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+        jakarta:
+          persistence:
+            sharedCache:
+              mode: ENABLE_SELECTIVE
+        javax:
+          cache:
+            provider: org.ehcache.jsr107.EhcacheCachingProvider
+            uri: classpath:ehcache.xml
             
         # Connection 관리
         connection:

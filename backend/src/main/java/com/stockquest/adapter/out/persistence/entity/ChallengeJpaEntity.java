@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -15,6 +17,7 @@ import java.time.LocalDateTime;
 
 /**
  * 챌린지 JPA 엔티티
+ * Hibernate Second-level Cache 적용 (READ_WRITE 전략)
  */
 @Entity
 @Table(name = "challenge")
@@ -22,6 +25,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class ChallengeJpaEntity {
     
     @Id
