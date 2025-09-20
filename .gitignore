@@ -25,7 +25,9 @@ hs_err_pid*
 # Build directories
 build/
 target/
+# out/ 디렉토리는 빌드 산출물을 위한 것이지만 adapter/out은 소스코드이므로 제외
 out/
+!backend/src/main/java/com/stockquest/adapter/out/
 
 # IDE
 .vscode/
@@ -44,6 +46,18 @@ out/
 .idea/artifacts/
 .idea/gradle.xml
 .idea/caches/
+# Additional IDEA files
+.idea/compiler.xml
+.idea/modules.xml
+.idea/modules/
+.idea/.name
+.idea/inspectionProfiles/
+.idea/encodings.xml
+.idea/libraries/
+.idea/runConfigurations/
+*.iml
+*.ipr
+*.iws
 
 # Gradle
 .gradle/
@@ -88,13 +102,8 @@ coverage/
 test-results/
 playwright-report/
 
-# Logs
+# Additional Logs
 logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
 lerna-debug.log*
 
 # Database
