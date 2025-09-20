@@ -6,6 +6,7 @@ import com.stockquest.application.port.out.ChallengePort;
 import com.stockquest.domain.challenge.Challenge;
 import com.stockquest.domain.challenge.port.ChallengeRepository;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -65,14 +66,17 @@ public class ChallengePortAdapter implements ChallengePort {
 
     @Override
     public List<Challenge> findPopularChallenges(int limit) {
-        // TODO: 인기도 기반 정렬 로직 구현 필요
-        return challengeRepository.findAll(0, limit);
+        // 활성 챌린지 중에서 제한된 수만 반환 (인기도 기준이 없으므로 활성 챌린지 중 상위 N개)
+        return challengeRepository.findActiveChallenges()
+                .stream()
+                .limit(limit)
+                .toList();
     }
 
     @Override
     public List<Challenge> findFeaturedChallenges() {
-        // TODO: 피처드 챌린지 조회 로직 구현 필요
-        return challengeRepository.findAll(0, 100); // 임시 구현
+        // 활성 챌린지들을 피처드 챌린지로 반환
+        return challengeRepository.findActiveChallenges();
     }
 
     @Override

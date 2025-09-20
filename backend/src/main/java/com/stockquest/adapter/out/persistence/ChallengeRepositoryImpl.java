@@ -8,11 +8,11 @@ import com.stockquest.domain.challenge.port.ChallengeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * ChallengeRepository 구현체
@@ -42,17 +42,17 @@ public class ChallengeRepositoryImpl implements ChallengeRepository {
         return jpaRepository.findByStatus(status)
             .stream()
             .map(ChallengeJpaEntity::toDomain)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     @Override
     public List<Challenge> findAll(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return jpaRepository.findAll(pageable)
             .getContent()
             .stream()
             .map(ChallengeJpaEntity::toDomain)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     @Override
@@ -60,6 +60,6 @@ public class ChallengeRepositoryImpl implements ChallengeRepository {
         return jpaRepository.findActiveChallenges()
             .stream()
             .map(ChallengeJpaEntity::toDomain)
-            .collect(Collectors.toList());
+            .toList();
     }
 }

@@ -2,6 +2,7 @@ package com.stockquest.adapter.out.persistence.repository;
 
 import com.stockquest.adapter.out.persistence.entity.ChallengeJpaEntity;
 import com.stockquest.domain.challenge.ChallengeStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -18,4 +19,11 @@ public interface ChallengeJpaRepository extends JpaRepository<ChallengeJpaEntity
     
     @Query("SELECT c FROM ChallengeJpaEntity c WHERE c.status = 'ACTIVE' ORDER BY c.createdAt DESC")
     List<ChallengeJpaEntity> findActiveChallenges();
+
+    @Query("SELECT c FROM ChallengeJpaEntity c WHERE c.status = 'ACTIVE' ORDER BY c.createdAt DESC")
+    List<ChallengeJpaEntity> findFeaturedChallenges();
+
+
+    @Query("SELECT c FROM ChallengeJpaEntity c WHERE c.status = :status ORDER BY c.createdAt DESC")
+    List<ChallengeJpaEntity> findByStatusString(String status);
 }
