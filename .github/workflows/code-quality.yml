@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     
     - name: Set up JDK 21
       uses: actions/setup-java@v5
@@ -20,7 +20,7 @@ jobs:
         distribution: 'temurin'
         
     - name: Cache Gradle packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.gradle/caches
@@ -56,7 +56,7 @@ jobs:
         ./gradlew test jacocoTestReport
       
     - name: Upload Code Coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         file: backend/build/reports/jacoco/test/jacocoTestReport.xml
         flags: backend
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     
     - name: Setup Node.js
       uses: actions/setup-node@v5
@@ -75,7 +75,7 @@ jobs:
         node-version: '18'
         
     - name: Setup npm cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.npm
         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -104,7 +104,7 @@ jobs:
         npm run test -- --coverage
         
     - name: Upload Frontend Coverage
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         file: frontend/coverage/lcov.info
         flags: frontend
@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
@@ -143,7 +143,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     
     - name: OWASP Dependency Check
       uses: dependency-check/Dependency-Check_Action@main
@@ -180,7 +180,7 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0  # Shallow clones should be disabled for better relevancy
         
@@ -191,14 +191,14 @@ jobs:
         distribution: 'temurin'
         
     - name: Cache SonarQube packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.sonar/cache
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
         
     - name: Cache Gradle packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.gradle/caches

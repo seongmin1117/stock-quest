@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'jacoco'
     id 'org.springframework.boot' version '3.5.5'
-    id 'io.spring.dependency-management' version '1.1.6'
+    id 'io.spring.dependency-management' version '1.1.7'
     id 'org.flywaydb.flyway' version '10.15.0'
 }
 
@@ -35,8 +35,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     
     // Rate Limiting with Spring Boot (basic implementation)
-    implementation 'com.github.vladimir-bukhtoyarov:bucket4j-core:7.6.0'
-    implementation 'com.github.vladimir-bukhtoyarov:bucket4j-redis:7.6.0'
+    implementation 'com.bucket4j:bucket4j-core:8.0.1'
+    implementation 'com.bucket4j:bucket4j-redis:8.0.1'
     
     // AOP for Metrics
     implementation 'org.springframework.boot:spring-boot-starter-aop'
@@ -74,7 +74,7 @@ dependencies {
     // implementation 'com.github.haifengl:smile-core:3.1.1'              // Machine learning algorithms (fallback mode)
     // implementation 'com.github.haifengl:smile-data:3.1.1'              // Data processing (fallback mode)
     implementation 'org.springframework.boot:spring-boot-starter-cache'   // Advanced caching
-    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'        // High-performance caching
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.2.2'        // High-performance caching
     implementation 'io.projectreactor:reactor-tools'                     // Reactor debugging tools
     implementation 'org.springframework.boot:spring-boot-starter-mail'    // Email alerts for risk monitoring
     
