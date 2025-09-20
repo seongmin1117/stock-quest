@@ -20,6 +20,7 @@ interface UserInfo {
   id: number;
   email: string;
   nickname: string;
+  role: 'USER' | 'ADMIN';
 }
 
 /**
@@ -129,10 +130,16 @@ export const useAuthStore = create<AuthState>()(
 
           // 사용자 정보 설정
           if (response.userId && response.email && response.nickname) {
+            // 관리자 여부 판단 (Navbar.tsx와 동일한 로직)
+            const isAdmin = response.email === 'admin@example.com' ||
+                          response.email === 'admin@stockquest.com' ||
+                          response.nickname?.toLowerCase().includes('admin');
+
             state.user = {
               id: response.userId,
               email: response.email,
               nickname: response.nickname,
+              role: isAdmin ? 'ADMIN' : 'USER',
             };
           }
 

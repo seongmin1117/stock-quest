@@ -173,8 +173,8 @@ export class ExportUtils {
 
     // 선택된 섹션별로 시트 생성
     options.selectedSections.forEach(section => {
-      if (data.sections && data.sections[section]) {
-        workbook.sheets[section] = data.sections[section];
+      if (data.sections && (data.sections as any)[section]) {
+        (workbook.sheets as any)[section] = (data.sections as any)[section];
       }
     });
 

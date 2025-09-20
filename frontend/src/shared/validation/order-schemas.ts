@@ -7,11 +7,11 @@ import { z } from 'zod';
 
 // Enum 스키마들 - 백엔드와 정확히 일치
 export const OrderSideSchema = z.enum(['BUY', 'SELL'], {
-  errorMap: () => ({ message: '매수/매도를 선택해주세요' }),
+  message: '매수/매도를 선택해주세요',
 });
 
 export const OrderTypeSchema = z.enum(['MARKET', 'LIMIT'], {
-  errorMap: () => ({ message: '주문 유형을 선택해주세요' }),
+  message: '주문 유형을 선택해주세요',
 });
 
 export const OrderStatusSchema = z.enum(['PENDING', 'EXECUTED', 'CANCELLED']);
@@ -30,8 +30,7 @@ export const PlaceOrderRequestSchema = z.object({
   
   quantity: z
     .number({
-      required_error: '주문 수량은 필수입니다',
-      invalid_type_error: '주문 수량은 숫자여야 합니다',
+      message: '주문 수량은 숫자여야 합니다',
     })
     .min(0.000001, '주문 수량은 0보다 커야 합니다')
     .max(999999999, '주문 수량이 너무 큽니다')
@@ -49,7 +48,7 @@ export const PlaceOrderRequestSchema = z.object({
   
   limitPrice: z
     .number({
-      invalid_type_error: '지정가는 숫자여야 합니다',
+      message: '지정가는 숫자여야 합니다',
     })
     .min(0.01, '지정가는 0.01 이상이어야 합니다')
     .max(999999999, '지정가가 너무 큽니다')

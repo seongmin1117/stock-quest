@@ -654,7 +654,6 @@ const RecommendationSystemPage = () => {
                 <Scatter
                   dataKey="return"
                   fill="#8884d8"
-                  r={(entry: any) => entry.value}
                 />
               </ScatterChart>
             </ResponsiveContainer>

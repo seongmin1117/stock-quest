@@ -77,7 +77,8 @@ const statusColors = {
   [ChallengeStatus.ACTIVE]: 'primary',
   [ChallengeStatus.COMPLETED]: 'success',
   [ChallengeStatus.ARCHIVED]: 'secondary',
-  [ChallengeStatus.CANCELLED]: 'error'
+  [ChallengeStatus.CANCELLED]: 'error',
+  [ChallengeStatus.PAUSED]: 'warning'
 } as const;
 
 const typeColors = {
@@ -91,7 +92,12 @@ const typeColors = {
   [ChallengeType.RISK_MANAGEMENT]: 'warning',
   [ChallengeType.TOURNAMENT]: 'primary',
   [ChallengeType.EDUCATIONAL]: 'info',
-  [ChallengeType.COMMUNITY]: 'secondary'
+  [ChallengeType.COMMUNITY]: 'secondary',
+  [ChallengeType.STOCK_PICKING]: 'primary',
+  [ChallengeType.PORTFOLIO_MANAGEMENT]: 'secondary',
+  [ChallengeType.OPTIONS_TRADING]: 'error',
+  [ChallengeType.SECTOR_ANALYSIS]: 'info',
+  [ChallengeType.TECHNICAL_ANALYSIS]: 'success'
 } as const;
 
 interface TabPanelProps {
@@ -404,7 +410,7 @@ export default function ChallengeDetailPage() {
                   태그
                 </Typography>
                 <Box display="flex" flexWrap="wrap" gap={1}>
-                  {challenge.tags.map((tag) => (
+                  {(challenge.tags || []).map((tag) => (
                     <Chip key={tag} label={tag} variant="outlined" size="small" />
                   ))}
                 </Box>
@@ -461,11 +467,11 @@ export default function ChallengeDetailPage() {
                   <>
                     <LinearProgress
                       variant="determinate"
-                      value={(challenge.currentParticipants / challenge.maxParticipants) * 100}
+                      value={((challenge.currentParticipants || 0) / challenge.maxParticipants) * 100}
                       sx={{ mb: 2 }}
                     />
                     <Typography variant="body2" color="text.secondary">
-                      {Math.round((challenge.currentParticipants / challenge.maxParticipants) * 100)}% 달성
+                      {Math.round(((challenge.currentParticipants || 0) / challenge.maxParticipants) * 100)}% 달성
                     </Typography>
                   </>
                 )}

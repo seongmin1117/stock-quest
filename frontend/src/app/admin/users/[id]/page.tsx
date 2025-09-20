@@ -625,7 +625,7 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
                         <ListItem alignItems="flex-start">
                           <ListItemIcon>
                             {log.type === 'LOGIN' && <Security color="success" />}
-                            {log.type === 'LOGOUT' && <Security color="default" />}
+                            {log.type === 'LOGOUT' && <Security color="inherit" />}
                             {log.type === 'CHALLENGE_START' && <EmojiEvents color="primary" />}
                             {log.type === 'CHALLENGE_COMPLETE' && <CheckCircle color="success" />}
                             {log.type === 'ORDER_PLACED' && <AccountBalance color="primary" />}

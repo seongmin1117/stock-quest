@@ -392,7 +392,6 @@ const ChallengePerformancePage = () => {
                 <Scatter
                   dataKey="성공률"
                   fill="#8884d8"
-                  r={(entry: any) => entry.참여자수 / 10}
                 />
               </ScatterChart>
             </ResponsiveContainer>

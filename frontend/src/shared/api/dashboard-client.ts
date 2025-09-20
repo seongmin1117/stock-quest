@@ -78,7 +78,7 @@ export const dashboardApi = {
   // 대시보드 전체 데이터 조회
   getDashboardData: async (): Promise<DashboardData> => {
     const response = await apiClient.get<DashboardData>('/api/dashboard');
-    return response.data || response;
+    return (response as any).data || response;
   },
 
   // 최근 세션 목록 조회

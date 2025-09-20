@@ -8,8 +8,10 @@ export default function FeaturedArticles() {
   const { data: articles, isLoading: loading, error } = useGetApiV1ContentArticlesFeatured(
     { limit: 6 },
     {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      cacheTime: 1000 * 60 * 10, // 10 minutes
+      query: {
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        gcTime: 1000 * 60 * 10, // 10 minutes
+      }
     }
   );
 
@@ -72,7 +74,7 @@ export default function FeaturedArticles() {
             </div>
             <div className="flex items-center justify-between text-xs text-gray-500">
               <div className="flex items-center space-x-3">
-                <span>조회 {article.viewCount.toLocaleString()}</span>
+                <span>조회 {(article.viewCount || 0).toLocaleString()}</span>
                 <span>•</span>
                 <span>{article.readingTimeDisplay}</span>
               </div>

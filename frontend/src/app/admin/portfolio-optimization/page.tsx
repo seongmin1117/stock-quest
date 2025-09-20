@@ -37,7 +37,6 @@ import {
   Avatar,
   Tab,
   Tabs,
-  TabPanel,
 } from '@mui/material';
 import {
   AccountBalance,
@@ -166,7 +165,7 @@ const PortfolioOptimizationPage = () => {
 
     const optimizations = optimizationHistory.optimizations;
     const todayOptimizations = optimizations.filter(opt => {
-      const optDate = new Date(opt.createdAt || '');
+      const optDate = new Date((opt as any).createdAt || new Date());
       const today = new Date();
       return optDate.toDateString() === today.toDateString();
     });
@@ -292,9 +291,9 @@ const PortfolioOptimizationPage = () => {
 
     return rebalancingData.suggestions.map(suggestion => ({
       asset: suggestion.symbol || '',
-      currentWeight: parseFloat(suggestion.currentWeight || '0'),
-      targetWeight: parseFloat(suggestion.targetWeight || '0'),
-      action: suggestion.action || 'HOLD',
+      currentWeight: parseFloat((suggestion as any).currentWeight || '0'),
+      targetWeight: parseFloat((suggestion as any).targetWeight || '0'),
+      action: (suggestion as any).action || 'HOLD',
       amount: parseFloat(suggestion.amount || '0'),
       reason: suggestion.reason || '최적화'
     }));
@@ -344,7 +343,7 @@ const PortfolioOptimizationPage = () => {
           objective: selectedObjective,
           riskTolerance: riskTolerance.toString(),
           investmentAmount: investmentAmount.toString()
-        }
+        } as any
       });
     } catch (error) {
       console.error('Portfolio optimization failed:', error);
@@ -358,7 +357,7 @@ const PortfolioOptimizationPage = () => {
         data: {
           riskTolerance: riskTolerance.toString(),
           investmentAmount: investmentAmount.toString()
-        }
+        } as any
       });
     } catch (error) {
       console.error('Efficient frontier calculation failed:', error);
@@ -373,7 +372,7 @@ const PortfolioOptimizationPage = () => {
           startDate: '2023-01-01',
           endDate: '2023-12-31',
           benchmark: 'S&P500'
-        }
+        } as any
       });
     } catch (error) {
       console.error('Backtest execution failed:', error);

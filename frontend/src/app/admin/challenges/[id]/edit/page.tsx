@@ -103,15 +103,15 @@ export default function ChallengeEditPage() {
           difficulty: challenge.difficulty,
           challengeType: challenge.challengeType,
           initialBalance: challenge.initialBalance,
-          durationDays: challenge.durationDays,
+          durationDays: challenge.durationDays || 0,
           estimatedTimeMinutes: challenge.estimatedTimeMinutes || 0,
           maxParticipants: challenge.maxParticipants,
-          tags: challenge.tags,
+          tags: challenge.tags || [],
           learningObjectives: challenge.learningObjectives || '',
           marketScenarioDescription: challenge.marketScenarioDescription || '',
-          availableInstruments: challenge.availableInstruments,
-          riskLevel: challenge.riskLevel,
-          categoryId: challenge.categoryId
+          availableInstruments: challenge.availableInstruments || [],
+          riskLevel: challenge.riskLevel || 0,
+          categoryId: challenge.categoryId || 0
         });
       } catch (err) {
         setError('챌린지 정보를 불러오는데 실패했습니다.');

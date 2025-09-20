@@ -8,8 +8,10 @@ export default function RecentArticles() {
   const { data: articles, isLoading: loading, error } = useGetApiV1ContentArticlesRecent(
     { limit: 10 },
     {
-      staleTime: 1000 * 60 * 2, // 2 minutes
-      cacheTime: 1000 * 60 * 5, // 5 minutes
+      query: {
+        staleTime: 1000 * 60 * 2, // 2 minutes
+        gcTime: 1000 * 60 * 5, // 5 minutes
+      }
     }
   );
 
@@ -81,7 +83,7 @@ export default function RecentArticles() {
                 <div className="flex items-center space-x-4 text-xs text-gray-500">
                   <span>{article.authorNickname}</span>
                   <span>•</span>
-                  <span>조회 {article.viewCount.toLocaleString()}</span>
+                  <span>조회 {(article.viewCount || 0).toLocaleString()}</span>
                   <span>•</span>
                   <span>{article.readingTimeDisplay}</span>
                   {article.publishedAt && (

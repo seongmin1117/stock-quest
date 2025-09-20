@@ -51,16 +51,28 @@ const difficultyColors = {
 
 const statusColors = {
   [ChallengeStatus.DRAFT]: 'default',
+  [ChallengeStatus.SCHEDULED]: 'info',
   [ChallengeStatus.ACTIVE]: 'primary',
+  [ChallengeStatus.PAUSED]: 'warning',
   [ChallengeStatus.COMPLETED]: 'success',
   [ChallengeStatus.ARCHIVED]: 'secondary',
-  [ChallengeStatus.PAUSED]: 'warning'
+  [ChallengeStatus.CANCELLED]: 'error'
 } as const;
 
 const typeColors = {
+  [ChallengeType.MARKET_CRASH]: 'error',
+  [ChallengeType.BULL_MARKET]: 'success',
+  [ChallengeType.SECTOR_ROTATION]: 'secondary',
+  [ChallengeType.VOLATILITY]: 'warning',
+  [ChallengeType.ESG]: 'info',
+  [ChallengeType.INTERNATIONAL]: 'primary',
+  [ChallengeType.OPTIONS]: 'error',
+  [ChallengeType.RISK_MANAGEMENT]: 'warning',
+  [ChallengeType.TOURNAMENT]: 'secondary',
+  [ChallengeType.EDUCATIONAL]: 'info',
+  [ChallengeType.COMMUNITY]: 'primary',
   [ChallengeType.STOCK_PICKING]: 'primary',
   [ChallengeType.PORTFOLIO_MANAGEMENT]: 'secondary',
-  [ChallengeType.RISK_MANAGEMENT]: 'warning',
   [ChallengeType.OPTIONS_TRADING]: 'error',
   [ChallengeType.SECTOR_ANALYSIS]: 'info',
   [ChallengeType.TECHNICAL_ANALYSIS]: 'success'

@@ -104,7 +104,7 @@ export default function DebugCompanyPage() {
     try {
       const response = await fetch('http://localhost:8080/api/v1/companies/categories');
       console.log('✅ Direct fetch response status:', response.status);
-      console.log('✅ Direct fetch response headers:', [...response.headers.entries()]);
+      console.log('✅ Direct fetch response headers:', Array.from(response.headers.entries()));
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

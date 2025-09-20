@@ -6,10 +6,11 @@ import type { CategoryResponse } from '@/shared/api/generated/model';
 
 export default function CategoryNavigation() {
   const { data: categories, isLoading: loading, error } = useGetApiV1ContentCategories(
-    undefined,
     {
-      staleTime: 1000 * 60 * 10, // 10 minutes
-      cacheTime: 1000 * 60 * 30, // 30 minutes
+      query: {
+        staleTime: 1000 * 60 * 10, // 10 minutes
+        gcTime: 1000 * 60 * 30, // 30 minutes
+      }
     }
   );
 
@@ -100,11 +101,11 @@ export default function CategoryNavigation() {
           <Link
             key={category.id}
             href={`/blog/categories/${category.slug}`}
-            className={`relative group block p-4 rounded-lg border transition-all duration-200 ${getCategoryColor(category.slug)}`}
+            className={`relative group block p-4 rounded-lg border transition-all duration-200 ${getCategoryColor(category.slug || '')}`}
           >
             <div className="text-center">
               <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">
-                {getCategoryIcon(category.slug)}
+                {getCategoryIcon(category.slug || '')}
               </div>
               <h3 className="font-medium text-sm mb-1">
                 {category.name}

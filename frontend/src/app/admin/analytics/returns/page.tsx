@@ -542,7 +542,6 @@ const ReturnsAnalysisPage = () => {
                 <Scatter
                   dataKey="수익률"
                   fill="#8884d8"
-                  r={(entry: any) => 4 + (entry.참여자 / 50)}
                 />
               </ScatterChart>
             </ResponsiveContainer>

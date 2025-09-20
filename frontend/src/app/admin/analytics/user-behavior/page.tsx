@@ -26,7 +26,6 @@ import {
   ArrowBack,
   Person,
   AccessTime,
-  MouseIcon,
   Visibility,
   TrendingUp,
   TrendingDown,
@@ -50,8 +49,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
-  Heatmap
+  ResponsiveContainer
 } from 'recharts';
 
 interface UserEngagementData {
