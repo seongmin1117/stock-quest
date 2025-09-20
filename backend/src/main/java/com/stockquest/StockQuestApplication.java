@@ -2,8 +2,10 @@ package com.stockquest;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
@@ -13,7 +15,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableJpaAuditing
 @EnableAspectJAutoProxy(proxyTargetClass = true)
-@SpringBootApplication
+@EnableJpaRepositories(basePackages = {
+    "com.stockquest.adapter.out.persistence.repository",
+    "com.stockquest.adapter.out.persistence.company"
+})
+@SpringBootApplication(exclude = {RedisRepositoriesAutoConfiguration.class})
 public class StockQuestApplication {
 
     public static void main(String[] args) {
