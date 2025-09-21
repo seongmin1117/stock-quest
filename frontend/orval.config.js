@@ -1,7 +1,7 @@
 module.exports = {
   stockquest: {
     input: {
-      target: './openapi-spec.yaml',
+      target: './openapi-spec-new.json',
     },
     output: {
       mode: 'tags-split',
@@ -18,15 +18,7 @@ module.exports = {
           path: 'src/shared/api/api-client.ts',
           name: 'apiClient',
         },
-        operations: {
-          // React Query 훅 이름 커스터마이징
-          'signup': {
-            operationName: 'signup',
-          },
-          'login': {
-            operationName: 'login',
-          },
-        },
+        operations: false,
       },
     },
     hooks: {

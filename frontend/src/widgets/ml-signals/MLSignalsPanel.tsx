@@ -39,7 +39,7 @@ import {
   useGetApiV1MlSignalsActive,
   usePostApiV1MlSignalsGenerateBatch,
 } from '@/shared/api/generated/ml-시그널/ml-시그널';
-import { useGetApiChallengesChallengeId } from '@/shared/api/generated/챌린지/챌린지';
+import { useGetChallengeDetail } from '@/shared/api/challenge-client';
 import type { TradingSignalResponse } from '@/shared/api/generated/model';
 
 interface MLSignalsPanelProps {
@@ -55,7 +55,7 @@ export function MLSignalsPanel({ challengeId }: MLSignalsPanelProps) {
   const [refreshing, setRefreshing] = React.useState(false);
 
   // Fetch challenge data to get instruments
-  const { data: challengeData, isLoading: challengeLoading } = useGetApiChallengesChallengeId(challengeId, {
+  const { data: challengeData, isLoading: challengeLoading } = useGetChallengeDetail(challengeId, {
     query: {
       enabled: !isNaN(challengeId) && challengeId > 0,
     }

@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@mui/material';
 import { TrendingUp, TrendingDown, Speed } from '@mui/icons-material';
-import { useGetApiChallengesChallengeId } from '@/shared/api/generated/챌린지/챌린지';
+import { useGetChallengeDetail } from '@/shared/api/challenge-client';
 
 interface MarketData {
   instrumentKey: string;
@@ -43,7 +43,7 @@ export function MarketDataPanel({ challengeId }: MarketDataPanelProps) {
   const [currentTime, setCurrentTime] = React.useState(new Date());
 
   // Fetch challenge data to get instruments
-  const { data: challengeData, isLoading: loading } = useGetApiChallengesChallengeId(challengeId, {
+  const { data: challengeData, isLoading: loading } = useGetChallengeDetail(challengeId, {
     query: {
       enabled: !isNaN(challengeId) && challengeId > 0,
       refetchInterval: 3000, // Refresh every 3 seconds for live simulation

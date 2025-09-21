@@ -267,16 +267,16 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
             <CardContent sx={{ textAlign: 'center' }}>
               <Security sx={{ fontSize: 32, color: 'primary.main', mb: 1 }} />
               <Typography variant="h5" fontWeight="bold">
-                {dashboardData?.overallRiskScore || '-'}
+                {dashboardData?.activeAlerts || 0}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                종합 리스크 점수
+                활성 알림 수
               </Typography>
-              {dashboardData?.riskRating && (
+              {dashboardData?.riskTrend && (
                 <Box sx={{ mt: 1 }}>
                   <Chip
-                    label={dashboardData.riskRating}
-                    color={getRiskRatingColor(dashboardData.riskRating)}
+                    label={dashboardData.riskTrend}
+                    color={getRiskRatingColor(dashboardData.riskTrend)}
                     size="small"
                   />
                 </Box>
@@ -290,13 +290,13 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
             <CardContent sx={{ textAlign: 'center' }}>
               <TrendingDown sx={{ fontSize: 32, color: 'error.main', mb: 1 }} />
               <Typography variant="h6" fontWeight="bold">
-                {formatCurrency(dashboardData?.var95)}
+                {formatCurrency(dashboardData?.averageVaR)}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                95% VaR (일일)
+                평균 VaR
               </Typography>
               <Typography variant="body2" sx={{ mt: 0.5 }}>
-                99% VaR: {formatCurrency(dashboardData?.var99)}
+                총 VaR 계산: {dashboardData?.totalVaRCalculations || 0}
               </Typography>
             </CardContent>
           </Card>
@@ -307,13 +307,13 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
             <CardContent sx={{ textAlign: 'center' }}>
               <ShowChart sx={{ fontSize: 32, color: 'warning.main', mb: 1 }} />
               <Typography variant="h6" fontWeight="bold">
-                {formatPercentage(dashboardData?.portfolioVolatility)}
+                {dashboardData?.totalPortfolios || 0}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                포트폴리오 변동성
+                총 포트폴리오 수
               </Typography>
               <Typography variant="body2" sx={{ mt: 0.5 }}>
-                샤프 비율: {formatRatio(dashboardData?.sharpeRatio)}
+                리스크 트렌드: {dashboardData?.riskTrend || 'N/A'}
               </Typography>
             </CardContent>
           </Card>
@@ -324,13 +324,13 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
             <CardContent sx={{ textAlign: 'center' }}>
               <Assessment sx={{ fontSize: 32, color: 'success.main', mb: 1 }} />
               <Typography variant="h6" fontWeight="bold">
-                {formatCurrency(dashboardData?.totalPortfolioValue)}
+                {dashboardData?.activeAlerts || 0}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                총 포트폴리오 가치
+                활성 리스크 알림
               </Typography>
               <Typography variant="body2" sx={{ mt: 0.5 }}>
-                최대 손실: {formatPercentage(dashboardData?.maxDrawdown)}
+                마지막 업데이트: {dashboardData?.lastUpdated ? new Date(dashboardData.lastUpdated).toLocaleString() : 'N/A'}
               </Typography>
             </CardContent>
           </Card>
@@ -401,7 +401,7 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
       )}
 
       {/* Risk Breakdown */}
-      {dashboardData?.riskBreakdown && (
+      {dashboardData?.portfolioRiskSummary && (
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -415,7 +415,7 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
                     집중 리스크
                   </Typography>
                   <Typography variant="h6" color="warning.main">
-                    {formatPercentage(dashboardData.concentrationRisk)}
+                    {dashboardData.portfolioRiskSummary.length > 0 ? `${dashboardData.portfolioRiskSummary.length}개 요약` : 'N/A'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     단일 종목 최대 비중
@@ -429,7 +429,7 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
                     최대 손실률 (MDD)
                   </Typography>
                   <Typography variant="h6" color="error.main">
-                    {formatPercentage(dashboardData.maxDrawdown)}
+                    {formatCurrency(dashboardData.averageVaR)}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     역사적 최대 낙폭

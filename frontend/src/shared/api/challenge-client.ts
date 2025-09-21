@@ -1,16 +1,92 @@
 /**
- * User Challenge API Client
- * 사용자용 챌린지 API 클라이언트
+ * User Challenge API Client (Latest OpenAPI Integration)
+ * 사용자용 챌린지 API 클라이언트 - 최신 OpenAPI 스펙 기반
  */
 
-import apiClient from './api-client';
+// Re-export from generated API
+export {
+  // Challenge API
+  getChallengeList,
+  getGetChallengeListQueryOptions,
+  useGetChallengeList,
+  getChallengeDetail,
+  getGetChallengeDetailQueryOptions,
+  useGetChallengeDetail,
+  startChallenge,
+  getStartChallengeMutationOptions,
+  useStartChallenge as useGeneratedStartChallenge,
+  getChallengeInstruments,
+  getGetChallengeInstrumentsQueryOptions,
+  useGetChallengeInstruments,
+} from './generated/챌린지/챌린지';
 
-// Enums
+// Challenge Session API
+export {
+  getSessionDetail,
+  getGetSessionDetailQueryOptions,
+  useGetSessionDetail,
+  getOrders,
+  getGetOrdersQueryOptions,
+  useGetOrders,
+  placeOrder,
+  getPlaceOrderMutationOptions,
+  usePlaceOrder,
+  closeChallenge,
+  getCloseChallengeMutationOptions,
+  useCloseChallenge,
+} from './generated/챌린지-세션/챌린지-세션';
+
+// Leaderboard API
+export {
+  getLeaderboard as getChallengeLeaderboard,
+  getGetLeaderboardQueryOptions as getGetChallengeLeaderboardQueryOptions,
+  useGetLeaderboard as useGetChallengeLeaderboard,
+  calculateLeaderboard,
+  getCalculateLeaderboardMutationOptions,
+  useCalculateLeaderboard,
+} from './generated/리더보드/리더보드';
+
+// Community API
+export {
+  getPostList,
+  getGetPostListQueryOptions,
+  useGetPostList,
+  createPost,
+  getCreatePostMutationOptions,
+  useCreatePost,
+  getCommentList,
+  getGetCommentListQueryOptions,
+  useGetCommentList,
+  createComment,
+  getCreateCommentMutationOptions,
+  useCreateComment,
+} from './generated/커뮤니티/커뮤니티';
+
+// Re-export types from generated models
+export type {
+  ChallengeListResponse,
+  ChallengeDetailResponse,
+  ChallengeItem,
+  ChallengeItemDifficultyLevel,
+  StartChallengeResponse,
+  ChallengeInstrumentsResponse,
+  SessionDetailResponse,
+  OrdersResponse,
+  PlaceOrderRequest,
+  PlaceOrderResponse,
+  CloseChallengeResponse,
+  LeaderboardResponse,
+  PostResponse,
+  CreatePostRequest,
+  CommentResponse,
+  CreateCommentRequest,
+} from './generated/model';
+
+// Legacy enums for backward compatibility
 export enum ChallengeStatus {
   DRAFT = 'DRAFT',
   SCHEDULED = 'SCHEDULED',
   ACTIVE = 'ACTIVE',
-  PAUSED = 'PAUSED',
   COMPLETED = 'COMPLETED',
   ARCHIVED = 'ARCHIVED',
   CANCELLED = 'CANCELLED'
@@ -42,238 +118,137 @@ export enum ChallengeType {
   TECHNICAL_ANALYSIS = 'TECHNICAL_ANALYSIS'
 }
 
-// User Session Types (based on ChallengeDetailResponse.UserSession)
-export interface UserSession {
-  sessionId: number;
-  status: 'READY' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'ENDED';
-  currentBalance: number;
-  returnRate: number;
-  startedAt: string;
-  completedAt?: string;
-}
+// Enhanced hooks with better error handling and caching
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  getChallengeList as apiGetChallengeList,
+  getChallengeDetail as apiGetChallengeDetail,
+  startChallenge as apiStartChallenge,
+  getChallengeInstruments as apiGetChallengeInstruments,
+} from './generated/챌린지/챌린지';
 
-// Types
-export interface Challenge {
-  id: number;
-  title: string;
-  description: string;
-  difficulty: ChallengeDifficulty;
-  challengeType?: ChallengeType;
-  status: ChallengeStatus;
-  initialBalance: number;
-  durationDays: number;
-  startDate?: string;
-  endDate?: string;
-  instruments?: string[];
-  userSession?: UserSession;
-
-  // Optional legacy/extended fields for backward compatibility
-  categoryId?: number;
-  maxParticipants?: number;
-  currentParticipants?: number;
-  availableInstruments?: string[];
-  tradingRestrictions?: Record<string, any>;
-  successCriteria?: Record<string, any>;
-  entryRequirements?: Record<string, any>;
-  learningObjectives?: string;
-  marketScenarioDescription?: string;
-  riskLevel?: number;
-  estimatedTimeMinutes?: number;
-  estimatedDurationMinutes?: number;
-  tags?: string[];
-  featured?: boolean;
-  isFeatured?: boolean;
-  averageRating?: number;
-  totalRatings?: number;
-  totalReviews?: number;
-  createdBy?: number;
-  createdAt?: string;
-  updatedAt?: string;
-
-  // Additional backend fields
-  templateId?: number;
-  marketPeriodId?: number;
-  periodStart?: string;
-  periodEnd?: string;
-  speedFactor?: number;
-  marketScenario?: Record<string, any>;
-  sortOrder?: number;
-  lastModifiedBy?: number;
-  version?: number;
-
-  // User-specific fields (legacy)
-  userParticipated?: boolean;
-  userCanParticipate?: boolean;
-  userActiveSession?: ChallengeSession;
-}
-
-export interface ChallengeSession {
-  id: number;
-  challengeId: number;
-  userId: number;
-  status: 'ACTIVE' | 'COMPLETED' | 'ABANDONED';
-  initialBalance: number;
-  currentBalance: number;
-  totalReturn: number;
-  totalReturnPercentage: number;
-  startTime: string;
-  endTime?: string;
-  rank?: number;
-  portfolioPositions: PortfolioPosition[];
-}
-
-export interface PortfolioPosition {
-  symbol: string;
-  companyName: string;
-  quantity: number;
-  averagePrice: number;
-  currentPrice: number;
-  marketValue: number;
-  unrealizedPnl: number;
-  unrealizedPnlPercentage: number;
-}
-
-export interface ChallengeInstrument {
-  symbol: string;
-  companyName: string;
-  currentPrice: number;
-  changeAmount: number;
-  changePercentage: number;
-  volume: number;
-  marketCap: number;
-  sector: string;
-  available: boolean;
-}
-
-export interface ChallengeListParams {
-  page?: number;
-  size?: number;
-  difficulty?: ChallengeDifficulty;
-  challengeType?: ChallengeType;
-  status?: ChallengeStatus;
-  featured?: boolean;
-  tags?: string[];
-  sortBy?: string;
-  sortDirection?: 'ASC' | 'DESC';
-}
-
-export interface ChallengeListResponse {
-  challenges: Challenge[];
-  totalCount: number;
-  totalElements?: number; // Backward compatibility
-  totalPages?: number;    // Backward compatibility
-  page: number;
-  size: number;
-  number?: number;       // Backward compatibility
-  first?: boolean;       // Backward compatibility
-  last?: boolean;        // Backward compatibility
-}
-
-export interface StartChallengeResponse {
-  sessionId: number;
-  challengeId: number;
-  initialBalance: number;
-  startTime: string;
-  message?: string;
-}
-
-export const challengeApi = {
-  // 챌린지 목록 조회
-  getChallenges: async (params: ChallengeListParams = {}): Promise<ChallengeListResponse> => {
-    const queryParams = new URLSearchParams();
-
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        if (Array.isArray(value)) {
-          value.forEach(item => queryParams.append(key, item.toString()));
-        } else {
-          queryParams.append(key, value.toString());
-        }
-      }
-    });
-
-    const response = await apiClient.get<ChallengeListResponse>(
-      `/api/challenges?${queryParams.toString()}`
-    );
-    return response;
-  },
-
-  // 활성 챌린지 목록 조회
-  getActiveChallenges: async (): Promise<ChallengeListResponse> => {
-    const response = await apiClient.get<ChallengeListResponse>('/api/challenges/active');
-    return response;
-  },
-
-  // 챌린지 상세 조회
-  getChallengeById: async (challengeId: number): Promise<Challenge> => {
-    const response = await apiClient.get<Challenge>(`/api/challenges/${challengeId}`);
-    return response;
-  },
-
-  // 챌린지 시작
-  startChallenge: async (challengeId: number): Promise<StartChallengeResponse> => {
-    const response = await apiClient.post<StartChallengeResponse>(
-      `/api/challenges/${challengeId}/start`
-    );
-    return response;
-  },
-
-  // 챌린지 상품 목록 조회
-  getChallengeInstruments: async (challengeId: number): Promise<ChallengeInstrument[]> => {
-    const response = await apiClient.get<{ instruments: ChallengeInstrument[] }>(
-      `/api/challenges/${challengeId}/instruments`
-    );
-    return response.instruments || [];
-  },
-
-  // 인기 챌린지 조회 (featured 챌린지 기반)
-  getPopularChallenges: async (limit: number = 5): Promise<Challenge[]> => {
-    const response = await apiClient.get<ChallengeListResponse>(
-      `/api/challenges?featured=true&size=${limit}&sortBy=totalRatings&sortDirection=DESC`
-    );
-    return response.challenges || [];
-  },
-
-  // 추천 챌린지 조회 (사용자 레벨 기반)
-  getRecommendedChallenges: async (userLevel?: ChallengeDifficulty, limit: number = 5): Promise<Challenge[]> => {
-    const params: ChallengeListParams = {
-      status: ChallengeStatus.ACTIVE,
-      size: limit,
-      sortBy: 'averageRating',
-      sortDirection: 'DESC'
-    };
-
-    if (userLevel) {
-      params.difficulty = userLevel;
-    }
-
-    const response = await challengeApi.getChallenges(params);
-    return response.challenges || [];
-  },
-
-  // 카테고리별 챌린지 조회
-  getChallengesByType: async (challengeType: ChallengeType, limit: number = 10): Promise<Challenge[]> => {
-    const response = await challengeApi.getChallenges({
-      challengeType,
-      status: ChallengeStatus.ACTIVE,
-      size: limit,
-      sortBy: 'createdAt',
-      sortDirection: 'DESC'
-    });
-    return response.challenges || [];
-  },
-
-  // 난이도별 챌린지 조회
-  getChallengesByDifficulty: async (difficulty: ChallengeDifficulty, limit: number = 10): Promise<Challenge[]> => {
-    const response = await challengeApi.getChallenges({
-      difficulty,
-      status: ChallengeStatus.ACTIVE,
-      size: limit,
-      sortBy: 'currentParticipants',
-      sortDirection: 'DESC'
-    });
-    return response.challenges || [];
-  }
+/**
+ * Enhanced Challenge List Hook with smart caching
+ */
+export const useChallengeList = (page: number = 0, size: number = 10) => {
+  return useQuery({
+    queryKey: challengeQueryKeys.list(page, size),
+    queryFn: () => apiGetChallengeList({ page, size }),
+    staleTime: 5 * 60 * 1000, // 5분간 캐시
+    gcTime: 10 * 60 * 1000, // 10분간 보관 (React Query v5+)
+  });
 };
 
-export default challengeApi;
+/**
+ * Enhanced Active Challenges Hook
+ */
+export const useActiveChallenges = () => {
+  return useQuery({
+    queryKey: challengeQueryKeys.active(),
+    queryFn: () => apiGetChallengeList({ page: 0, size: 20 }), // Active challenges with higher limit
+    staleTime: 2 * 60 * 1000, // 2분간 캐시 (더 자주 갱신)
+    refetchInterval: 5 * 60 * 1000, // 5분마다 자동 갱신
+  });
+};
+
+/**
+ * Enhanced Challenge Detail Hook
+ */
+export const useChallengeDetail = (challengeId: number) => {
+  return useQuery({
+    queryKey: challengeQueryKeys.detail(challengeId),
+    queryFn: () => apiGetChallengeDetail(challengeId),
+    enabled: !!challengeId && challengeId > 0,
+    staleTime: 3 * 60 * 1000, // 3분간 캐시
+  });
+};
+
+/**
+ * Enhanced Start Challenge Hook with optimistic updates
+ */
+export const useStartChallenge = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ challengeId, forceRestart }: { challengeId: number; forceRestart?: boolean }) =>
+      apiStartChallenge(challengeId, forceRestart ? { forceRestart } : undefined),
+    onSuccess: (data, variables) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: challengeQueryKeys.detail(variables.challengeId) });
+      queryClient.invalidateQueries({ queryKey: challengeQueryKeys.list() });
+      console.log('챌린지 시작 성공:', data);
+    },
+    onError: (error) => {
+      console.error('챌린지 시작 실패:', error);
+    },
+  });
+};
+
+/**
+ * Enhanced Challenge Instruments Hook
+ */
+export const useChallengeInstruments = (challengeId: number) => {
+  return useQuery({
+    queryKey: challengeQueryKeys.instruments(challengeId),
+    queryFn: () => apiGetChallengeInstruments(challengeId),
+    enabled: !!challengeId && challengeId > 0,
+    staleTime: 10 * 60 * 1000, // 10분간 캐시 (상품 정보는 자주 변하지 않음)
+  });
+};
+
+/**
+ * Challenge Query Keys for better cache management
+ */
+export const challengeQueryKeys = {
+  all: ['challenges'] as const,
+  lists: () => [...challengeQueryKeys.all, 'list'] as const,
+  list: (page?: number, size?: number) => [...challengeQueryKeys.lists(), { page, size }] as const,
+  active: () => [...challengeQueryKeys.all, 'active'] as const,
+  details: () => [...challengeQueryKeys.all, 'detail'] as const,
+  detail: (id: number) => [...challengeQueryKeys.details(), id] as const,
+  instruments: (challengeId: number) => [...challengeQueryKeys.all, 'instruments', challengeId] as const,
+} as const;
+
+/**
+ * Utility functions for backward compatibility
+ */
+export const challengeUtils = {
+  /**
+   * Legacy challenge list fetcher (for compatibility)
+   */
+  getChallenges: async (params: { page?: number; size?: number } = {}) => {
+    const { page = 0, size = 10 } = params;
+    return apiGetChallengeList({ page, size });
+  },
+
+  /**
+   * Legacy active challenges fetcher
+   */
+  getActiveChallenges: async () => {
+    return apiGetChallengeList({ page: 0, size: 20 });
+  },
+
+  /**
+   * Legacy challenge detail fetcher
+   */
+  getChallengeById: async (challengeId: number) => {
+    return apiGetChallengeDetail(challengeId);
+  },
+
+  /**
+   * Legacy challenge start
+   */
+  startChallenge: async (challengeId: number, forceRestart?: boolean) => {
+    return apiStartChallenge(challengeId, forceRestart ? { forceRestart } : undefined);
+  },
+
+  /**
+   * Legacy challenge instruments fetcher
+   */
+  getChallengeInstruments: async (challengeId: number) => {
+    return apiGetChallengeInstruments(challengeId);
+  },
+};
+
+// Default export for backward compatibility
+export default challengeUtils;

@@ -1,21 +1,103 @@
 /**
- * DCA 시뮬레이션 API 클라이언트
- * 백엔드 DCA 시뮬레이션 API와 통신하는 클라이언트
+ * DCA (Dollar Cost Averaging) API Client (Latest OpenAPI Integration)
+ * DCA 시뮬레이션 관련 API 클라이언트 - 최신 OpenAPI 스펙 기반
  */
 
-import axios, { AxiosResponse } from 'axios';
-import {
-  DCASimulationRequest,
-  DCASimulationResponse,
-  DCASimulationErrorResponse,
-  DCAApiError,
-  InvestmentFrequency
-} from './types/dca-types';
+// Re-export from generated API
+export {
+  simulate,
+  getSimulateMutationOptions,
+  useSimulate,
+  testEndpoint,
+  getTestEndpointQueryOptions,
+  useTestEndpoint,
+} from './generated/dca-controller/dca-controller';
 
-const VALID_FREQUENCIES: InvestmentFrequency[] = ['DAILY', 'WEEKLY', 'MONTHLY'];
+// Re-export types
+export type {
+  DCASimulationRequest,
+  Simulate200,
+} from './generated/model';
+
+// Enhanced hooks with better caching and error handling
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { simulate as apiSimulate, testEndpoint as apiTestEndpoint } from './generated/dca-controller/dca-controller';
+import type { DCASimulationRequest } from './generated/model';
 
 /**
- * DCA 시뮬레이션 API 클라이언트 클래스
+ * Enhanced DCA Simulation Hook with validation and caching
+ */
+export const useDCASimulation = () => {
+  return useMutation({
+    mutationFn: (request: DCASimulationRequest) => {
+      // Validation
+      validateDCARequest(request);
+      return apiSimulate(request);
+    },
+    onSuccess: (data) => {
+      console.log('DCA 시뮬레이션 완료:', data);
+    },
+    onError: (error) => {
+      console.error('DCA 시뮬레이션 실패:', error);
+    },
+  });
+};
+
+/**
+ * DCA Test Endpoint Hook
+ */
+export const useDCATest = () => {
+  return useQuery({
+    queryKey: dcaQueryKeys.test(),
+    queryFn: () => apiTestEndpoint(),
+    staleTime: 10 * 60 * 1000, // 10분간 캐시
+  });
+};
+
+/**
+ * DCA Query Keys for cache management
+ */
+export const dcaQueryKeys = {
+  all: ['dca'] as const,
+  simulation: (params: DCASimulationRequest) => ['dca', 'simulation', params] as const,
+  test: () => ['dca', 'test'] as const,
+} as const;
+
+/**
+ * DCA 요청 데이터 검증 함수
+ */
+export function validateDCARequest(request: DCASimulationRequest): void {
+  // 종목 코드 검증
+  if (!request.symbol || request.symbol.trim() === '') {
+    throw new Error('종목 코드는 필수입니다');
+  }
+
+  // 투자 금액 검증
+  if (!request.monthlyInvestmentAmount || request.monthlyInvestmentAmount <= 0) {
+    throw new Error('투자 금액은 0보다 커야 합니다');
+  }
+
+  // 날짜 검증
+  if (!request.startDate || !request.endDate) {
+    throw new Error('시작일과 종료일은 필수입니다');
+  }
+
+  const startDate = new Date(request.startDate);
+  const endDate = new Date(request.endDate);
+
+  if (startDate >= endDate) {
+    throw new Error('종료일은 시작일보다 늦어야 합니다');
+  }
+
+  // 투자 주기 검증
+  const validFrequencies = ['DAILY', 'WEEKLY', 'MONTHLY'];
+  if (request.frequency && !validFrequencies.includes(request.frequency)) {
+    throw new Error('유효하지 않은 투자 주기입니다');
+  }
+}
+
+/**
+ * Legacy DCA Client for backward compatibility
  */
 export class DCAClient {
   private readonly baseURL: string;
@@ -25,126 +107,57 @@ export class DCAClient {
   }
 
   /**
-   * DCA 시뮬레이션 실행
-   *
-   * @param request DCA 시뮬레이션 요청 데이터
-   * @returns 시뮬레이션 결과
+   * Legacy DCA 시뮬레이션 실행 (호환성을 위해 유지)
    */
-  async simulate(request: DCASimulationRequest): Promise<DCASimulationResponse> {
-    try {
-      // 요청 데이터 검증
-      this.validateRequest(request);
-
-      // API 호출
-      const response: AxiosResponse<DCASimulationResponse> = await axios.post(
-        `${this.baseURL}/api/v1/dca/simulate`,
-        request
-      );
-
-      // 응답 데이터 검증
-      if (!response.data) {
-        throw new Error('응답 데이터가 없습니다');
-      }
-
-      // 응답 변환 및 반환
-      return this.transformResponse(response.data);
-
-    } catch (error: any) {
-      // 에러 처리 및 재던지기
-      throw this.handleError(error);
-    }
+  async simulate(request: DCASimulationRequest): Promise<any> {
+    validateDCARequest(request);
+    return apiSimulate(request);
   }
 
   /**
-   * 요청 데이터 검증
-   *
-   * @param request 검증할 요청 데이터
+   * Legacy 요청 검증 (호환성을 위해 유지)
    */
   validateRequest(request: DCASimulationRequest): void {
-    // 종목 코드 검증
-    if (!request.symbol || request.symbol.trim() === '') {
-      throw new Error('종목 코드는 필수입니다');
-    }
-
-    // 투자 금액 검증
-    if (request.monthlyInvestmentAmount <= 0) {
-      throw new Error('투자 금액은 0보다 커야 합니다');
-    }
-
-    // 투자 주기 검증
-    if (!VALID_FREQUENCIES.includes(request.frequency)) {
-      throw new Error('유효하지 않은 투자 주기입니다');
-    }
-
-    // 날짜 검증
-    const startDate = new Date(request.startDate);
-    const endDate = new Date(request.endDate);
-
-    if (startDate >= endDate) {
-      throw new Error('종료일은 시작일보다 늦어야 합니다');
-    }
+    validateDCARequest(request);
   }
 
   /**
-   * API 응답을 클라이언트 형식으로 변환
-   *
-   * @param apiResponse API에서 받은 응답
-   * @returns 변환된 응답 데이터
+   * Legacy 응답 변환 (호환성을 위해 유지)
    */
-  transformResponse(apiResponse: DCASimulationResponse): DCASimulationResponse {
-    // 현재는 1:1 매핑이지만, 필요시 변환 로직 추가 가능
-    return {
-      ...apiResponse,
-      // 날짜 형식이나 숫자 형식 변환 로직을 여기에 추가할 수 있음
-    };
-  }
-
-  /**
-   * API 에러 처리 (새로운 구조화된 에러 응답 형식 지원)
-   *
-   * @param error 발생한 에러
-   * @returns 처리된 에러 객체
-   */
-  private handleError(error: any): Error {
-    if (error.response) {
-      // HTTP 에러 응답
-      const status = error.response.status;
-      const errorData = error.response.data;
-
-      // 새로운 구조화된 에러 응답 형식 확인
-      if (this.isStructuredErrorResponse(errorData)) {
-        const structuredError = errorData as DCASimulationErrorResponse;
-        return new Error(structuredError.message);
-      }
-
-      // 기존 에러 응답 형식 지원
-      const message = errorData?.message || `HTTP Error: ${status}`;
-      return new Error(message);
-    } else if (error.request) {
-      // 네트워크 에러
-      return new Error('네트워크 연결을 확인해주세요');
-    } else {
-      // 기타 에러
-      return error instanceof Error ? error : new Error('알 수 없는 오류가 발생했습니다');
-    }
-  }
-
-  /**
-   * 구조화된 에러 응답인지 확인
-   *
-   * @param errorData 에러 데이터
-   * @returns 구조화된 에러 응답 여부
-   */
-  private isStructuredErrorResponse(errorData: any): boolean {
-    return errorData &&
-           typeof errorData.errorCode === 'string' &&
-           typeof errorData.message === 'string' &&
-           typeof errorData.timestamp === 'string' &&
-           typeof errorData.path === 'string';
+  transformResponse(apiResponse: any): any {
+    return apiResponse;
   }
 }
 
 /**
- * 기본 DCA 클라이언트 인스턴스
+ * DCA 유틸리티 함수들
+ */
+export const dcaUtils = {
+  /**
+   * DCA 시뮬레이션 실행 (함수형 인터페이스)
+   */
+  simulate: async (request: DCASimulationRequest) => {
+    validateDCARequest(request);
+    return apiSimulate(request);
+  },
+
+  /**
+   * DCA 테스트 엔드포인트 호출
+   */
+  test: async () => {
+    return apiTestEndpoint();
+  },
+
+  /**
+   * 요청 데이터 검증
+   */
+  validateRequest: validateDCARequest,
+};
+
+/**
+ * 기본 DCA 클라이언트 인스턴스 (호환성을 위해 유지)
  */
 export const dcaClient = new DCAClient();
+
+// Default export for backward compatibility
+export default dcaUtils;

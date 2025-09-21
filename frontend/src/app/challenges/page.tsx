@@ -17,11 +17,11 @@ import {
 import { useRouter } from 'next/navigation';
 import { TrendingUp, Speed, DateRange } from '@mui/icons-material';
 import challengeApi, {
-  Challenge,
   ChallengeStatus,
   ChallengeDifficulty,
   ChallengeType
 } from "@/shared/api/challenge-client";
+import type { Challenge } from "@/shared/api/generated/model";
 
 /**
  * 챌린지 목록 페이지
@@ -44,11 +44,8 @@ export default function ChallengesPage() {
       setError(null);
 
       const response = await challengeApi.getChallenges({
-        status: ChallengeStatus.ACTIVE,
         page: 0,
         size: 20,
-        sortBy: 'featured',
-        sortDirection: 'DESC'
       });
       setChallenges(response.challenges ?? []);
     } catch (err: any) {
@@ -84,7 +81,7 @@ export default function ChallengesPage() {
         return 'default';
       case ChallengeStatus.DRAFT:
         return 'warning';
-      case ChallengeStatus.PAUSED:
+      case ChallengeStatus.SCHEDULED:
         return 'warning';
       case ChallengeStatus.ARCHIVED:
         return 'default';
@@ -101,8 +98,8 @@ export default function ChallengesPage() {
         return '완료';
       case ChallengeStatus.DRAFT:
         return '준비중';
-      case ChallengeStatus.PAUSED:
-        return '일시정지';
+      case ChallengeStatus.SCHEDULED:
+        return '예정됨';
       case ChallengeStatus.ARCHIVED:
         return '보관됨';
       default:
@@ -191,7 +188,7 @@ export default function ChallengesPage() {
                           fullWidth
                           variant="contained"
                           startIcon={<TrendingUp />}
-                          onClick={() => handleStartChallenge(challenge.id)}
+                          onClick={() => challenge.id && handleStartChallenge(challenge.id)}
                           disabled={challenge.status !== ChallengeStatus.ACTIVE}
                       >
                         {challenge.status === ChallengeStatus.ACTIVE ? '챌린지 시작' : '참여 불가'}

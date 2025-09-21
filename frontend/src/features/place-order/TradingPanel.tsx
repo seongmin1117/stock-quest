@@ -22,9 +22,8 @@ import {
   PlaceOrderRequestSchema,
   type PlaceOrderRequestType,
 } from '../../shared/validation/order-schemas';
-import { useGetApiSessionsSessionId } from '@/shared/api/generated/챌린지-세션/챌린지-세션';
-import { useGetApiChallengesChallengeId } from '@/shared/api/generated/챌린지/챌린지';
-import { usePostApiSessionsSessionIdOrders } from '@/shared/api/generated/챌린지-세션/챌린지-세션';
+import { useGetSessionDetail, usePlaceOrder } from '@/shared/api/challenge-client';
+import { useGetChallengeDetail } from '@/shared/api/challenge-client';
 
 type OrderForm = PlaceOrderRequestType;
 
@@ -41,14 +40,14 @@ export function TradingPanel({ sessionId }: TradingPanelProps) {
   const [success, setSuccess] = React.useState<string | null>(null);
 
   // 세션 정보 가져오기
-  const { data: sessionData, isLoading: sessionLoading } = useGetApiSessionsSessionId(sessionId, {
+  const { data: sessionData, isLoading: sessionLoading } = useGetSessionDetail(sessionId, {
     query: {
       enabled: !isNaN(sessionId) && sessionId > 0,
     },
   });
 
   // 챌린지 정보 가져오기 (instruments 포함)
-  const { data: challengeData, isLoading: challengeLoading } = useGetApiChallengesChallengeId(
+  const { data: challengeData, isLoading: challengeLoading } = useGetChallengeDetail(
     sessionData?.challengeId || 0,
     {
       query: {
@@ -58,7 +57,7 @@ export function TradingPanel({ sessionId }: TradingPanelProps) {
   );
 
   // 주문 mutation
-  const orderMutation = usePostApiSessionsSessionIdOrders();
+  const orderMutation = usePlaceOrder();
 
   const {
     register,

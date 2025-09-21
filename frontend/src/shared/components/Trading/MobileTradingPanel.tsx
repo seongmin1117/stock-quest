@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useGetApiChallengesChallengeId } from '@/shared/api/generated/챌린지/챌린지';
+import { useGetChallengeDetail } from '@/shared/api/challenge-client';
 
 interface Stock {
   symbol: string;
@@ -44,7 +44,7 @@ export const MobileTradingPanel: React.FC<MobileTradingPanelProps> = ({
   const [currentTranslateX, setCurrentTranslateX] = useState(0);
 
   // Fetch challenge data to get instruments
-  const { data: challengeData, isLoading: loadingChallenge } = useGetApiChallengesChallengeId(challengeId, {
+  const { data: challengeData, isLoading: loadingChallenge } = useGetChallengeDetail(challengeId, {
     query: {
       enabled: !isNaN(challengeId) && challengeId > 0,
       refetchInterval: 5000, // Refresh every 5 seconds for live data

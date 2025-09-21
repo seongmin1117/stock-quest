@@ -95,7 +95,10 @@ const optimizationTypeLabels = {
   [OptimizationRequestOptimizationType.MODERN_PORTFOLIO_THEORY]: '현대 포트폴리오 이론',
   [OptimizationRequestOptimizationType.BLACK_LITTERMAN]: '블랙-리터만 모델',
   [OptimizationRequestOptimizationType.RISK_PARITY]: '리스크 패리티',
-  [OptimizationRequestOptimizationType.EQUAL_WEIGHT]: '동일 가중',
+  [OptimizationRequestOptimizationType.MINIMUM_VARIANCE]: '최소 분산',
+  [OptimizationRequestOptimizationType.MAXIMUM_SHARPE]: '최대 샤프 비율',
+  [OptimizationRequestOptimizationType.HIERARCHICAL_RISK_PARITY]: '계층적 리스크 패리티',
+  [OptimizationRequestOptimizationType.MACHINE_LEARNING_BASED]: '머신러닝 기반',
 };
 
 export function PortfolioOptimizationPanel({ portfolioId }: PortfolioOptimizationPanelProps) {
@@ -118,9 +121,9 @@ export function PortfolioOptimizationPanel({ portfolioId }: PortfolioOptimizatio
 
   const [efficientFrontierRequest, setEfficientFrontierRequest] = React.useState<EfficientFrontierRequest>({
     points: 100,
-    minWeight: '0.0',
-    maxWeight: '100.0',
-    riskLevels: ['0.05', '0.10', '0.15', '0.20', '0.25'],
+    minWeight: 0.0,
+    maxWeight: 100.0,
+    riskLevels: [0.05, 0.10, 0.15, 0.20, 0.25],
   });
 
   const [activeTab, setActiveTab] = React.useState('optimization');
@@ -190,9 +193,9 @@ export function PortfolioOptimizationPanel({ portfolioId }: PortfolioOptimizatio
     const optimizationData: OptimizationRequest = {
       objective: optimizationForm.objective,
       optimizationType: optimizationForm.optimizationType,
-      targetVolatility: optimizationForm.targetVolatility,
-      minWeight: optimizationForm.minWeight,
-      maxWeight: optimizationForm.maxWeight,
+      targetVolatility: parseFloat(optimizationForm.targetVolatility) || undefined,
+      minWeight: parseFloat(optimizationForm.minWeight) || undefined,
+      maxWeight: parseFloat(optimizationForm.maxWeight) || undefined,
     };
 
     runOptimization({
@@ -551,7 +554,7 @@ export function PortfolioOptimizationPanel({ portfolioId }: PortfolioOptimizatio
                     value={efficientFrontierRequest.minWeight}
                     onChange={(e) => setEfficientFrontierRequest(prev => ({
                       ...prev,
-                      minWeight: e.target.value
+                      minWeight: parseFloat(e.target.value) || 0
                     }))}
                     inputProps={{ min: -1, max: 1, step: 0.01 }}
                   />
@@ -564,7 +567,7 @@ export function PortfolioOptimizationPanel({ portfolioId }: PortfolioOptimizatio
                     value={efficientFrontierRequest.maxWeight}
                     onChange={(e) => setEfficientFrontierRequest(prev => ({
                       ...prev,
-                      maxWeight: e.target.value
+                      maxWeight: parseFloat(e.target.value) || 0
                     }))}
                     inputProps={{ min: -1, max: 1, step: 0.01 }}
                   />
@@ -639,7 +642,10 @@ export function PortfolioOptimizationPanel({ portfolioId }: PortfolioOptimizatio
                       <MenuItem value="MODERN_PORTFOLIO_THEORY">현대 포트폴리오 이론</MenuItem>
                       <MenuItem value="BLACK_LITTERMAN">블랙-리터만 모델</MenuItem>
                       <MenuItem value="RISK_PARITY">리스크 패리티</MenuItem>
-                      <MenuItem value="EQUAL_WEIGHT">동일 가중</MenuItem>
+                      <MenuItem value="MINIMUM_VARIANCE">최소 분산</MenuItem>
+                      <MenuItem value="MAXIMUM_SHARPE">최대 샤프 비율</MenuItem>
+                      <MenuItem value="HIERARCHICAL_RISK_PARITY">계층적 리스크 패리티</MenuItem>
+                      <MenuItem value="MACHINE_LEARNING_BASED">머신러닝 기반</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>

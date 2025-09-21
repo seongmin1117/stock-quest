@@ -15,14 +15,15 @@ import {
   Stack,
 } from '@mui/material';
 import { TrendingUp, TrendingDown } from '@mui/icons-material';
-import { useGetApiSessionsSessionId } from '@/shared/api/generated/챌린지-세션/챌린지-세션';
+import { useGetSessionDetail } from '@/shared/api/challenge-client';
+import type { PortfolioItem } from '@/shared/api/generated/model/portfolioItem';
 
 interface PortfolioPanelProps {
   sessionId: number;
 }
 
 export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
-  const { data: sessionData, isLoading: loading, error } = useGetApiSessionsSessionId(
+  const { data: sessionData, isLoading: loading, error } = useGetSessionDetail(
     sessionId,
     {
       query: {
@@ -113,10 +114,11 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
   }
 
   const currentBalance = sessionData.currentBalance || 0;
-  const totalValue = sessionData.totalValue || 0;
-  const profitLoss = sessionData.profitLoss || 0;
-  const profitLossPercent = sessionData.profitLossPercent || 0;
-  const positions = sessionData.positions || [];
+  const initialBalance = sessionData.initialBalance || 0;
+  const totalValue = currentBalance;
+  const profitLoss = currentBalance - initialBalance;
+  const profitLossPercent = sessionData.returnRate || 0;
+  const positions = sessionData.portfolio || [];
 
   return (
     <Box
@@ -401,7 +403,7 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {positions.map((position) => (
+              {positions.map((position: PortfolioItem) => (
                 <TableRow
                   key={position.instrumentKey}
                   sx={{
@@ -454,7 +456,7 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                         fontFamily: '"Roboto Mono", monospace',
                       }}
                     >
-                      현재: {formatCurrency(position.currentPrice || 0)}
+                      현재: {formatCurrency(position.currentValue || 0)}
                     </Typography>
                   </TableCell>
                   <TableCell align="right" sx={{ borderColor: '#2A3441' }}>
@@ -462,12 +464,12 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                       variant="body2"
                       sx={{
                         fontWeight: 600,
-                        color: (position.unrealizedPL || 0) >= 0 ? '#4CAF50' : '#F44336',
+                        color: (position.unrealizedPnl || 0) >= 0 ? '#4CAF50' : '#F44336',
                         fontSize: '0.75rem',
                         fontFamily: '"Roboto Mono", monospace',
                       }}
                     >
-                      {formatCurrency(position.unrealizedPL || 0)}
+                      {formatCurrency(position.unrealizedPnl || 0)}
                     </Typography>
                   </TableCell>
                 </TableRow>
