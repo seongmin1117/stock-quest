@@ -221,6 +221,62 @@ src/main/java/com/stockquest/
 4. Don't forget to handle null cases in JPA mappings
 5. Always use UTF-8 encoding for Korean text support
 
+## 📚 API 문서화 (최신 완료)
+
+### **✅ OpenAPI 3.0 통합 완료 (2025-09-21)**
+
+#### **접근 링크**
+- **Swagger UI**: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+- **OpenAPI JSON**: [http://localhost:8080/api-docs](http://localhost:8080/api-docs)
+- **프론트엔드 개발자 가이드**: `API_GUIDE.md`
+
+#### **문서화된 주요 API 카테고리**
+1. **🔐 인증 API** (`/api/auth/*`)
+   - 로그인, 회원가입, 토큰 갱신, 로그아웃
+   - JWT Bearer Token 인증 방식
+
+2. **🏢 회사 정보 API** (`/api/v1/companies/*`)
+   - 개별 회사 조회, 인기 회사 목록, 회사 검색
+   - 카테고리 관리, 한국어 데이터 지원
+
+3. **🎯 챌린지 API** (`/api/challenges/*`)
+   - 챌린지 목록, 시작, 세션 관리
+   - 실시간 주문 실행 및 내역 조회
+
+4. **💼 고급 분석 API**
+   - **VaR 계산**: `/api/v1/risk/portfolios/{portfolioId}/var`
+   - **포트폴리오 최적화**: `/api/v1/ml/portfolio-optimization/{portfolioId}/optimize`
+   - **ML 트레이딩 신호**: `/api/v1/ml/signals/generate/{symbol}`
+   - **DCA 시뮬레이션**: `/api/v1/dca/simulate`
+   - **백테스팅**: `/api/v1/backtesting/run`
+
+5. **🛠 관리자 API** (`/api/admin/*`)
+   - 챌린지 관리, 회사 데이터 동기화
+   - 세션 관리, 시스템 모니터링
+
+#### **프론트엔드 통합 지원**
+- **TypeScript 클라이언트 자동 생성** 지원
+- **실제 요청/응답 예시** 포함
+- **인증 토큰 관리** 가이드
+- **WebSocket 실시간 기능** 연동 방법
+- **에러 처리** 패턴 및 상태 코드 설명
+
+#### **생성된 문서**
+```
+backend/
+├── API_GUIDE.md                    # 프론트엔드 개발자용 완전 가이드
+├── docs/
+│   ├── openapi-complete.json       # 완전한 OpenAPI 3.0 스펙 (203KB)
+│   └── openapi.json                # 기본 API 정보
+```
+
+#### **검증된 API 엔드포인트**
+✅ **회사 정보**: `/api/v1/companies/005930` (삼성전자)
+✅ **인기 회사**: `/api/v1/companies/top?limit=5`
+✅ **챌린지 목록**: `/api/challenges`
+✅ **OpenAPI 문서**: `/api-docs` (정상 응답)
+✅ **Swagger UI**: 브라우저 접근 가능
+
 ## Quick Debugging
 ```bash
 # Check for compilation errors
@@ -231,4 +287,8 @@ JAVA_HOME=/Users/seongmin/Library/Java/JavaVirtualMachines/temurin-21.0.5/Conten
 
 # Check dependency tree
 JAVA_HOME=/Users/seongmin/Library/Java/JavaVirtualMachines/temurin-21.0.5/Contents/Home ./gradlew dependencies
+
+# Test OpenAPI endpoints
+curl -s http://localhost:8080/api-docs | jq .info
+curl -s http://localhost:8080/swagger-ui/index.html | head -5
 ```
