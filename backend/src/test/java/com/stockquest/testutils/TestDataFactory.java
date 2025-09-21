@@ -4,7 +4,7 @@ import com.stockquest.domain.challenge.Challenge;
 import com.stockquest.domain.challenge.ChallengeDifficulty;
 import com.stockquest.domain.challenge.ChallengeStatus;
 import com.stockquest.domain.session.ChallengeSession;
-import com.stockquest.domain.session.SessionStatus;
+// SessionStatus는 ChallengeSession의 중첩 enum으로 사용
 import com.stockquest.domain.user.User;
 import com.stockquest.domain.order.Order;
 import com.stockquest.domain.order.OrderSide;
@@ -118,7 +118,7 @@ public class TestDataFactory {
         session.setId(sessionIdCounter++);
         session.setUserId(userId);
         session.setChallengeId(challengeId);
-        session.setStatus(SessionStatus.ACTIVE);
+        session.setStatus(ChallengeSession.SessionStatus.ACTIVE);
         session.setInitialBalance(BigDecimal.valueOf(1000000));
         session.setCurrentBalance(BigDecimal.valueOf(1000000));
         session.setStartedAt(LocalDateTime.now().minusHours(2));
@@ -131,7 +131,7 @@ public class TestDataFactory {
      */
     public static ChallengeSession createActiveSession(Long userId, Long challengeId) {
         ChallengeSession session = createSession(userId, challengeId);
-        session.setStatus(SessionStatus.ACTIVE);
+        session.setStatus(ChallengeSession.SessionStatus.ACTIVE);
         session.setCurrentBalance(BigDecimal.valueOf(1200000)); // 20% 수익
         return session;
     }
@@ -141,7 +141,7 @@ public class TestDataFactory {
      */
     public static ChallengeSession createCompletedSessionWithProfit(Long userId, Long challengeId) {
         ChallengeSession session = createSession(userId, challengeId);
-        session.setStatus(SessionStatus.COMPLETED);
+        session.setStatus(ChallengeSession.SessionStatus.COMPLETED);
         session.setFinalBalance(BigDecimal.valueOf(1300000)); // 30% 수익
         session.setFinalReturnRate(BigDecimal.valueOf(0.30));
         session.setCompletedAt(LocalDateTime.now().minusHours(1));
@@ -153,7 +153,7 @@ public class TestDataFactory {
      */
     public static ChallengeSession createCompletedSessionWithLoss(Long userId, Long challengeId) {
         ChallengeSession session = createSession(userId, challengeId);
-        session.setStatus(SessionStatus.COMPLETED);
+        session.setStatus(ChallengeSession.SessionStatus.COMPLETED);
         session.setFinalBalance(BigDecimal.valueOf(850000)); // -15% 손실
         session.setFinalReturnRate(BigDecimal.valueOf(-0.15));
         session.setCompletedAt(LocalDateTime.now().minusHours(1));

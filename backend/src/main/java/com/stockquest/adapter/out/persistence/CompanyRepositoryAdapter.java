@@ -1,6 +1,7 @@
 package com.stockquest.adapter.out.persistence;
 
 import com.stockquest.adapter.out.persistence.company.CompanyJpaRepository;
+import com.stockquest.adapter.out.persistence.entity.CompanyJpaEntity;
 import com.stockquest.application.company.CompanySyncLog;
 import com.stockquest.application.company.CompanySyncBatchLog;
 import com.stockquest.domain.company.Company;
@@ -16,6 +17,7 @@ import java.util.Optional;
 /**
  * 회사 저장소 어댑터
  * Domain CompanyRepositoryPort 인터페이스를 구현하여 JPA를 통한 데이터 영속성 제공
+ * 헥사고날 아키텍처 준수 - 도메인과 JPA 엔티티 간 변환 담당
  */
 @Slf4j
 @Component
@@ -29,22 +31,32 @@ public class CompanyRepositoryAdapter implements CompanyRepositoryPort {
 
     @Override
     public Optional<Company> findBySymbol(String symbol) {
-        return jpaRepository.findBySymbol(symbol);
+        return jpaRepository.findBySymbol(symbol)
+                .map(CompanyJpaEntity::toDomain);
     }
 
     @Override
     public List<Company> findByCategory(String categoryId) {
-        return jpaRepository.findByCategoryId(categoryId);
+        return jpaRepository.findByCategoryId(categoryId)
+                .stream()
+                .map(CompanyJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<Company> findByCategories(List<String> categoryIds) {
-        return jpaRepository.findByCategoryIds(categoryIds);
+        return jpaRepository.findByCategoryIds(categoryIds)
+                .stream()
+                .map(CompanyJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<Company> searchByName(String name) {
-        return jpaRepository.findByNameContainingIgnoreCase(name);
+        return jpaRepository.findByNameContainingIgnoreCase(name)
+                .stream()
+                .map(CompanyJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
@@ -52,23 +64,47 @@ public class CompanyRepositoryAdapter implements CompanyRepositoryPort {
         if (limit > 50) {
             limit = 50; // Repository method is limited to top 50
         }
-        List<Company> allTop = jpaRepository.findTop50ByIsActiveTrueOrderByPopularityScoreDesc();
-        return allTop.stream().limit(limit).toList();
+        List<CompanyJpaEntity> allTop = jpaRepository.findTop50ByIsActiveTrueOrderByPopularityScoreDesc();
+        return allTop.stream()
+                .limit(limit)
+                .map(CompanyJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<Company> findAllActive() {
-        return jpaRepository.findByIsActiveTrueOrderByPopularityScoreDesc();
+        return jpaRepository.findByIsActiveTrueOrderByPopularityScoreDesc()
+                .stream()
+                .map(CompanyJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public Company save(Company company) {
-        return jpaRepository.save(company);
+        CompanyJpaEntity jpaEntity;
+
+        if (company.getId() == null) {
+            // 새로운 엔티티 생성
+            jpaEntity = CompanyJpaEntity.fromDomainForCreate(company);
+        } else {
+            // 기존 엔티티 업데이트
+            Optional<CompanyJpaEntity> existingEntity = jpaRepository.findById(company.getId());
+            if (existingEntity.isPresent()) {
+                jpaEntity = existingEntity.get().updateFromDomain(company);
+            } else {
+                jpaEntity = CompanyJpaEntity.fromDomain(company);
+            }
+        }
+
+        CompanyJpaEntity savedEntity = jpaRepository.save(jpaEntity);
+        return savedEntity.toDomain();
     }
 
     @Override
     public void delete(Company company) {
-        jpaRepository.delete(company);
+        if (company.getId() != null) {
+            jpaRepository.deleteById(company.getId());
+        }
     }
 
     @Override
@@ -84,16 +120,23 @@ public class CompanyRepositoryAdapter implements CompanyRepositoryPort {
     @Override
     public List<Company> findAll(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return jpaRepository.findAllActiveOrderByPopularity();
+        return jpaRepository.findAllActiveOrderByPopularity()
+                .stream()
+                .skip((long) page * size)
+                .limit(size)
+                .map(CompanyJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public void updateMarketCap(String symbol, Long marketCap) {
-        Optional<Company> company = jpaRepository.findBySymbol(symbol);
-        if (company.isPresent()) {
-            Company existingCompany = company.get();
-            existingCompany.updateMarketCap(marketCap, null);
-            jpaRepository.save(existingCompany);
+        Optional<CompanyJpaEntity> companyEntity = jpaRepository.findBySymbol(symbol);
+        if (companyEntity.isPresent()) {
+            Company domainCompany = companyEntity.get().toDomain();
+            Company updatedCompany = domainCompany.updateMarketCap(marketCap, null);
+
+            CompanyJpaEntity updatedEntity = companyEntity.get().updateFromDomain(updatedCompany);
+            jpaRepository.save(updatedEntity);
         }
     }
 
@@ -117,5 +160,47 @@ public class CompanyRepositoryAdapter implements CompanyRepositoryPort {
                 batchLog.getSuccessCount(),
                 batchLog.getFailureCount(),
                 batchLog.getSuccessRate());
+    }
+
+    // Additional methods using new JPA repository features
+
+    /**
+     * 거래소별 회사 조회
+     */
+    public List<Company> findByExchange(String exchange) {
+        return jpaRepository.findByExchangeAndIsActiveTrueOrderByPopularityScoreDesc(exchange)
+                .stream()
+                .map(CompanyJpaEntity::toDomain)
+                .toList();
+    }
+
+    /**
+     * 통화별 회사 조회
+     */
+    public List<Company> findByCurrency(String currency) {
+        return jpaRepository.findByCurrencyAndIsActiveTrueOrderByPopularityScoreDesc(currency)
+                .stream()
+                .map(CompanyJpaEntity::toDomain)
+                .toList();
+    }
+
+    /**
+     * 대형주 회사 조회 (시가총액 기준)
+     */
+    public List<Company> findLargeCapCompanies(Long minMarketCap) {
+        return jpaRepository.findLargeCapCompanies(minMarketCap)
+                .stream()
+                .map(CompanyJpaEntity::toDomain)
+                .toList();
+    }
+
+    /**
+     * 통합 검색 (이름, 심볼, 섹터)
+     */
+    public List<Company> searchCompanies(String query) {
+        return jpaRepository.searchCompanies(query)
+                .stream()
+                .map(CompanyJpaEntity::toDomain)
+                .toList();
     }
 }

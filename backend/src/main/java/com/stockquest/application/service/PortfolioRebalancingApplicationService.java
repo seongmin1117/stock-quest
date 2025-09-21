@@ -7,6 +7,7 @@ import com.stockquest.application.port.out.RebalancingActionRepositoryPort;
 import com.stockquest.application.port.out.MarketDataPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@ConditionalOnProperty(name = "stockquest.features.portfolio-rebalancing.enabled", havingValue = "true", matchIfMissing = false)
 public class PortfolioRebalancingApplicationService {
 
     private final PortfolioRepositoryPort portfolioRepository;

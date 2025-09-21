@@ -195,9 +195,7 @@ public class CompanyApplicationService {
                 .popularityScore(company.getPopularityScore())
                 .createdAt(company.getCreatedAt())
                 .updatedAt(company.getUpdatedAt())
-                .categories(company.getCategories().stream()
-                        .map(mapping -> mapping.getCategoryId())
-                        .toList())
+                .categories(company.getCategoryIds())
                 .build();
     }
 

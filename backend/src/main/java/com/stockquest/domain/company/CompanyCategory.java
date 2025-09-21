@@ -1,49 +1,35 @@
 package com.stockquest.domain.company;
 
-import jakarta.persistence.*;
-import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 /**
  * 회사 카테고리 도메인 엔티티
+ * 헥사고날 아키텍처 준수 - 순수한 비즈니스 로직만 포함
  */
-@Entity
-@Table(name = "company_category")
 @Getter
-@Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class CompanyCategory {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "category_id", nullable = false, unique = true, length = 20)
     private String categoryId;
-
-    @Column(name = "name_kr", nullable = false, length = 50)
     private String nameKr;
-
-    @Column(name = "name_en", nullable = false, length = 50)
     private String nameEn;
-
-    @Column(name = "description_kr", columnDefinition = "TEXT")
     private String descriptionKr;
-
-    @Column(name = "description_en", columnDefinition = "TEXT")
     private String descriptionEn;
 
-    @Column(name = "sort_order")
+    @Builder.Default
     private Integer sortOrder = 0;
 
-    @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     /**
@@ -55,31 +41,57 @@ public class CompanyCategory {
         this.nameEn = nameEn;
         this.descriptionKr = descriptionKr;
         this.descriptionEn = descriptionEn;
+        this.sortOrder = 0;
+        this.isActive = true;
         this.createdAt = LocalDateTime.now();
     }
 
     /**
      * 카테고리 정보 업데이트
      */
-    public void updateInfo(String nameKr, String nameEn, String descriptionKr, String descriptionEn) {
-        this.nameKr = nameKr;
-        this.nameEn = nameEn;
-        this.descriptionKr = descriptionKr;
-        this.descriptionEn = descriptionEn;
+    public CompanyCategory updateInfo(String nameKr, String nameEn, String descriptionKr, String descriptionEn) {
+        return this.toBuilder()
+                .nameKr(nameKr)
+                .nameEn(nameEn)
+                .descriptionKr(descriptionKr)
+                .descriptionEn(descriptionEn)
+                .build();
     }
 
     /**
      * 정렬 순서 업데이트
      */
-    public void updateSortOrder(Integer sortOrder) {
-        this.sortOrder = sortOrder;
+    public CompanyCategory updateSortOrder(Integer sortOrder) {
+        return this.toBuilder()
+                .sortOrder(sortOrder)
+                .build();
     }
 
     /**
      * 활성화 상태 토글
      */
-    public void toggleActiveStatus() {
-        this.isActive = !this.isActive;
+    public CompanyCategory toggleActiveStatus() {
+        return this.toBuilder()
+                .isActive(!this.isActive)
+                .build();
+    }
+
+    /**
+     * 카테고리 활성화
+     */
+    public CompanyCategory activate() {
+        return this.toBuilder()
+                .isActive(true)
+                .build();
+    }
+
+    /**
+     * 카테고리 비활성화
+     */
+    public CompanyCategory deactivate() {
+        return this.toBuilder()
+                .isActive(false)
+                .build();
     }
 
     /**
@@ -89,10 +101,91 @@ public class CompanyCategory {
         return String.format("%s (%s)", nameKr, nameEn);
     }
 
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
+    /**
+     * 카테고리 유효성 검증
+     */
+    public boolean isValid() {
+        return categoryId != null && !categoryId.trim().isEmpty() &&
+               nameKr != null && !nameKr.trim().isEmpty() &&
+               nameEn != null && !nameEn.trim().isEmpty();
+    }
+
+    /**
+     * 검색 매칭 점수 계산 (0-100)
+     */
+    public int calculateSearchScore(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return 0;
         }
+
+        String lowerQuery = query.toLowerCase();
+        int score = 0;
+
+        // 정확한 카테고리 ID 매칭 (최고 점수)
+        if (categoryId.toLowerCase().equals(lowerQuery)) {
+            score += 100;
+        } else if (categoryId.toLowerCase().contains(lowerQuery)) {
+            score += 80;
+        }
+
+        // 한국어 이름 매칭
+        if (nameKr.toLowerCase().contains(lowerQuery)) {
+            score += 70;
+        }
+
+        // 영어 이름 매칭
+        if (nameEn.toLowerCase().contains(lowerQuery)) {
+            score += 60;
+        }
+
+        // 한국어 설명 매칭
+        if (descriptionKr != null && descriptionKr.toLowerCase().contains(lowerQuery)) {
+            score += 30;
+        }
+
+        // 영어 설명 매칭
+        if (descriptionEn != null && descriptionEn.toLowerCase().contains(lowerQuery)) {
+            score += 25;
+        }
+
+        // 활성 상태 보너스
+        if (isActive) {
+            score += 5;
+        }
+
+        return Math.min(score, 100);
+    }
+
+    /**
+     * 정렬 우선순위 비교
+     */
+    public int compareTo(CompanyCategory other) {
+        if (other == null) return 1;
+
+        // 활성 상태 우선 정렬
+        if (this.isActive && !other.isActive) return -1;
+        if (!this.isActive && other.isActive) return 1;
+
+        // 정렬 순서로 정렬
+        int sortComparison = Integer.compare(this.sortOrder, other.sortOrder);
+        if (sortComparison != 0) return sortComparison;
+
+        // 한국어 이름으로 정렬
+        return this.nameKr.compareTo(other.nameKr);
+    }
+
+    /**
+     * 카테고리가 기본 카테고리인지 확인
+     */
+    public boolean isSystemCategory() {
+        return categoryId != null &&
+               (categoryId.startsWith("SYS_") || categoryId.startsWith("DEFAULT_"));
+    }
+
+    /**
+     * 카테고리가 사용자 정의 카테고리인지 확인
+     */
+    public boolean isCustomCategory() {
+        return !isSystemCategory();
     }
 }

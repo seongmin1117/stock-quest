@@ -1,12 +1,9 @@
 package com.stockquest.domain.company;
 
-import jakarta.persistence.*;
-import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,72 +13,42 @@ import java.util.List;
 /**
  * 회사 도메인 엔티티
  * 한국 주식 시장의 회사 정보를 나타냅니다.
+ * 헥사고날 아키텍처 준수 - 순수한 비즈니스 로직만 포함
  */
-@Entity
-@Table(name = "company")
 @Getter
-@Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class Company {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "symbol", nullable = false, unique = true, length = 10)
     private String symbol;
-
-    @Column(name = "name_kr", nullable = false, length = 100)
     private String nameKr;
-
-    @Column(name = "name_en", nullable = false, length = 100)
     private String nameEn;
-
-    @Column(name = "sector", length = 50)
     private String sector;
-
-    @Column(name = "market_cap")
     private Long marketCap;
-
-    @Column(name = "market_cap_display", length = 20)
     private String marketCapDisplay;
-
-    @Column(name = "logo_path", length = 200)
     private String logoPath;
-
-    @Column(name = "description_kr", columnDefinition = "TEXT")
     private String descriptionKr;
-
-    @Column(name = "description_en", columnDefinition = "TEXT")
     private String descriptionEn;
 
     @Builder.Default
-    @Column(name = "exchange", length = 10)
     private String exchange = "KRX";
 
     @Builder.Default
-    @Column(name = "currency", length = 3)
     private String currency = "KRW";
 
     @Builder.Default
-    @Column(name = "is_active")
     private Boolean isActive = true;
 
     @Builder.Default
-    @Column(name = "popularity_score")
     private Integer popularityScore = 0;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @Builder.Default
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<CompanyCategoryMapping> categories = new ArrayList<>();
+    private List<String> categoryIds = new ArrayList<>();
 
     /**
      * 회사 생성자
@@ -93,43 +60,82 @@ public class Company {
         this.sector = sector;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.exchange = "KRX";
+        this.currency = "KRW";
+        this.isActive = true;
+        this.popularityScore = 0;
+        this.categoryIds = new ArrayList<>();
     }
 
     /**
      * 회사 정보 업데이트
      */
-    public void updateInfo(String nameKr, String nameEn, String sector, String descriptionKr, String descriptionEn) {
-        this.nameKr = nameKr;
-        this.nameEn = nameEn;
-        this.sector = sector;
-        this.descriptionKr = descriptionKr;
-        this.descriptionEn = descriptionEn;
-        this.updatedAt = LocalDateTime.now();
+    public Company updateInfo(String nameKr, String nameEn, String sector, String descriptionKr, String descriptionEn) {
+        return this.toBuilder()
+                .nameKr(nameKr)
+                .nameEn(nameEn)
+                .sector(sector)
+                .descriptionKr(descriptionKr)
+                .descriptionEn(descriptionEn)
+                .updatedAt(LocalDateTime.now())
+                .build();
     }
 
     /**
      * 시가총액 업데이트
      */
-    public void updateMarketCap(Long marketCap, String marketCapDisplay) {
-        this.marketCap = marketCap;
-        this.marketCapDisplay = marketCapDisplay;
-        this.updatedAt = LocalDateTime.now();
+    public Company updateMarketCap(Long marketCap, String marketCapDisplay) {
+        return this.toBuilder()
+                .marketCap(marketCap)
+                .marketCapDisplay(marketCapDisplay)
+                .updatedAt(LocalDateTime.now())
+                .build();
     }
 
     /**
      * 인기도 점수 업데이트
      */
-    public void updatePopularityScore(Integer score) {
-        this.popularityScore = score;
-        this.updatedAt = LocalDateTime.now();
+    public Company updatePopularityScore(Integer score) {
+        return this.toBuilder()
+                .popularityScore(score)
+                .updatedAt(LocalDateTime.now())
+                .build();
     }
 
     /**
      * 활성화 상태 토글
      */
-    public void toggleActiveStatus() {
-        this.isActive = !this.isActive;
-        this.updatedAt = LocalDateTime.now();
+    public Company toggleActiveStatus() {
+        return this.toBuilder()
+                .isActive(!this.isActive)
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * 카테고리 추가
+     */
+    public Company addCategory(String categoryId) {
+        List<String> newCategoryIds = new ArrayList<>(this.categoryIds);
+        if (!newCategoryIds.contains(categoryId)) {
+            newCategoryIds.add(categoryId);
+        }
+        return this.toBuilder()
+                .categoryIds(newCategoryIds)
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * 카테고리 제거
+     */
+    public Company removeCategory(String categoryId) {
+        List<String> newCategoryIds = new ArrayList<>(this.categoryIds);
+        newCategoryIds.remove(categoryId);
+        return this.toBuilder()
+                .categoryIds(newCategoryIds)
+                .updatedAt(LocalDateTime.now())
+                .build();
     }
 
     /**
@@ -143,8 +149,7 @@ public class Company {
      * 회사가 특정 카테고리에 속하는지 확인
      */
     public boolean belongsToCategory(String categoryId) {
-        return categories.stream()
-                .anyMatch(mapping -> mapping.getCategoryId().equals(categoryId));
+        return categoryIds.contains(categoryId);
     }
 
     /**
@@ -180,18 +185,70 @@ public class Company {
         return "KRX".equals(exchange) && "KRW".equals(currency);
     }
 
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-        if (updatedAt == null) {
-            updatedAt = LocalDateTime.now();
-        }
+    /**
+     * 인기 회사인지 확인 (상위 20%)
+     */
+    public boolean isPopular() {
+        return popularityScore != null && popularityScore >= 80;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    /**
+     * 대형주인지 확인 (시가총액 1조원 이상)
+     */
+    public boolean isLargeCap() {
+        if (marketCap == null) return false;
+        BigDecimal cap = new BigDecimal(marketCap);
+        BigDecimal trillion = new BigDecimal("1000000000000"); // 1조
+        return cap.compareTo(trillion) >= 0;
+    }
+
+    /**
+     * 회사 유효성 검증
+     */
+    public boolean isValid() {
+        return symbol != null && !symbol.trim().isEmpty() &&
+               nameKr != null && !nameKr.trim().isEmpty() &&
+               nameEn != null && !nameEn.trim().isEmpty();
+    }
+
+    /**
+     * 검색 매칭 점수 계산 (0-100)
+     */
+    public int calculateSearchScore(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return 0;
+        }
+
+        String lowerQuery = query.toLowerCase();
+        int score = 0;
+
+        // 정확한 심볼 매칭 (최고 점수)
+        if (symbol.toLowerCase().equals(lowerQuery)) {
+            score += 100;
+        } else if (symbol.toLowerCase().contains(lowerQuery)) {
+            score += 80;
+        }
+
+        // 한국어 이름 매칭
+        if (nameKr.toLowerCase().contains(lowerQuery)) {
+            score += 60;
+        }
+
+        // 영어 이름 매칭
+        if (nameEn.toLowerCase().contains(lowerQuery)) {
+            score += 50;
+        }
+
+        // 섹터 매칭
+        if (sector != null && sector.toLowerCase().contains(lowerQuery)) {
+            score += 30;
+        }
+
+        // 인기도 보너스
+        if (isPopular()) {
+            score += 10;
+        }
+
+        return Math.min(score, 100);
     }
 }
