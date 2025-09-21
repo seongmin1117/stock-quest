@@ -11,6 +11,7 @@ import com.stockquest.application.auth.port.in.LoginUseCase;
 import com.stockquest.application.auth.port.in.RefreshTokenUseCase;
 import com.stockquest.application.auth.port.in.LogoutUseCase;
 import com.stockquest.application.auth.port.in.SignupUseCase;
+import com.stockquest.application.security.SecureUserContextService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -40,14 +41,16 @@ public class AuthController {
     private final GetCurrentUserUseCase getCurrentUserUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
     private final LogoutUseCase logoutUseCase;
+    private final SecureUserContextService secureUserContextService;
     
     public AuthController(SignupUseCase signupUseCase, LoginUseCase loginUseCase, GetCurrentUserUseCase getCurrentUserUseCase,
-                         RefreshTokenUseCase refreshTokenUseCase, LogoutUseCase logoutUseCase) {
+                         RefreshTokenUseCase refreshTokenUseCase, LogoutUseCase logoutUseCase, SecureUserContextService secureUserContextService) {
         this.signupUseCase = signupUseCase;
         this.loginUseCase = loginUseCase;
         this.getCurrentUserUseCase = getCurrentUserUseCase;
         this.refreshTokenUseCase = refreshTokenUseCase;
         this.logoutUseCase = logoutUseCase;
+        this.secureUserContextService = secureUserContextService;
     }
     
     @PostMapping("/signup")
@@ -123,7 +126,7 @@ public class AuthController {
         }
     )
     public ResponseEntity<AuthResponse> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = Long.parseLong(userDetails.getUsername());
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         var result = getCurrentUserUseCase.getCurrentUser(userId);
         
         var response = AuthResponse.basic(
@@ -189,7 +192,7 @@ public class AuthController {
                     .build());
         }
         
-        Long userId = Long.parseLong(userDetails.getUsername());
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         
         // 로그아웃 명령 생성
         var command = new LogoutUseCase.LogoutCommand(
@@ -221,7 +224,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
-        Long userId = Long.parseLong(userDetails.getUsername());
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         var result = getCurrentUserUseCase.getCurrentUser(userId);
         
         var response = AuthResponse.basic(

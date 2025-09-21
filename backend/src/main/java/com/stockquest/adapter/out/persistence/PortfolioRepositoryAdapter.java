@@ -1,12 +1,16 @@
 package com.stockquest.adapter.out.persistence;
 
 import com.stockquest.adapter.out.persistence.entity.PortfolioPositionJpaEntity;
+import com.stockquest.adapter.out.persistence.projection.PortfolioPositionSummaryImpl;
 import com.stockquest.adapter.out.persistence.repository.PortfolioPositionJpaRepository;
 import com.stockquest.domain.portfolio.PortfolioPosition;
 import com.stockquest.domain.portfolio.port.PortfolioRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -15,6 +19,7 @@ import java.util.stream.Collectors;
  * 포트폴리오 저장소 어댑터
  * Domain PortfolioRepository 인터페이스를 구현하여 JPA를 통한 데이터 영속성 제공
  */
+@Slf4j
 @Component
 public class PortfolioRepositoryAdapter implements PortfolioRepository {
 
@@ -61,29 +66,39 @@ public class PortfolioRepositoryAdapter implements PortfolioRepository {
 
     @Override
     public List<PortfolioPosition> findActivePositionsByUserId(Long userId) {
-        // TODO: This requires a more complex query joining with session table
-        // For now, returning empty list as a placeholder
-        return List.of();
+        log.debug("Finding active positions for userId: {}", userId);
+        return jpaRepository.findActivePositionsByUserId(userId)
+                .stream()
+                .map(PortfolioPositionJpaEntity::toDomain)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<PortfolioPositionSummary> findPortfolioSummaryBySessionId(Long sessionId) {
-        // TODO: This requires implementing the projection interface and query
-        // For now, returning empty list as a placeholder
-        return List.of();
+        log.debug("Finding portfolio summary for sessionId: {}", sessionId);
+        return jpaRepository.findPortfolioSummaryBySessionId(sessionId)
+                .stream()
+                .map(PortfolioPositionSummaryImpl::fromProjection)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<PortfolioPositionSummary> findAllActivePortfolioSummaries() {
-        // TODO: This requires implementing the projection interface and complex query
-        // For now, returning empty list as a placeholder
-        return List.of();
+        log.debug("Finding all active portfolio summaries");
+        return jpaRepository.findAllActivePortfolioSummaries()
+                .stream()
+                .map(PortfolioPositionSummaryImpl::fromProjection)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<PortfolioPosition> findPositionChangesAfterTimestamp(Long sessionId, Instant timestamp) {
-        // TODO: This requires adding timestamp filtering to JPA repository
-        // For now, returning empty list as a placeholder
-        return List.of();
+        log.debug("Finding position changes for sessionId: {} after timestamp: {}", sessionId, timestamp);
+        // Convert Instant to LocalDateTime for JPA query
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(timestamp, ZoneOffset.UTC);
+        return jpaRepository.findPositionChangesAfterTimestamp(sessionId, localDateTime)
+                .stream()
+                .map(PortfolioPositionJpaEntity::toDomain)
+                .collect(Collectors.toList());
     }
 }

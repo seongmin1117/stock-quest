@@ -2,6 +2,7 @@ package com.stockquest.adapter.in.web.dashboard;
 
 import com.stockquest.application.dashboard.DashboardService;
 import com.stockquest.application.dashboard.dto.DashboardData;
+import com.stockquest.application.security.SecureUserContextService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class DashboardWebAdapter {
 
     private final DashboardService dashboardService;
+    private final SecureUserContextService secureUserContextService;
 
     /**
      * 사용자 대시보드 데이터 조회
@@ -33,7 +35,7 @@ public class DashboardWebAdapter {
 
         try {
             // 현재 사용자 ID 추출
-            Long userId = Long.parseLong(userDetails.getUsername());
+            Long userId = secureUserContextService.getCurrentUserId(userDetails);
             log.info("대시보드 데이터 조회: userId={}", userId);
 
             // 대시보드 데이터 조회

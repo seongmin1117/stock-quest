@@ -2,6 +2,7 @@ package com.stockquest.adapter.in.web.community;
 
 import com.stockquest.adapter.in.web.community.dto.*;
 import com.stockquest.application.community.port.in.*;
+import com.stockquest.application.security.SecureUserContextService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class CommunityController {
     private final GetPostListUseCase getPostListUseCase;
     private final CreateCommentUseCase createCommentUseCase;
     private final GetCommentListUseCase getCommentListUseCase;
+    private final SecureUserContextService secureUserContextService;
     
     @PostMapping("/posts")
     @Operation(summary = "게시글 작성", description = "특정 챌린지에 게시글을 작성합니다")
@@ -34,7 +36,7 @@ public class CommunityController {
             @Valid @RequestBody CreatePostRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        Long userId = getUserId(userDetails);
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         var command = new CreatePostUseCase.CreatePostCommand(
                 challengeId,
                 userId,
@@ -64,7 +66,7 @@ public class CommunityController {
             @Valid @RequestBody CreateCommentRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        Long userId = getUserId(userDetails);
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         var command = new CreateCommentUseCase.CreateCommentCommand(
                 postId,
                 userId,
@@ -87,7 +89,4 @@ public class CommunityController {
         return ResponseEntity.ok(CommentResponse.from(comments));
     }
     
-    private Long getUserId(UserDetails userDetails) {
-        return Long.parseLong(userDetails.getUsername());
-    }
 }

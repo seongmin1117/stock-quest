@@ -11,6 +11,7 @@ import com.stockquest.application.session.port.in.CloseChallengeUseCase.CloseCha
 import com.stockquest.application.session.dto.GetSessionDetailQuery;
 import com.stockquest.application.session.dto.GetPortfolioQuery;
 import com.stockquest.application.session.dto.GetOrdersQuery;
+import com.stockquest.application.security.SecureUserContextService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class SessionController {
     private final GetOrdersUseCase getOrdersUseCase;
     private final PlaceOrderUseCase placeOrderUseCase;
     private final CloseChallengeUseCase closeChallengeUseCase;
+    private final SecureUserContextService secureUserContextService;
     
     @GetMapping("/{sessionId}")
     @Operation(summary = "세션 상세 조회", description = "챌린지 세션의 상세 정보를 조회합니다")
@@ -43,7 +45,7 @@ public class SessionController {
             @PathVariable @NotNull @Positive Long sessionId,
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        Long userId = getUserId(userDetails);
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         var query = new GetSessionDetailQuery(sessionId, userId);
         var result = getSessionDetailUseCase.getSessionDetail(query);
         
@@ -56,7 +58,7 @@ public class SessionController {
             @PathVariable @NotNull @Positive Long sessionId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = getUserId(userDetails);
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         var query = new GetPortfolioQuery(sessionId, userId);
         var result = getPortfolioUseCase.getPortfolio(query);
 
@@ -69,7 +71,7 @@ public class SessionController {
             @PathVariable @NotNull @Positive Long sessionId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = getUserId(userDetails);
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         var query = new GetOrdersQuery(sessionId, userId);
         var result = getOrdersUseCase.getOrders(query);
 
@@ -83,7 +85,7 @@ public class SessionController {
             @Valid @RequestBody PlaceOrderRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        Long userId = getUserId(userDetails);
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         var command = new PlaceOrderCommand(
                 sessionId,
                 request.instrumentKey(),
@@ -103,14 +105,11 @@ public class SessionController {
             @PathVariable @NotNull @Positive Long sessionId,
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        Long userId = getUserId(userDetails);
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         var command = new CloseChallengeCommand(sessionId);
         var result = closeChallengeUseCase.close(command);
         
         return ResponseEntity.ok(CloseChallengeResponse.from(result));
     }
     
-    private Long getUserId(UserDetails userDetails) {
-        return Long.parseLong(userDetails.getUsername());
-    }
 }

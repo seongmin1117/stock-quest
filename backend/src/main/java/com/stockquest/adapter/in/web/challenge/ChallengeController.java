@@ -12,6 +12,7 @@ import com.stockquest.application.challenge.dto.GetChallengeDetailQuery;
 import com.stockquest.application.challenge.dto.GetChallengeListQuery;
 import com.stockquest.application.challenge.dto.GetChallengeInstrumentsQuery;
 import com.stockquest.application.challenge.port.in.StartChallengeUseCase.StartChallengeCommand;
+import com.stockquest.application.security.SecureUserContextService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class ChallengeController {
     private final GetChallengeDetailUseCase getChallengeDetailUseCase;
     private final StartChallengeUseCase startChallengeUseCase;
     private final GetChallengeInstrumentsUseCase getChallengeInstrumentsUseCase;
+    private final SecureUserContextService secureUserContextService;
     
     @GetMapping
     @Operation(summary = "챌린지 목록 조회", description = "활성 상태의 챌린지 목록을 조회합니다")
@@ -61,7 +63,7 @@ public class ChallengeController {
             @PathVariable Long challengeId,
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        Long userId = getUserId(userDetails);
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         var query = new GetChallengeDetailQuery(challengeId, userId);
         var result = getChallengeDetailUseCase.getChallengeDetail(query);
         
@@ -75,7 +77,7 @@ public class ChallengeController {
             @RequestParam(defaultValue = "false") boolean forceRestart,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = getUserId(userDetails);
+        Long userId = secureUserContextService.getCurrentUserId(userDetails);
         var command = new StartChallengeCommand(userId, challengeId, forceRestart);
         var result = startChallengeUseCase.start(command);
 
@@ -93,7 +95,4 @@ public class ChallengeController {
         return ResponseEntity.ok(ChallengeInstrumentsResponse.from(result));
     }
 
-    private Long getUserId(UserDetails userDetails) {
-        return Long.parseLong(userDetails.getUsername());
-    }
 }
