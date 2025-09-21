@@ -2,8 +2,6 @@ package com.stockquest.domain.simulation;
 
 import com.stockquest.domain.simulation.port.BenchmarkDataRepository;
 import com.stockquest.domain.simulation.port.PriceDataRepository;
-import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -13,8 +11,9 @@ import java.util.List;
 /**
  * DCA 시뮬레이션 도메인 서비스
  * 달러 평균 투자법(Dollar Cost Averaging) 시뮬레이션을 실행하고 결과를 계산
+ *
+ * 헥사고날 아키텍처: 순수 도메인 서비스 (프레임워크 의존성 없음)
  */
-@Service("dcaDomainSimulationService")
 public class DCASimulationService {
 
     private final PriceDataRepository priceDataRepository;

@@ -41,7 +41,7 @@ public class ChallengeTemplatePortAdapter implements ChallengeTemplatePort {
 
     @Override
     public List<ChallengeTemplate> findAll() {
-        return challengeTemplateRepository.findAll(PageRequest.of(0, 1000)).getContent();
+        return challengeTemplateRepository.findAll(com.stockquest.domain.common.PageRequest.of(0, 1000)).getContent();
     }
 
     @Override
@@ -52,7 +52,7 @@ public class ChallengeTemplatePortAdapter implements ChallengeTemplatePort {
     @Override
     public List<ChallengeTemplate> findPopularTemplates(int limit) {
         // TODO: 실제 구현에서는 사용 횟수나 평점 기반으로 인기 템플릿 조회
-        return challengeTemplateRepository.findAll(PageRequest.of(0, limit)).getContent();
+        return challengeTemplateRepository.findAll(com.stockquest.domain.common.PageRequest.of(0, limit)).getContent();
     }
 
     @Override

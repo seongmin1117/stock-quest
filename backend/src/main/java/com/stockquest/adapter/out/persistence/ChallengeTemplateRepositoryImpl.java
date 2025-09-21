@@ -7,8 +7,8 @@ import com.stockquest.domain.challenge.ChallengeType;
 import com.stockquest.domain.challenge.ChallengeDifficulty;
 import com.stockquest.domain.challenge.port.ChallengeTemplateRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.stockquest.domain.common.Page;
+import com.stockquest.domain.common.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -46,9 +46,21 @@ public class ChallengeTemplateRepositoryImpl implements ChallengeTemplateReposit
     }
     
     @Override
-    public Page<ChallengeTemplate> findAll(Pageable pageable) {
-        return jpaRepository.findAll(pageable)
-            .map(this::toDomain);
+    public Page<ChallengeTemplate> findAll(PageRequest pageRequest) {
+        org.springframework.data.domain.PageRequest springPageRequest =
+            org.springframework.data.domain.PageRequest.of(
+                pageRequest.getPage(),
+                pageRequest.getSize()
+            );
+
+        org.springframework.data.domain.Page<ChallengeTemplateJpaEntity> springPage =
+            jpaRepository.findAll(springPageRequest);
+
+        List<ChallengeTemplate> content = springPage.getContent().stream()
+            .map(this::toDomain)
+            .collect(Collectors.toList());
+
+        return new Page<>(content, pageRequest, springPage.getTotalElements());
     }
     
     @Override

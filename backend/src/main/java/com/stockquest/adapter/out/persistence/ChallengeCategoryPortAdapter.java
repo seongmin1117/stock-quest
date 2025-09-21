@@ -41,7 +41,7 @@ public class ChallengeCategoryPortAdapter implements ChallengeCategoryPort {
     public List<ChallengeCategory> findAll() {
         // 첫 번째 페이지의 모든 카테고리를 가져옴 (페이지 크기를 크게 설정)
         return challengeCategoryRepository.findAll(
-            org.springframework.data.domain.PageRequest.of(0, 1000)
+            com.stockquest.domain.common.PageRequest.of(0, 1000)
         ).getContent();
     }
 

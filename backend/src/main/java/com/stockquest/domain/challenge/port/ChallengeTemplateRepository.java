@@ -3,8 +3,8 @@ package com.stockquest.domain.challenge.port;
 import com.stockquest.domain.challenge.ChallengeTemplate;
 import com.stockquest.domain.challenge.ChallengeType;
 import com.stockquest.domain.challenge.ChallengeDifficulty;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.stockquest.domain.common.Page;
+import com.stockquest.domain.common.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,7 +32,7 @@ public interface ChallengeTemplateRepository {
     /**
      * 페이지네이션된 템플릿 목록 조회
      */
-    Page<ChallengeTemplate> findAll(Pageable pageable);
+    Page<ChallengeTemplate> findAll(PageRequest pageRequest);
     
     /**
      * 카테고리별 템플릿 목록 조회

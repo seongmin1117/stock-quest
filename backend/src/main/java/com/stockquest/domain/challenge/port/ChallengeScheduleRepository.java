@@ -1,8 +1,8 @@
 package com.stockquest.domain.challenge.port;
 
 import com.stockquest.domain.challenge.ChallengeSchedule;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.stockquest.domain.common.Page;
+import com.stockquest.domain.common.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -51,7 +51,7 @@ public interface ChallengeScheduleRepository {
     /**
      * 페이지네이션된 스케줄 목록 조회
      */
-    Page<ChallengeSchedule> findAll(Pageable pageable);
+    Page<ChallengeSchedule> findAll(PageRequest pageRequest);
     
     /**
      * 특정 기간의 스케줄 조회

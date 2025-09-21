@@ -5,8 +5,8 @@ import com.stockquest.adapter.out.persistence.repository.ChallengeCategoryJpaRep
 import com.stockquest.domain.challenge.ChallengeCategory;
 import com.stockquest.domain.challenge.port.ChallengeCategoryRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.stockquest.domain.common.Page;
+import com.stockquest.domain.common.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -44,9 +44,21 @@ public class ChallengeCategoryRepositoryImpl implements ChallengeCategoryReposit
     }
     
     @Override
-    public Page<ChallengeCategory> findAll(Pageable pageable) {
-        return jpaRepository.findAll(pageable)
-            .map(this::toDomain);
+    public Page<ChallengeCategory> findAll(PageRequest pageRequest) {
+        org.springframework.data.domain.PageRequest springPageRequest =
+            org.springframework.data.domain.PageRequest.of(
+                pageRequest.getPage(),
+                pageRequest.getSize()
+            );
+
+        org.springframework.data.domain.Page<ChallengeCategoryJpaEntity> springPage =
+            jpaRepository.findAll(springPageRequest);
+
+        List<ChallengeCategory> content = springPage.getContent().stream()
+            .map(this::toDomain)
+            .collect(Collectors.toList());
+
+        return new Page<>(content, pageRequest, springPage.getTotalElements());
     }
     
     @Override

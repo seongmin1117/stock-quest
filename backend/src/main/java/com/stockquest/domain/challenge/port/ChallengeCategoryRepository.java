@@ -1,8 +1,8 @@
 package com.stockquest.domain.challenge.port;
 
 import com.stockquest.domain.challenge.ChallengeCategory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.stockquest.domain.common.Page;
+import com.stockquest.domain.common.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +30,7 @@ public interface ChallengeCategoryRepository {
     /**
      * 페이지네이션된 카테고리 목록 조회
      */
-    Page<ChallengeCategory> findAll(Pageable pageable);
+    Page<ChallengeCategory> findAll(PageRequest pageRequest);
     
     /**
      * 이름으로 카테고리 조회
