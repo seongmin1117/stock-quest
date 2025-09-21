@@ -5,6 +5,7 @@ import com.stockquest.application.service.PortfolioService;
 import com.stockquest.application.service.RealTimePositionManagementService;
 import com.stockquest.domain.portfolio.Portfolio;
 import com.stockquest.domain.portfolio.Position;
+import com.stockquest.config.WebSocketConnectionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,10 +18,15 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
- * 포트폴리오 실시간 업데이트 WebSocket 컨트롤러
- * Phase 2.2: WebSocket 실시간 기능 구현 - 포트폴리오 실시간 업데이트
+ * 고급 포트폴리오 실시간 업데이트 WebSocket 컨트롤러
+ * 기능: 압축 메시지 전송, 재연결 관리, 성능 모니터링
+ * 성능 목표: <100ms 지연시간, 30% 대역폭 절약
  */
 @Slf4j
 @Component
@@ -29,6 +35,7 @@ public class PortfolioWebSocketController implements WebSocketHandler {
     
     private final PortfolioService portfolioService;
     private final RealTimePositionManagementService positionManagementService;
+    private final WebSocketConnectionManager connectionManager;
     private final ObjectMapper objectMapper;
     
     // 연결된 세션 관리
@@ -40,14 +47,24 @@ public class PortfolioWebSocketController implements WebSocketHandler {
     
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        activeSessions.add(session);
-        
         // 사용자 ID 추출 (실제 구현에서는 JWT 토큰에서 추출)
         String userId = extractUserId(session);
+
+        // 연결 관리자에 등록
+        boolean registered = connectionManager.registerConnection(
+            WebSocketConnectionManager.PORTFOLIO, session, userId);
+
+        if (!registered) {
+            log.warn("포트폴리오 WebSocket 연결 제한 초과: userId={}", userId);
+            session.close(CloseStatus.POLICY_VIOLATION.withReason("Connection limit exceeded"));
+            return;
+        }
+
+        activeSessions.add(session);
         sessionUsers.put(session.getId(), userId);
-        
+
         log.info("포트폴리오 WebSocket 연결 설정: sessionId={}, userId={}", session.getId(), userId);
-        
+
         // 연결 성공 메시지 전송
         PortfolioMessage welcomeMessage = PortfolioMessage.builder()
             .type(MessageType.CONNECTION_ESTABLISHED)
@@ -56,15 +73,15 @@ public class PortfolioWebSocketController implements WebSocketHandler {
                 "message", "포트폴리오 실시간 업데이트 연결이 설정되었습니다",
                 "userId", userId,
                 "availableActions", Arrays.asList(
-                    "SUBSCRIBE_PORTFOLIO", "UNSUBSCRIBE_PORTFOLIO", 
+                    "SUBSCRIBE_PORTFOLIO", "UNSUBSCRIBE_PORTFOLIO",
                     "REQUEST_PORTFOLIO_SNAPSHOT", "REQUEST_POSITION_DETAILS",
                     "UPDATE_POSITION", "PORTFOLIO_ANALYTICS"
                 )
             ))
             .build();
-        
+
         sendMessage(session, welcomeMessage);
-        
+
         // 사용자의 포트폴리오 목록 전송
         sendUserPortfolioList(session, userId);
     }

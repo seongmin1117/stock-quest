@@ -10,17 +10,22 @@ spring:
     username: root
     password: rootpassword
     
-    # HikariCP 개발 환경 최적화
+    # HikariCP 개발 환경 최적화 (2025-09-21 성능 분석 기반)
     hikari:
       pool-name: "StockQuest-Dev-HikariCP"
-      minimum-idle: 2
-      maximum-pool-size: 10
-      connection-timeout: 20000
-      idle-timeout: 300000
-      max-lifetime: 1200000
-      leak-detection-threshold: 60000
+      minimum-idle: 5              # 2→5: 개발 생산성 향상
+      maximum-pool-size: 15        # 10→15: 동시 개발자 지원 확대
+      connection-timeout: 15000    # 20s→15s: 더 빠른 실패 감지
+      idle-timeout: 600000         # 5min→10min: 개발 세션 안정성
+      max-lifetime: 1800000        # 20min→30min: 장기 개발 세션 지원
+      leak-detection-threshold: 45000  # 60s→45s: 더 빠른 누수 감지
+      keepalive-time: 300000       # 5min: 연결 드롭 방지 NEW
       connection-test-query: "SELECT 1"
       connection-init-sql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+
+      # 개발 환경 모니터링 활성화
+      register-mbeans: true        # NEW: JMX 모니터링 활성화
+      validation-timeout: 3000     # NEW: 빠른 연결 검증
       
       # MySQL Driver 최적화 설정
       data-source-properties:

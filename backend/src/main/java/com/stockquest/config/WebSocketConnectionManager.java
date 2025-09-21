@@ -38,7 +38,7 @@ public class WebSocketConnectionManager {
     /**
      * 새로운 WebSocket 연결 등록
      */
-    public void registerConnection(String connectionType, WebSocketSession session, String userId) {
+    public boolean registerConnection(String connectionType, WebSocketSession session, String userId) {
         try {
             // 연결 정보 생성
             ConnectionInfo info = ConnectionInfo.builder()
@@ -62,11 +62,13 @@ public class WebSocketConnectionManager {
             totalConnections.incrementAndGet();
             updateUniqueUserCount();
             
-            log.info("WebSocket 연결 등록: type={}, sessionId={}, userId={}, 총 연결 수={}", 
+            log.info("WebSocket 연결 등록: type={}, sessionId={}, userId={}, 총 연결 수={}",
                 connectionType, session.getId(), userId, totalConnections.get());
-            
+
+            return true;
         } catch (Exception e) {
             log.error("WebSocket 연결 등록 실패: sessionId={}", session.getId(), e);
+            return false;
         }
     }
     
@@ -351,4 +353,5 @@ public class WebSocketConnectionManager {
         private long averageConnectionDuration;
         private LocalDateTime timestamp;
     }
+
 }
