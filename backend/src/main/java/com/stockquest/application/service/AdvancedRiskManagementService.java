@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * 스트레스 테스트, 시나리오 분석, 실시간 모니터링 등 통합 관리
  */
 @Slf4j
-@Service
+// @Service  // TODO: Temporarily disabled until RiskScenarioRepository and StressTestRepository are implemented
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AdvancedRiskManagementService {

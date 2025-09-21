@@ -141,10 +141,36 @@ public class SecurityConfig {
             // 예외 처리
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint((request, response, authException) -> {
-                    response.sendError(401, "인증이 필요합니다.");
+                    response.setStatus(401);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("""
+                        {
+                            "timestamp": "%s",
+                            "status": 401,
+                            "error": "Unauthorized",
+                            "message": "인증이 필요합니다.",
+                            "path": "%s"
+                        }
+                        """.formatted(
+                            java.time.LocalDateTime.now().toString(),
+                            request.getRequestURI()
+                        ));
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    response.sendError(403, "접근 권한이 없습니다.");
+                    response.setStatus(403);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("""
+                        {
+                            "timestamp": "%s",
+                            "status": 403,
+                            "error": "Forbidden",
+                            "message": "접근 권한이 없습니다.",
+                            "path": "%s"
+                        }
+                        """.formatted(
+                            java.time.LocalDateTime.now().toString(),
+                            request.getRequestURI()
+                        ));
                 })
             );
 
