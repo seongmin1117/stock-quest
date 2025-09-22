@@ -116,10 +116,168 @@ command:
 hikari.connection-init-sql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
 ```
 
-### Known Issue Resolution
-- **Problem**: Double UTF-8 encoding in challenge data (IDs 4-13 were corrupted)
-- **Solution**: Always use `--default-character-set=utf8mb4` with MySQL client
-- **Prevention**: Use application-level data entry, not direct SQL
+### Critical Issue: Double UTF-8 Encoding (Resolved 2025-09-22)
+
+#### Problem Summary
+A severe double UTF-8 encoding issue was discovered in Korean text data across multiple database tables:
+
+**Affected Data:**
+- `challenge_instrument` table: 13 records with corrupted Korean instrument names
+- `challenge` table: 4 fields (`name`, `description`, `learning_objectives`, `market_context`)
+- **Symptoms**: Korean text displayed as `ê¸°ìˆ ì£¼ A` instead of `기술주 A`
+
+**Impact Scope:**
+- 17 total corrupted records affecting challenge system functionality
+- User-facing Korean text completely unreadable
+- Challenge selection and trading interface compromised
+
+#### Root Cause Analysis
+
+**Primary Cause**: Direct MySQL client usage without proper charset specification
+```bash
+# WRONG: This causes double encoding
+mysql -u root -p stockquest
+
+# CORRECT: Must specify charset
+mysql --default-character-set=utf8mb4 -u root -p stockquest
+```
+
+**Technical Details:**
+1. **Initial Setup**: Database correctly configured for UTF-8 (utf8mb4)
+2. **Data Entry Error**: Korean text entered via MySQL client without charset flag
+3. **Double Encoding**: Already UTF-8 encoded Korean text was re-encoded as UTF-8
+4. **Corruption Result**: Binary data stored as `LATIN1` interpreted as `UTF-8`
+
+**Timeline:**
+- Data corruption occurred during initial data seeding (manual SQL entry)
+- Issue persisted undetected until comprehensive Korean text audit
+- Application layer (Spring Boot) always handled Korean correctly
+
+#### Resolution Process
+
+**1. Data Assessment**
+```sql
+-- Identified corrupted records
+SELECT id, name FROM challenge WHERE name LIKE '%ê%' OR name LIKE '%ì%';
+SELECT id, instrument_name FROM challenge_instrument WHERE instrument_name LIKE '%ê%';
+```
+
+**2. Backup Creation**
+```sql
+-- Safety backup before correction
+CREATE TABLE challenge_backup AS SELECT * FROM challenge;
+CREATE TABLE challenge_instrument_backup AS SELECT * FROM challenge_instrument;
+```
+
+**3. Data Recovery**
+```sql
+-- Fixed double-encoded Korean text
+UPDATE challenge SET name = '코로나 대폭락' WHERE id = 4;
+UPDATE challenge SET description = '2020년 3월 코로나19...' WHERE id = 4;
+-- (Continued for all affected records)
+```
+
+**4. Verification**
+```sql
+-- Confirmed proper Korean display
+SELECT id, name, description FROM challenge WHERE id BETWEEN 4 AND 13;
+```
+
+#### Prevention Measures (CRITICAL)
+
+**1. MySQL Client Usage Rules**
+```bash
+# MANDATORY: Always use charset flag
+docker exec stockquest-mysql mysql --default-character-set=utf8mb4 -u root -p stockquest
+
+# For mysqldump (backup/restore)
+mysqldump --default-character-set=utf8mb4 --single-transaction stockquest > backup.sql
+mysql --default-character-set=utf8mb4 stockquest < backup.sql
+```
+
+**2. Application-Level Data Entry (RECOMMENDED)**
+```java
+// Use Spring Boot repositories for Korean data
+challengeRepository.save(challenge); // Proper UTF-8 handling guaranteed
+```
+
+**3. Data Quality Checks**
+```sql
+-- Regular Korean text validation
+SELECT table_name, column_name
+FROM information_schema.columns
+WHERE table_schema = 'stockquest'
+  AND (column_name LIKE '%name%' OR column_name LIKE '%description%');
+
+-- Check for encoding issues
+SELECT * FROM challenge WHERE name REGEXP '[ê|ì|â|î]';
+```
+
+#### Verification Methods
+
+**1. Database Level**
+```sql
+-- Verify Korean text storage
+SELECT id, name, HEX(name) as hex_encoding FROM challenge WHERE id = 4;
+-- Should show proper Korean characters, not garbage
+```
+
+**2. API Level**
+```bash
+# Test API response encoding
+curl -H "Accept: application/json; charset=utf-8" http://localhost:8080/api/challenges/4
+```
+
+**3. Frontend Level**
+```javascript
+// Verify proper display in browser
+console.log(challenge.name); // Should display: "코로나 대폭락"
+```
+
+#### Reference Commands
+
+**Safe MySQL Access:**
+```bash
+# Production-safe connection
+docker exec stockquest-mysql mysql \
+  --default-character-set=utf8mb4 \
+  --database=stockquest \
+  --user=root \
+  --password
+
+# Quick charset verification
+SHOW VARIABLES LIKE 'character_set%';
+SHOW VARIABLES LIKE 'collation%';
+```
+
+**Korean Text Testing:**
+```sql
+-- Test Korean input/output
+SELECT '한글 테스트' as test_korean;
+-- Should display exactly: 한글 테스트
+
+-- Detect encoding problems
+SELECT name, CHAR_LENGTH(name), OCTET_LENGTH(name)
+FROM challenge
+WHERE CHAR_LENGTH(name) != OCTET_LENGTH(name)/3;
+```
+
+**Emergency Recovery:**
+```sql
+-- If corruption detected, restore from backup
+DROP TABLE challenge;
+CREATE TABLE challenge AS SELECT * FROM challenge_backup;
+```
+
+#### Lessons Learned
+
+1. **Never bypass application layer** for Korean data entry
+2. **Always specify charset** when using MySQL client directly
+3. **Implement automated Korean text validation** in CI/CD pipeline
+4. **Regular audits** of Korean text quality across all tables
+5. **Document encoding requirements** for all team members
+
+This issue highlights the critical importance of proper UTF-8 handling in international applications and serves as a reminder that database configuration alone is insufficient - client tools must also be properly configured.
 
 ## 📊 Core Business Features
 
@@ -147,7 +305,7 @@ hikari.connection-init-sql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
 ### ✅ Completed (2025-09)
 - OpenAPI 3.1 compatibility
 - Frontend API client automation
-- Korean encoding issues resolved
+- Korean encoding issues comprehensively resolved (double UTF-8 encoding fixed)
 - Hibernate L2 Cache implementation
 - HikariCP optimization (150% improvement)
 - 10 Repository adapters for Hexagonal Architecture
@@ -204,10 +362,15 @@ POST   /api/v1/portfolio/optimize      # Portfolio optimization
 ### Common Issues & Solutions
 
 1. **Korean Text Corruption**
-   ```sql
-   -- Fix: Use UTF-8 client
-   docker exec stockquest-mysql mysql --default-character-set=utf8mb4
+   ```bash
+   # CRITICAL: Always use charset flag with MySQL client
+   docker exec stockquest-mysql mysql --default-character-set=utf8mb4 -u root -p stockquest
    ```
+
+   **See detailed analysis in "Korean Language Support → Critical Issue" section above**
+   - Double UTF-8 encoding causes `ê¸°ìˆ ì£¼` instead of `기술주`
+   - Prevention: Use application-level data entry, never direct SQL for Korean text
+   - Verification: Check API responses and frontend display after any Korean data changes
 
 2. **Backend Won't Start**
    ```bash
@@ -244,7 +407,7 @@ POST   /api/v1/portfolio/optimize      # Portfolio optimization
 4. **CHECK** existing patterns before implementing new features
 5. **MAINTAIN** Hexagonal Architecture boundaries (no Spring in domain layer)
 6. **FOLLOW** Feature-Sliced Design for frontend features
-7. **TEST** Korean text handling in all new features
+7. **TEST** Korean text handling in all new features (verify encoding end-to-end)
 8. **IGNORE** generated API files (they're in .gitignore)
 
 ### Architecture Rules
