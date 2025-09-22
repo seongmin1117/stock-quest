@@ -25,13 +25,14 @@ import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/shared/api/api-client';
 
 interface LeaderboardEntry {
-  rank: number;
+  id: number;
+  challengeId: number;
+  sessionId: number;
   userId: number;
-  nickname: string;
-  finalBalance: number;
-  totalReturn: number;
-  returnRate: number;
-  completedAt: string;
+  pnl: number;
+  returnPercentage: number;
+  rankPosition: number;
+  calculatedAt: string;
 }
 
 interface Challenge {
@@ -126,12 +127,21 @@ export function GlobalLeaderboard({ defaultChallengeId }: GlobalLeaderboardProps
     }).format(amount);
   };
 
-  const formatPercentage = (rate: number) => {
+  const formatPercentage = (rate: number | undefined | null) => {
+    // null 안전성 체크
+    if (rate === undefined || rate === null || isNaN(rate)) {
+      return {
+        value: '0.0%',
+        color: '#78828A',
+        icon: null,
+      };
+    }
+
     const isPositive = rate > 0;
     return {
       value: `${isPositive ? '+' : ''}${rate.toFixed(1)}%`,
       color: isPositive ? '#4CAF50' : rate < 0 ? '#F44336' : '#78828A',
-      icon: isPositive ? <TrendingUp sx={{ fontSize: 14 }} /> : 
+      icon: isPositive ? <TrendingUp sx={{ fontSize: 14 }} /> :
             rate < 0 ? <TrendingDown sx={{ fontSize: 14 }} /> : null,
     };
   };
@@ -214,36 +224,37 @@ export function GlobalLeaderboard({ defaultChallengeId }: GlobalLeaderboardProps
               </TableHead>
               <TableBody>
                 {leaderboard.slice(0, 5).map((entry) => {
-                  const percentage = formatPercentage(entry.returnRate);
+                  const percentage = formatPercentage(entry.returnPercentage);
+                  const nickname = `User${entry.userId}`; // 기본 닉네임 생성
                   return (
                     <TableRow
-                      key={entry.userId}
+                      key={`${entry.sessionId}-${entry.userId}`}
                       sx={{ borderBottom: '1px solid #2A3441' }}
                     >
                       <TableCell sx={{ color: '#FFFFFF' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {getRankIcon(entry.rank)}
+                          {getRankIcon(entry.rankPosition)}
                           <Typography variant="body2">
-                            #{entry.rank}
+                            #{entry.rankPosition}
                           </Typography>
                         </Box>
                       </TableCell>
-                      
+
                       <TableCell sx={{ color: '#FFFFFF' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Avatar
                             sx={{
                               width: 24,
                               height: 24,
-                              backgroundColor: entry.rank <= 3 ? '#2196F3' : '#2A3441',
+                              backgroundColor: entry.rankPosition <= 3 ? '#2196F3' : '#2A3441',
                               fontSize: '0.75rem',
                               fontWeight: 'bold',
                             }}
                           >
-                            {entry.nickname.charAt(0).toUpperCase()}
+                            {nickname.charAt(0).toUpperCase()}
                           </Avatar>
                           <Typography variant="body2">
-                            {entry.nickname}
+                            {nickname}
                           </Typography>
                         </Box>
                       </TableCell>
