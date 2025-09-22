@@ -35,8 +35,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     
     // Rate Limiting with Spring Boot (basic implementation)
-    implementation 'com.bucket4j:bucket4j-core:8.0.1'
-    implementation 'com.bucket4j:bucket4j-redis:8.0.1'
+    implementation 'com.bucket4j:bucket4j-core:8.10.1'
+    implementation 'com.bucket4j:bucket4j-redis:8.10.1'
     
     // AOP for Metrics
     implementation 'org.springframework.boot:spring-boot-starter-aop'
