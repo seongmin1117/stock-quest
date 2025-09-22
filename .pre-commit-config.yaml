@@ -1,0 +1,99 @@
+# Pre-commit hooks configuration for Stock Quest
+# UTF-8 인코딩 및 한국어 텍스트 지원 검증
+#
+# 설치: pip install pre-commit && pre-commit install
+# 실행: pre-commit run --all-files
+# 업데이트: pre-commit autoupdate
+
+repos:
+  # Built-in hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Remove trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML syntax
+      - id: check-json
+        name: Check JSON syntax
+      - id: check-xml
+        name: Check XML syntax
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: check-case-conflict
+        name: Check for case conflicts
+      - id: mixed-line-ending
+        name: Check mixed line endings
+        args: ['--fix=lf']
+
+  # Custom charset validation hooks
+  - repo: local
+    hooks:
+      # 1. SQL 마이그레이션 charset 검증
+      - id: migration-charset-check
+        name: Validate Migration Charset Configuration
+        entry: scripts/pre-commit/check-migration-charset.sh
+        language: script
+        files: 'backend/src/main/resources/db/migration/V.*\.sql$'
+        pass_filenames: true
+        require_serial: false
+
+      # 2. 한국어 텍스트 인코딩 검증
+      - id: korean-text-encoding-check
+        name: Validate Korean Text Encoding
+        entry: scripts/pre-commit/check-korean-text-encoding.sh
+        language: script
+        files: '\.(java|sql|yml|yaml|properties|md)$'
+        pass_filenames: true
+        require_serial: false
+
+      # 3. 설정 파일 charset 검증
+      - id: config-charset-check
+        name: Validate Configuration Charset Settings
+        entry: scripts/pre-commit/check-config-charset.sh
+        language: script
+        files: 'application.*\.(yml|yaml|properties)$'
+        pass_filenames: true
+        require_serial: false
+
+      # 4. Docker 설정 charset 검증
+      - id: docker-charset-check
+        name: Validate Docker Charset Configuration
+        entry: scripts/pre-commit/check-docker-charset.sh
+        language: script
+        files: '(docker-compose.*\.ya?ml|Dockerfile)$'
+        pass_filenames: true
+        require_serial: false
+
+      # 5. 테스트 파일 한국어 텍스트 검증
+      - id: test-korean-text-check
+        name: Validate Korean Text in Tests
+        entry: scripts/pre-commit/check-test-korean-text.sh
+        language: script
+        files: 'backend/src/test/.*\.java$'
+        pass_filenames: true
+        require_serial: false
+
+  # Java formatting and linting
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.12.0
+    hooks:
+      - id: pretty-format-java
+        args: [--autofix]
+        files: '\.java$'
+
+  # Frontend hooks (if applicable)
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        files: '\.(js|jsx|ts|tsx)$'
+        additional_dependencies:
+          - eslint@8.56.0
+
+# Global configuration
+default_stages: [commit]
+fail_fast: false
+minimum_pre_commit_version: '3.0.0'
