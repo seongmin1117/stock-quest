@@ -2,6 +2,7 @@ package com.stockquest.domain.user.port;
 
 import com.stockquest.domain.user.User;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -33,4 +34,9 @@ public interface UserRepository {
      * 닉네임 중복 확인
      */
     boolean existsByNickname(String nickname);
+
+    /**
+     * ID 목록으로 사용자 목록 조회
+     */
+    List<User> findByIdIn(List<Long> ids);
 }

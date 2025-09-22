@@ -51,6 +51,14 @@ public class UserRepositoryAdapter implements UserRepository {
         return jpaRepository.existsByNickname(nickname);
     }
 
+    @Override
+    public List<User> findByIdIn(List<Long> ids) {
+        return jpaRepository.findByIdIn(ids)
+                .stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
     /**
      * JPA Entity를 Domain Object로 변환
      */

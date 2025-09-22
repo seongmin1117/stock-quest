@@ -13,33 +13,49 @@ import java.util.List;
 public record PostResponse(
         @Schema(description = "게시글 ID")
         Long id,
-        
+
         @Schema(description = "챌린지 ID")
         Long challengeId,
-        
+
         @Schema(description = "작성자 ID")
         Long authorId,
-        
+
+        @Schema(description = "작성자 닉네임")
+        String authorNickname,
+
         @Schema(description = "게시글 내용")
         String content,
-        
+
         @Schema(description = "작성일시")
         LocalDateTime createdAt,
-        
+
         @Schema(description = "수정일시")
         LocalDateTime updatedAt
 ) {
-    public static PostResponse from(CommunityPost post) {
+    public static PostResponse from(CommunityPost post, String authorNickname) {
         return new PostResponse(
                 post.getId(),
                 post.getChallengeId(),
                 post.getAuthorId(),
+                authorNickname,
                 post.getContent(),
                 post.getCreatedAt(),
                 post.getUpdatedAt()
         );
     }
-    
+
+    public static PostResponse from(CommunityPost post) {
+        return new PostResponse(
+                post.getId(),
+                post.getChallengeId(),
+                post.getAuthorId(),
+                "Unknown", // 임시 기본값
+                post.getContent(),
+                post.getCreatedAt(),
+                post.getUpdatedAt()
+        );
+    }
+
     public static List<PostResponse> from(List<CommunityPost> posts) {
         return posts.stream()
                 .map(PostResponse::from)

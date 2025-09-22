@@ -13,33 +13,49 @@ import java.util.List;
 public record CommentResponse(
         @Schema(description = "댓글 ID")
         Long id,
-        
+
         @Schema(description = "게시글 ID")
         Long postId,
-        
+
         @Schema(description = "작성자 ID")
         Long authorId,
-        
+
+        @Schema(description = "작성자 닉네임")
+        String authorNickname,
+
         @Schema(description = "댓글 내용")
         String content,
-        
+
         @Schema(description = "작성일시")
         LocalDateTime createdAt,
-        
+
         @Schema(description = "수정일시")
         LocalDateTime updatedAt
 ) {
-    public static CommentResponse from(CommunityComment comment) {
+    public static CommentResponse from(CommunityComment comment, String authorNickname) {
         return new CommentResponse(
                 comment.getId(),
                 comment.getPostId(),
                 comment.getAuthorId(),
+                authorNickname,
                 comment.getContent(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt()
         );
     }
-    
+
+    public static CommentResponse from(CommunityComment comment) {
+        return new CommentResponse(
+                comment.getId(),
+                comment.getPostId(),
+                comment.getAuthorId(),
+                "Unknown", // 임시 기본값
+                comment.getContent(),
+                comment.getCreatedAt(),
+                comment.getUpdatedAt()
+        );
+    }
+
     public static List<CommentResponse> from(List<CommunityComment> comments) {
         return comments.stream()
                 .map(CommentResponse::from)
