@@ -66,7 +66,7 @@ CREATE TABLE articles (
         (status = 'PUBLISHED' AND published_at IS NOT NULL) OR
         (status != 'PUBLISHED')
     )
-) COMMENT = '블로그 글 테이블';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT = '블로그 글 테이블';
 
 -- 2. 글-태그 연결 테이블
 CREATE TABLE article_tags (
@@ -98,7 +98,7 @@ CREATE TABLE article_tags (
     CONSTRAINT chk_article_tags_order CHECK (tag_order >= 1),
     CONSTRAINT chk_article_tags_relevance CHECK (relevance_score >= 0.00 AND relevance_score <= 1.00),
     CONSTRAINT uq_article_tags_order UNIQUE (article_id, tag_order)
-) COMMENT = '글-태그 연결 테이블';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT = '글-태그 연결 테이블';
 
 -- 3. 뷰 생성: 발행된 글 목록 (자주 사용되는 쿼리 최적화)
 CREATE VIEW published_articles AS
