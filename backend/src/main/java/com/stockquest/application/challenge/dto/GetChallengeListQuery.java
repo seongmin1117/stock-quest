@@ -5,6 +5,7 @@ package com.stockquest.application.challenge.dto;
  */
 public record GetChallengeListQuery(
     int page,
-    int size
+    int size,
+    Long userId
 ) {
 }
