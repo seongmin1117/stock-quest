@@ -4,6 +4,7 @@ import com.stockquest.application.session.port.in.CloseChallengeUseCase;
 import com.stockquest.application.leaderboard.port.in.CalculateLeaderboardUseCase;
 import com.stockquest.domain.challenge.ChallengeInstrument;
 import com.stockquest.domain.challenge.port.ChallengeRepository;
+import com.stockquest.domain.event.ChallengeCompletedEvent;
 import com.stockquest.domain.portfolio.PortfolioPosition;
 import com.stockquest.domain.portfolio.port.PortfolioRepository;
 import com.stockquest.domain.session.ChallengeSession;
@@ -11,6 +12,7 @@ import com.stockquest.domain.session.ChallengeSession.SessionStatus;
 import com.stockquest.domain.session.port.ChallengeSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,7 @@ public class CloseChallengeService implements CloseChallengeUseCase {
     private final PortfolioRepository portfolioRepository;
     private final ChallengeRepository challengeRepository;
     private final CalculateLeaderboardUseCase calculateLeaderboardUseCase;
+    private final ApplicationEventPublisher eventPublisher;
     
     @Override
     public CloseChallengeResult close(CloseChallengeCommand command) {
@@ -65,15 +68,15 @@ public class CloseChallengeService implements CloseChallengeUseCase {
         session.end(); // 상태를 ENDED로 변경하고 completedAt 설정
         sessionRepository.save(session);
 
-        // 7. 리더보드 자동 계산
-        try {
-            var leaderboardCommand = new CalculateLeaderboardUseCase.CalculateLeaderboardCommand(session.getChallengeId());
-            calculateLeaderboardUseCase.calculateLeaderboard(leaderboardCommand);
-            log.info("리더보드 자동 계산 완료: 챌린지={}", session.getChallengeId());
-        } catch (Exception e) {
-            log.error("리더보드 자동 계산 실패: 챌린지={}", session.getChallengeId(), e);
-            // 리더보드 계산 실패가 세션 종료를 방해하지 않도록 예외를 삼킴
-        }
+        // 7. 챌린지 완료 이벤트 발행 (비동기 리더보드 계산 트리거)
+        var challengeCompletedEvent = ChallengeCompletedEvent.of(
+                session.getChallengeId(),
+                session.getId(),
+                session.getUserId()
+        );
+        eventPublisher.publishEvent(challengeCompletedEvent);
+        log.info("챌린지 완료 이벤트 발행: challengeId={}, sessionId={}",
+                session.getChallengeId(), session.getId());
 
         // 8. 랭킹 계산 (현재는 임시로 1위 반환, 실제로는 다른 참가자와 비교)
         Integer rank = calculateRank(session.getChallengeId(), returnPercentage);
