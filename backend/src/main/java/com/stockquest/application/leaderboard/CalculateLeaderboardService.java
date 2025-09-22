@@ -36,9 +36,15 @@ public class CalculateLeaderboardService implements CalculateLeaderboardUseCase 
         // 기존 리더보드 삭제 (재계산)
         leaderboardRepository.deleteByChallengeId(command.challengeId());
         
-        // 완료된 세션들 조회
+        // 완료된 세션들 조회 (COMPLETED와 ENDED 상태 모두 포함)
         List<ChallengeSession> completedSessions = challengeSessionRepository
+                .findByChallengeIdAndStatus(command.challengeId(), SessionStatus.COMPLETED);
+
+        List<ChallengeSession> endedSessions = challengeSessionRepository
                 .findByChallengeIdAndStatus(command.challengeId(), SessionStatus.ENDED);
+
+        // 두 리스트 합치기
+        completedSessions.addAll(endedSessions);
         
         if (completedSessions.isEmpty()) {
             return List.of();

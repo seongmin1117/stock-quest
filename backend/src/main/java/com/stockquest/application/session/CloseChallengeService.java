@@ -1,6 +1,7 @@
 package com.stockquest.application.session;
 
 import com.stockquest.application.session.port.in.CloseChallengeUseCase;
+import com.stockquest.application.leaderboard.port.in.CalculateLeaderboardUseCase;
 import com.stockquest.domain.challenge.ChallengeInstrument;
 import com.stockquest.domain.challenge.port.ChallengeRepository;
 import com.stockquest.domain.portfolio.PortfolioPosition;
@@ -31,6 +32,7 @@ public class CloseChallengeService implements CloseChallengeUseCase {
     private final ChallengeSessionRepository sessionRepository;
     private final PortfolioRepository portfolioRepository;
     private final ChallengeRepository challengeRepository;
+    private final CalculateLeaderboardUseCase calculateLeaderboardUseCase;
     
     @Override
     public CloseChallengeResult close(CloseChallengeCommand command) {
@@ -62,11 +64,21 @@ public class CloseChallengeService implements CloseChallengeUseCase {
         // 6. 세션 종료
         session.end(); // 상태를 ENDED로 변경하고 completedAt 설정
         sessionRepository.save(session);
-        
-        // 7. 랭킹 계산 (현재는 임시로 1위 반환, 실제로는 다른 참가자와 비교)
+
+        // 7. 리더보드 자동 계산
+        try {
+            var leaderboardCommand = new CalculateLeaderboardUseCase.CalculateLeaderboardCommand(session.getChallengeId());
+            calculateLeaderboardUseCase.calculateLeaderboard(leaderboardCommand);
+            log.info("리더보드 자동 계산 완료: 챌린지={}", session.getChallengeId());
+        } catch (Exception e) {
+            log.error("리더보드 자동 계산 실패: 챌린지={}", session.getChallengeId(), e);
+            // 리더보드 계산 실패가 세션 종료를 방해하지 않도록 예외를 삼킴
+        }
+
+        // 8. 랭킹 계산 (현재는 임시로 1위 반환, 실제로는 다른 참가자와 비교)
         Integer rank = calculateRank(session.getChallengeId(), returnPercentage);
-        
-        // 8. 상품명 공개 정보 생성
+
+        // 9. 상품명 공개 정보 생성
         List<RevealedInstrument> revealedInstruments = createRevealedInstruments(challenge, positions);
         
         log.info("챌린지 세션 종료 완료: 세션={}, 최종잔고={}, 수익률={}%, 순위={}", 
