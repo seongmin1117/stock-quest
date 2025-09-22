@@ -1,5 +1,5 @@
 # 멀티 스테이지 빌드
-FROM openjdk:17-jdk-slim AS builder
+FROM openjdk:21-jdk-slim AS builder
 
 WORKDIR /app
 COPY gradlew .
@@ -18,7 +18,7 @@ COPY src src
 RUN ./gradlew bootJar --no-daemon
 
 # 런타임 스테이지
-FROM openjdk:17-jre-slim
+FROM openjdk:21-jre-slim
 
 WORKDIR /app
 

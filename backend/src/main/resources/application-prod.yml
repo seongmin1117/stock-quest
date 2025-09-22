@@ -21,7 +21,8 @@ spring:
       leak-detection-threshold: 60000
       validation-timeout: 5000
       connection-test-query: "SELECT 1"
-      
+      connection-init-sql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+
       # 운영 환경 MySQL Driver 최적화
       data-source-properties:
         cachePrepStmts: true
