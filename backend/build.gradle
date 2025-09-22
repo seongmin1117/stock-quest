@@ -98,7 +98,7 @@ tasks.named('test') {
 }
 
 flyway {
-    url = 'jdbc:mysql://localhost:3306/stockquest?serverTimezone=UTC&characterEncoding=UTF-8&useUnicode=true&allowPublicKeyRetrieval=true&useSSL=false'
+    url = 'jdbc:mysql://127.0.0.1:3306/stockquest?serverTimezone=UTC&characterEncoding=UTF-8&useUnicode=true&allowPublicKeyRetrieval=true&useSSL=false'
     user = 'root'
     password = 'rootpassword'
     driver = 'com.mysql.cj.jdbc.Driver'

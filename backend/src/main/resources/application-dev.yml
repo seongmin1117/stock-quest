@@ -139,6 +139,56 @@ yahoo-finance:
 
 # 개발용 시뮬레이션 설정
 stockquest:
+  # 거래 시뮬레이션 설정 (개발 환경)
+  trading:
+    # 시뮬레이션 모드 활성화 (외부 API 없이 완전 동작)
+    simulation-mode: true
+
+    # 슬리피지 설정
+    slippage:
+      min: 0.5
+      max: 2.0
+
+    # 변동성 설정
+    volatility:
+      price-variation: 5.0
+      time-based-variation: true
+
+    # 티커별 기본 가격 (더미 데이터 보완)
+    default-prices:
+      # 미국 주식 (USD)
+      AAPL: 180.00
+      MSFT: 420.00
+      GOOGL: 140.00
+      GOOG: 140.00
+      AMZN: 150.00
+      TSLA: 250.00
+      NVDA: 450.00
+      META: 350.00
+      NFLX: 400.00
+      AMD: 120.00
+      INTC: 35.00
+
+      # 밈스톡 (2021년 기준)
+      GME: 20.00
+      AMC: 10.00
+      BB: 8.00
+      NOK: 5.00
+      KOSS: 15.00
+
+      # 방어적 자산
+      JNJ: 165.00
+      PG: 150.00
+      KO: 62.00
+
+      # 한국 주식 (KRW)
+      "005930": 70000.00  # 삼성전자
+      "000660": 120000.00 # SK하이닉스
+      "035720": 95000.00  # 카카오
+
+      # 기본 fallback
+      DEFAULT: 100.00
+
   simulation:
     batch-size: 10  # 개발용 작은 배치 크기
     thread-pool-size: 2

@@ -2,7 +2,9 @@ package com.stockquest.application.order;
 
 import com.stockquest.application.challenge.InstrumentMappingService;
 import com.stockquest.application.order.port.in.PlaceOrderUseCase;
+import com.stockquest.application.order.validation.ChallengeDataValidationService;
 import com.stockquest.application.market.MarketDataService;
+import com.stockquest.config.TradingSimulationConfig;
 import com.stockquest.domain.market.PriceCandle;
 import com.stockquest.domain.order.Order;
 import com.stockquest.domain.order.OrderSide;
@@ -35,6 +37,8 @@ public class PlaceOrderService implements PlaceOrderUseCase {
     private final PortfolioRepository portfolioRepository;
     private final MarketDataService marketDataService;
     private final InstrumentMappingService instrumentMappingService;
+    private final ChallengeDataValidationService challengeDataValidationService;
+    private final TradingSimulationConfig tradingConfig;
     
     @Value("${stockquest.trading.slippage.min:0.5}")
     private double minSlippagePercent; // 최소 슬리피지 0.5%
@@ -52,9 +56,21 @@ public class PlaceOrderService implements PlaceOrderUseCase {
         // 1. 세션 유효성 확인
         var session = sessionRepository.findById(command.sessionId())
             .orElseThrow(() -> new IllegalArgumentException("세션을 찾을 수 없습니다: " + command.sessionId()));
-            
+
         if (session.getStatus() != SessionStatus.ACTIVE) {
             throw new IllegalStateException("활성 상태의 세션에서만 주문할 수 있습니다");
+        }
+
+        // 1.1. 챌린지 데이터 검증 (선택적 - 성능을 위해 캐시됨)
+        try {
+            var validationResult = challengeDataValidationService.validateChallenge(session.getChallengeId());
+            if (!validationResult.isValid()) {
+                log.warn("챌린지 데이터 문제 감지: challengeId={}, issues={}",
+                        session.getChallengeId(), validationResult.getIssues());
+                // 심각한 문제가 아니면 주문은 계속 진행 (Fallback 로직이 있음)
+            }
+        } catch (Exception e) {
+            log.warn("챌린지 검증 중 오류 발생, 주문은 계속 진행: {}", e.getMessage());
         }
         
         // 2. 주문 생성
@@ -145,82 +161,67 @@ public class PlaceOrderService implements PlaceOrderUseCase {
         }
         
         // 모든 경우에 대해 기본값 반환
-        BigDecimal defaultPrice = getDefaultPrice(ticker);
+        BigDecimal defaultPrice = getEnhancedDefaultPrice(challengeId, ticker, instrumentKey);
         log.info("기본 가격 사용: {}({}) = {}", instrumentKey, ticker, defaultPrice);
         return defaultPrice;
     }
     
     
     /**
-     * 기본 가격 조회 (실시간 데이터 조회 실패 시 사용)
-     * 티커 기반으로 합리적인 기본값 제공
+     * 개선된 기본 가격 조회
+     * 설정 기반 가격 + 시뮬레이션 모드 지원
      */
-    private BigDecimal getDefaultPrice(String ticker) {
+    private BigDecimal getEnhancedDefaultPrice(Long challengeId, String ticker, String instrumentKey) {
         if (ticker == null || ticker.trim().isEmpty()) {
             log.warn("Empty ticker provided, using default fallback price");
             ticker = "DEFAULT";
         }
-        
-        // 티커별 현실적인 기본 가격 (2024년 기준)
-        BigDecimal basePrice;
-        switch (ticker.toUpperCase().trim()) {
-            case "AAPL":
-                basePrice = new BigDecimal("180.00");
-                break;
-            case "MSFT":
-                basePrice = new BigDecimal("420.00");
-                break;
-            case "GOOGL":
-                basePrice = new BigDecimal("140.00");
-                break;
-            case "TSLA":
-                basePrice = new BigDecimal("250.00");
-                break;
-            case "AMZN":
-                basePrice = new BigDecimal("150.00");
-                break;
-            case "NVDA":
-                basePrice = new BigDecimal("450.00");
-                break;
-            case "META":
-                basePrice = new BigDecimal("350.00");
-                break;
-            case "NFLX":
-                basePrice = new BigDecimal("400.00");
-                break;
-            case "GOOG":
-                basePrice = new BigDecimal("140.00");
-                break;
-            case "AMD":
-                basePrice = new BigDecimal("120.00");
-                break;
-            case "INTC":
-                basePrice = new BigDecimal("35.00");
-                break;
-            default:
-                // 알 수 없는 티커의 경우 중간 가격대로 설정
-                basePrice = new BigDecimal("100.00");
-                log.info("Unknown ticker for default price: {}, using fallback price: {}", ticker, basePrice);
-                break;
+
+        // 1. 설정에서 기본 가격 조회
+        BigDecimal basePrice = tradingConfig.getDefaultPrice(ticker);
+
+        // 2. 시뮬레이션 모드인 경우 변동성 적용
+        if (tradingConfig.isSimulationMode()) {
+            BigDecimal simulationPrice = tradingConfig.calculateSimulationPrice(ticker, basePrice);
+            log.debug("Simulation mode - Enhanced price for {}: base={}, final={}",
+                     ticker, basePrice, simulationPrice);
+            return simulationPrice;
         }
-        
-        // 약간의 변동성 추가 (±5%)
+
+        // 3. 일반 모드인 경우 약간의 변동성만 적용
         BigDecimal variation = BigDecimal.valueOf(0.95 + (random.nextDouble() * 0.1));
         BigDecimal finalPrice = basePrice.multiply(variation).setScale(2, BigDecimal.ROUND_HALF_UP);
-        
-        log.debug("Default price calculated for {}: base={}, variation={}, final={}", 
-                 ticker, basePrice, variation, finalPrice);
-        
+
+        log.debug("Enhanced default price for {} (challengeId={}): base={}, variation={}, final={}",
+                 ticker, challengeId, basePrice, variation, finalPrice);
+
         return finalPrice;
+    }
+
+    /**
+     * 기본 가격 조회 (레거시 메서드 - 호환성 유지)
+     * @deprecated Use getEnhancedDefaultPrice instead
+     */
+    @Deprecated
+    private BigDecimal getDefaultPrice(String ticker) {
+        return tradingConfig.getDefaultPrice(ticker);
     }
     
     /**
-     * 랜덤 슬리피지 계산
+     * 랜덤 슬리피지 계산 (설정 기반)
      */
     private BigDecimal calculateSlippageRate() {
-        double slippage = minSlippagePercent + 
-            (random.nextDouble() * (maxSlippagePercent - minSlippagePercent));
-        return BigDecimal.valueOf(slippage).setScale(2, BigDecimal.ROUND_HALF_UP);
+        // 설정에서 슬리피지 범위 가져오기
+        BigDecimal minSlippage = tradingConfig.getSlippage().getMin();
+        BigDecimal maxSlippage = tradingConfig.getSlippage().getMax();
+
+        double range = maxSlippage.subtract(minSlippage).doubleValue();
+        double slippage = minSlippage.doubleValue() + (random.nextDouble() * range);
+
+        BigDecimal result = BigDecimal.valueOf(slippage).setScale(2, BigDecimal.ROUND_HALF_UP);
+        log.debug("Calculated slippage: {}% (range: {}% - {}%)", result, minSlippage, maxSlippage);
+
+        return result;
     }
     
     /**
