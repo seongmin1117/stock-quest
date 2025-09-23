@@ -24,6 +24,9 @@ import {
   TableHead,
   TableRow,
   Divider,
+  useMediaQuery,
+  useTheme,
+  Fab,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -35,6 +38,8 @@ import {
   MonetizationOn,
   Calculate,
   Speed,
+  PhoneAndroid,
+  Computer,
 } from '@mui/icons-material';
 import {
   LineChart,
@@ -60,8 +65,19 @@ import type {
   DCAMonthlyRecord,
   InvestmentFrequency
 } from '@/shared/api/types/dca-types';
+import MobileDCASimulation from './MobileDCASimulation';
 
 const DCASimulationPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Mobile UI state
+  const [showMobileView, setShowMobileView] = useState(false);
+  const [forceMobile, setForceMobile] = useState(false);
+
+  // Determine if mobile view should be shown
+  const shouldShowMobile = isMobile || forceMobile;
+
   // 폼 상태
   const [symbol, setSymbol] = useState('');
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -325,6 +341,34 @@ const DCASimulationPage = () => {
     };
   };
 
+  // Early return for mobile view
+  if (shouldShowMobile) {
+    return (
+      <>
+        <MobileDCASimulation
+          isOpen={true}
+          onClose={() => setShowMobileView(false)}
+        />
+
+        {/* Desktop/Mobile toggle (only visible on desktop when forcing mobile) */}
+        {!isMobile && (
+          <Fab
+            color="primary"
+            onClick={() => setForceMobile(!forceMobile)}
+            sx={{
+              position: 'fixed',
+              bottom: 20,
+              left: 20,
+              zIndex: 1000,
+            }}
+          >
+            {forceMobile ? <Computer /> : <PhoneAndroid />}
+          </Fab>
+        )}
+      </>
+    );
+  }
+
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
       {/* 페이지 헤더 */}
@@ -337,6 +381,16 @@ const DCASimulationPage = () => {
             Dollar Cost Averaging 투자 전략 시뮬레이션
           </Typography>
         </Box>
+
+        {/* Mobile View Toggle Button (Desktop only) */}
+        <Button
+          variant="outlined"
+          startIcon={<PhoneAndroid />}
+          onClick={() => setForceMobile(true)}
+          sx={{ ml: 2 }}
+        >
+          모바일 버전 체험
+        </Button>
       </Box>
 
       <Grid container spacing={3}>
