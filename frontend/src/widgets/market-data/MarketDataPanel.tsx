@@ -15,9 +15,14 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  ToggleButton,
+  ToggleButtonGroup,
+  Paper,
 } from '@mui/material';
-import { TrendingUp, TrendingDown, Speed } from '@mui/icons-material';
+import { TrendingUp, TrendingDown, Speed, TableView, ShowChart } from '@mui/icons-material';
 import { useGetChallengeDetail } from '@/shared/api/challenge-client';
+import { ProfessionalTradingChart, CandlestickData } from '@/shared/ui/charts/ProfessionalTradingChart';
+import { useRealTimeMarketData } from '@/shared/hooks/useRealTimeMarketData';
 
 interface MarketData {
   instrumentKey: string;
@@ -40,57 +45,94 @@ interface MarketDataPanelProps {
  * 실시간 가격 정보와 차트 표시 (회사명 숨김)
  */
 export function MarketDataPanel({ challengeId }: MarketDataPanelProps) {
-  const [currentTime, setCurrentTime] = React.useState(new Date());
+  const [viewMode, setViewMode] = React.useState<'table' | 'chart'>('table');
+  const [selectedInstrument, setSelectedInstrument] = React.useState<string>('');
 
   // Fetch challenge data to get instruments
   const { data: challengeData, isLoading: loading } = useGetChallengeDetail(challengeId, {
     query: {
       enabled: !isNaN(challengeId) && challengeId > 0,
-      refetchInterval: 3000, // Refresh every 3 seconds for live simulation
+      refetchInterval: 10000, // Reduced frequency since we have real-time data
     }
   });
 
-  // Generate market data from challenge instruments
+  // Real-time market data
+  const {
+    currentPrices,
+    getInstrumentData,
+    isConnected,
+    lastUpdate,
+    error: realTimeError,
+  } = useRealTimeMarketData({
+    instruments: challengeData?.instruments || [],
+    updateInterval: 1000, // Update every second
+    bufferSize: 100,
+    enabled: !!challengeData?.instruments && challengeData.instruments.length > 0,
+  });
+
+  // Generate market data from real-time prices
   const marketData: MarketData[] = React.useMemo(() => {
     if (!challengeData?.instruments || challengeData.instruments.length === 0) {
       return [];
     }
 
-    return challengeData.instruments.map((instrumentKey, index) => {
-      // Generate simulated market data based on instrument key
-      const basePrice = 100 + (instrumentKey.charCodeAt(0) - 65) * 50; // A=100, B=150, C=200, etc.
-      const variation = (Math.sin(Date.now() / 10000 + index) * 10); // Time-based price variation
-      const currentPrice = basePrice + variation;
-      const openPrice = basePrice + (Math.random() - 0.5) * 5;
-      const highPrice = Math.max(currentPrice, openPrice) + Math.random() * 10;
-      const lowPrice = Math.min(currentPrice, openPrice) - Math.random() * 10;
-      const dailyChange = currentPrice - openPrice;
-      const dailyChangePercent = (dailyChange / openPrice) * 100;
+    return challengeData.instruments.map((instrumentKey) => {
+      const priceUpdate = currentPrices.get(instrumentKey);
+
+      if (!priceUpdate) {
+        // Fallback to default values if no real-time data yet
+        const basePrice = 100 + (instrumentKey.charCodeAt(0) - 65) * 50;
+        return {
+          instrumentKey,
+          hiddenName: `회사 ${instrumentKey}`,
+          currentPrice: basePrice,
+          openPrice: basePrice,
+          highPrice: basePrice,
+          lowPrice: basePrice,
+          volume: 1000000,
+          dailyChange: 0,
+          dailyChangePercent: 0,
+        };
+      }
+
+      // Use real-time data
+      const instrumentData = getInstrumentData(instrumentKey);
+      const todayData = instrumentData.slice(-24); // Last 24 data points (approx 1 day)
+
+      const openPrice = todayData.length > 0 ? todayData[0].open : priceUpdate.price;
+      const highPrice = todayData.length > 0 ? Math.max(...todayData.map(d => d.high)) : priceUpdate.price;
+      const lowPrice = todayData.length > 0 ? Math.min(...todayData.map(d => d.low)) : priceUpdate.price;
+      const dailyChange = priceUpdate.price - openPrice;
+      const dailyChangePercent = openPrice > 0 ? (dailyChange / openPrice) * 100 : 0;
 
       return {
         instrumentKey,
-        hiddenName: `회사 ${instrumentKey}`, // Hidden company name
-        currentPrice,
+        hiddenName: `회사 ${instrumentKey}`,
+        currentPrice: priceUpdate.price,
         openPrice,
         highPrice,
         lowPrice,
-        volume: Math.floor(Math.random() * 10000000) + 1000000, // Random volume between 1M-11M
+        volume: priceUpdate.volume,
         dailyChange,
         dailyChangePercent,
       };
     });
-  }, [challengeData?.instruments, currentTime]); // Include currentTime to update data
+  }, [challengeData?.instruments, currentPrices, getInstrumentData]);
 
+  // Get candlestick data for selected instrument from real-time data
+  const candlestickData = React.useMemo(() => {
+    if (!selectedInstrument || !challengeData?.instruments) return [];
+    return getInstrumentData(selectedInstrument);
+  }, [selectedInstrument, challengeData?.instruments, getInstrumentData]);
+
+  // No need for manual time updates since real-time data handles it
+
+  // Set default selected instrument when data loads
   React.useEffect(() => {
-    // 시뮬레이션 시간 업데이트 (1초마다)
-    const timeInterval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => {
-      clearInterval(timeInterval);
-    };
-  }, [challengeId]);
+    if (challengeData?.instruments && challengeData.instruments.length > 0 && !selectedInstrument) {
+      setSelectedInstrument(challengeData.instruments[0]);
+    }
+  }, [challengeData?.instruments, selectedInstrument]);
 
   const formatCurrency = (amount: number) => {
     return `₩${amount.toFixed(2)}`;
@@ -123,32 +165,78 @@ export function MarketDataPanel({ challengeId }: MarketDataPanelProps) {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h6">
           시장 현황
         </Typography>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Speed fontSize="small" color="action" />
-          <Typography variant="caption" color="text.secondary">
-            10배속 재생 중
-          </Typography>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(event, newViewMode) => {
+              if (newViewMode !== null) {
+                setViewMode(newViewMode);
+              }
+            }}
+            size="small"
+          >
+            <ToggleButton value="table" aria-label="테이블 뷰">
+              <TableView fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="chart" aria-label="차트 뷰">
+              <ShowChart fontSize="small" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: isConnected ? 'success.main' : 'error.main',
+                animation: isConnected ? 'pulse 2s infinite' : 'none',
+                '@keyframes pulse': {
+                  '0%': { opacity: 1 },
+                  '50%': { opacity: 0.5 },
+                  '100%': { opacity: 1 },
+                },
+              }}
+            />
+            <Typography variant="caption" color="text.secondary">
+              {isConnected ? '실시간 연결됨' : '연결 끊김'}
+            </Typography>
+          </Box>
         </Box>
       </Box>
 
-      {/* 시뮬레이션 시간 표시 */}
-      <Box sx={{ mb: 3, p: 2, bgcolor: 'primary.50', borderRadius: 1 }}>
+      {/* 실시간 연결 상태 */}
+      <Box sx={{ mb: 3, p: 2, bgcolor: isConnected ? 'success.50' : 'error.50', borderRadius: 1 }}>
         <Typography variant="body2" fontWeight="medium">
-          시뮬레이션 시간: {currentTime.toLocaleTimeString()}
+          {isConnected ? '실시간 데이터 스트리밍 활성화' : '실시간 연결 끊김'}
+          {lastUpdate && (
+            <Typography component="span" sx={{ ml: 1, fontSize: '0.875rem', color: 'text.secondary' }}>
+              • 마지막 업데이트: {lastUpdate.toLocaleTimeString()}
+            </Typography>
+          )}
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          실제 시장 데이터가 압축되어 재생되고 있습니다
+          {isConnected
+            ? '실시간 시장 데이터가 1초마다 업데이트되고 있습니다'
+            : '연결을 확인하고 다시 시도해주세요'
+          }
+          {realTimeError && (
+            <Typography component="span" sx={{ ml: 1, color: 'error.main' }}>
+              • 오류: {realTimeError}
+            </Typography>
+          )}
         </Typography>
       </Box>
 
       {loading ? (
         <LinearProgress />
-      ) : (
+      ) : viewMode === 'table' ? (
         <TableContainer>
           <Table>
             <TableHead>
@@ -157,11 +245,22 @@ export function MarketDataPanel({ challengeId }: MarketDataPanelProps) {
                 <TableCell align="right">현재가</TableCell>
                 <TableCell align="right">등락</TableCell>
                 <TableCell align="right">거래량</TableCell>
+                <TableCell align="center">차트</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {marketData.map((data) => (
-                <TableRow key={data.instrumentKey}>
+                <TableRow
+                  key={data.instrumentKey}
+                  sx={{
+                    backgroundColor: selectedInstrument === data.instrumentKey ? 'action.selected' : 'transparent',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                    },
+                  }}
+                  onClick={() => setSelectedInstrument(data.instrumentKey)}
+                >
                   <TableCell>
                     <Typography variant="body2" fontWeight="medium">
                       {data.hiddenName}
@@ -170,7 +269,7 @@ export function MarketDataPanel({ challengeId }: MarketDataPanelProps) {
                       {data.instrumentKey}
                     </Typography>
                   </TableCell>
-                  
+
                   <TableCell align="right">
                     <Typography variant="body2" fontWeight="medium">
                       {formatCurrency(data.currentPrice)}
@@ -179,7 +278,7 @@ export function MarketDataPanel({ challengeId }: MarketDataPanelProps) {
                       시가: {formatCurrency(data.openPrice)}
                     </Typography>
                   </TableCell>
-                  
+
                   <TableCell align="right">
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
                       {data.dailyChangePercent >= 0 ? (
@@ -188,7 +287,7 @@ export function MarketDataPanel({ challengeId }: MarketDataPanelProps) {
                         <TrendingDown fontSize="small" color="error" />
                       )}
                       <Box>
-                        <Typography 
+                        <Typography
                           variant="body2"
                           color={data.dailyChangePercent >= 0 ? 'success.main' : 'error.main'}
                           fontWeight="medium"
@@ -204,17 +303,64 @@ export function MarketDataPanel({ challengeId }: MarketDataPanelProps) {
                       </Box>
                     </Box>
                   </TableCell>
-                  
+
                   <TableCell align="right">
                     <Typography variant="body2">
                       {formatVolume(data.volume)}
                     </Typography>
+                  </TableCell>
+
+                  <TableCell align="center">
+                    <Chip
+                      label={selectedInstrument === data.instrumentKey ? "선택됨" : "차트 보기"}
+                      size="small"
+                      variant={selectedInstrument === data.instrumentKey ? "filled" : "outlined"}
+                      color={selectedInstrument === data.instrumentKey ? "primary" : "default"}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
+      ) : (
+        // Chart view
+        <Box>
+          {selectedInstrument && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                {marketData.find(d => d.instrumentKey === selectedInstrument)?.hiddenName || selectedInstrument} - 실시간 차트
+              </Typography>
+
+              {/* Instrument selector for chart view */}
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                {challengeData?.instruments?.map((instrument) => (
+                  <Chip
+                    key={instrument}
+                    label={`회사 ${instrument}`}
+                    onClick={() => setSelectedInstrument(instrument)}
+                    color={selectedInstrument === instrument ? 'primary' : 'default'}
+                    variant={selectedInstrument === instrument ? 'filled' : 'outlined'}
+                    size="small"
+                  />
+                ))}
+              </Box>
+
+              <Paper sx={{ p: 2 }}>
+                <ProfessionalTradingChart
+                  data={candlestickData}
+                  width={800}
+                  height={500}
+                  showVolume={true}
+                  showGrid={true}
+                  showCrosshair={true}
+                  realTimeUpdate={true}
+                  theme="dark"
+                />
+              </Paper>
+            </Box>
+          )}
+        </Box>
       )}
 
       <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>

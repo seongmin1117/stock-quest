@@ -5,7 +5,6 @@ import {
   Box,
   Typography,
   TextField,
-  Button,
   FormControl,
   InputLabel,
   Select,
@@ -14,8 +13,9 @@ import {
   ToggleButtonGroup,
   Alert,
   Divider,
-  CircularProgress,
 } from '@mui/material';
+import { SmartButton, BuyButton, SellButton } from '@/shared/ui/feedback/SmartButton';
+import { TradingSkeleton } from '@/shared/ui/skeleton/SkeletonLoader';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -139,6 +139,11 @@ export function TradingPanel({ sessionId }: TradingPanelProps) {
       setTimeout(() => setError(null), 8000);
     }
   };
+
+  // Show skeleton loading state
+  if (sessionLoading || challengeLoading) {
+    return <TradingSkeleton />;
+  }
 
   return (
     <Box
@@ -332,13 +337,16 @@ export function TradingPanel({ sessionId }: TradingPanelProps) {
           />
 
           {/* 주문 버튼 */}
-          <Button
-            type="submit"
+          <SmartButton
             variant="contained"
             size="large"
             fullWidth
-            disabled={orderMutation.isPending}
-            className="btn-hover"
+            isLoading={orderMutation.isPending}
+            loadingText="주문 처리 중..."
+            successText="주문 접수 완료!"
+            errorText="주문 접수 실패"
+            showFeedback={false} // Let our success/error alerts handle this
+            onClick={handleSubmit(onSubmit)}
             sx={{
               py: 2,
               fontSize: '1.1rem',
@@ -348,7 +356,6 @@ export function TradingPanel({ sessionId }: TradingPanelProps) {
               boxShadow: '0 8px 25px rgba(99, 102, 241, 0.4)',
               '&:hover:not(:disabled)': {
                 background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-                transform: 'translateY(-2px)',
                 boxShadow: '0 12px 35px rgba(99, 102, 241, 0.5)',
               },
               '&:disabled': {
@@ -357,15 +364,8 @@ export function TradingPanel({ sessionId }: TradingPanelProps) {
               }
             }}
           >
-            {orderMutation.isPending ? (
-              <Box display="flex" alignItems="center" gap={1}>
-                <CircularProgress size={20} color="inherit" />
-                주문 처리 중...
-              </Box>
-            ) : (
-              '🚀 주문 접수'
-            )}
-          </Button>
+            🚀 주문 접수
+          </SmartButton>
         </Box>
       </Box>
     </Box>

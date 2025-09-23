@@ -1,0 +1,137 @@
+{
+  "name": "Stock Quest - 실시간 주식 트레이딩 시뮬레이션",
+  "short_name": "Stock Quest",
+  "description": "실시간 주식 데이터로 배우는 투자 시뮬레이션 플랫폼",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#1976d2",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "education", "productivity"],
+  "lang": "ko",
+  "scope": "/",
+  "id": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "실시간 차트",
+      "short_name": "차트",
+      "description": "실시간 주식 차트 보기",
+      "url": "/challenges?view=chart",
+      "icons": [
+        {
+          "src": "/icons/chart-shortcut.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "포트폴리오",
+      "short_name": "포트폴리오",
+      "description": "내 포트폴리오 확인",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/icons/portfolio-shortcut.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "챌린지",
+      "short_name": "챌린지",
+      "description": "새로운 트레이딩 챌린지 시작",
+      "url": "/challenges",
+      "icons": [
+        {
+          "src": "/icons/challenge-shortcut.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-trading.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "데스크톱 트레이딩 인터페이스"
+    },
+    {
+      "src": "/screenshots/mobile-trading.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "모바일 트레이딩 인터페이스"
+    }
+  ],
+  "features": [
+    "실시간 주식 데이터 스트리밍",
+    "오프라인 포트폴리오 조회",
+    "전문가급 차트 분석",
+    "다양한 트레이딩 챌린지",
+    "모바일 최적화 인터페이스"
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+stockquest",
+      "url": "/challenges?symbol=%s"
+    }
+  ]
+}

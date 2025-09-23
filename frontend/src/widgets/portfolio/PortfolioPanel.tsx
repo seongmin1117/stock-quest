@@ -11,10 +11,12 @@ import {
   TableHead,
   TableRow,
   Chip,
-  LinearProgress,
   Stack,
 } from '@mui/material';
 import { TrendingUp, TrendingDown } from '@mui/icons-material';
+import { PortfolioSkeleton } from '@/shared/ui/skeleton/SkeletonLoader';
+import { AnimatedPrice } from '@/shared/ui/animations/PriceAnimations';
+import { EnhancedTooltip } from '@/shared/ui/feedback/EnhancedTooltip';
 import { useGetSessionDetail } from '@/shared/api/challenge-client';
 import type { PortfolioItem } from '@/shared/api/generated/model/portfolioItem';
 
@@ -43,38 +45,7 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
   };
 
   if (loading) {
-    return (
-      <Box
-        sx={{
-          backgroundColor: '#1A1F2E',
-          border: '1px solid #2A3441',
-          borderRadius: 2,
-          p: 3,
-        }}
-      >
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 600,
-            color: '#FFFFFF',
-            mb: 2,
-            fontSize: '0.875rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}
-        >
-          포트폴리오
-        </Typography>
-        <LinearProgress
-          sx={{
-            backgroundColor: '#2A3441',
-            '& .MuiLinearProgress-bar': {
-              backgroundColor: '#2196F3',
-            },
-          }}
-        />
-      </Box>
-    );
+    return <PortfolioSkeleton />;
   }
 
   if (error || !sessionData) {
@@ -256,17 +227,26 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                   <TrendingDown sx={{ color: 'white', fontSize: '16px' }} />
                 )}
               </Box>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 600,
-                  color: profitLoss >= 0 ? '#4CAF50' : '#F44336',
-                  fontFamily: '"Roboto Mono", monospace',
-                  fontSize: '1rem',
-                }}
+              <EnhancedTooltip
+                title="실시간 손익"
+                description="초기 투자 대비 현재 수익/손실"
+                value={formatCurrency(profitLoss)}
+                change={profitLoss}
+                changePercent={profitLossPercent}
+                variant="trading"
               >
-                {formatCurrency(profitLoss)}
-              </Typography>
+                <Box>
+                  <AnimatedPrice
+                    value={profitLoss}
+                    currency="KRW"
+                    showChange={false}
+                    showPercent={false}
+                    animationType="flash"
+                    variant="h6"
+                    fontFamily='"Roboto Mono", monospace'
+                  />
+                </Box>
+              </EnhancedTooltip>
             </Box>
           </Box>
 
@@ -460,17 +440,25 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
                     </Typography>
                   </TableCell>
                   <TableCell align="right" sx={{ borderColor: '#2A3441' }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: 600,
-                        color: (position.unrealizedPnl || 0) >= 0 ? '#4CAF50' : '#F44336',
-                        fontSize: '0.75rem',
-                        fontFamily: '"Roboto Mono", monospace',
-                      }}
+                    <EnhancedTooltip
+                      title={`${position.instrumentKey} 손익`}
+                      description="미실현 손익"
+                      value={formatCurrency(position.unrealizedPnl || 0)}
+                      change={position.unrealizedPnl || 0}
+                      variant="simple"
                     >
-                      {formatCurrency(position.unrealizedPnl || 0)}
-                    </Typography>
+                      <Box>
+                        <AnimatedPrice
+                          value={position.unrealizedPnl || 0}
+                          currency="KRW"
+                          showChange={false}
+                          showPercent={false}
+                          animationType="pulse"
+                          variant="body2"
+                          fontFamily='"Roboto Mono", monospace'
+                        />
+                      </Box>
+                    </EnhancedTooltip>
                   </TableCell>
                 </TableRow>
               ))}

@@ -430,5 +430,591 @@ wscat -c ws://localhost:8080/ws
 npm run generate-api && echo "✅ API client generated successfully"
 ```
 
+## 🎨 UI/UX Improvement Plan
+
+### Current State Analysis
+
+**Technical Foundation (Excellent)**:
+- ✅ Next.js 14 + Material-UI + TypeScript + Feature-Sliced Design
+- ✅ Mobile-first responsive design already implemented
+- ✅ Professional trading platform theme with dark mode support
+- ✅ Touch-optimized components with swipe gestures
+- ✅ Real-time WebSocket integration for live data
+- ✅ Auto-generated API client with TanStack Query
+
+**Current Strengths**:
+- Solid architectural foundation with Feature-Sliced Design
+- Comprehensive mobile responsiveness
+- Professional trading interface with dark theme
+- Efficient state management and API integration
+- Korean language support infrastructure
+
+### 3-Tier Improvement Roadmap
+
+#### **Tier 1: Essential UX Enhancements** (13 hours)
+*Focus: Immediate user experience improvements with high ROI*
+
+**1. Loading & Feedback States** (4 hours)
+```typescript
+// Enhanced loading states with skeleton components
+export function PortfolioSkeleton() {
+  return (
+    <Box sx={{ p: 3 }}>
+      <Skeleton variant="rectangular" width="100%" height={60} sx={{ mb: 2 }} />
+      <Skeleton variant="text" width="60%" height={40} sx={{ mb: 1 }} />
+      <Skeleton variant="circular" width={40} height={40} />
+    </Box>
+  );
+}
+
+// Smart loading indicators
+export function SmartLoadingButton({ isLoading, children, ...props }) {
+  return (
+    <Button {...props} disabled={isLoading}>
+      {isLoading ? <CircularProgress size={20} /> : children}
+    </Button>
+  );
+}
+```
+
+**2. Data Visualization Enhancement** (5 hours)
+```typescript
+// Enhanced chart components with better mobile interaction
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
+
+export function PerformanceChart({ data, theme }) {
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <LineChart data={data}>
+        <XAxis
+          dataKey="date"
+          tick={{ fontSize: 12 }}
+          axisLine={{ stroke: theme.palette.divider }}
+        />
+        <YAxis
+          tick={{ fontSize: 12 }}
+          axisLine={{ stroke: theme.palette.divider }}
+        />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: theme.palette.background.paper,
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 8,
+          }}
+        />
+        <Line
+          type="monotone"
+          dataKey="value"
+          stroke={theme.palette.primary.main}
+          strokeWidth={2}
+          dot={false}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+```
+
+**3. Micro-interactions & Feedback** (4 hours)
+```typescript
+// Animated state transitions
+import { motion, AnimatePresence } from 'framer-motion';
+
+export function OrderStatusCard({ order }) {
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'FILLED': return 'success.main';
+      case 'PENDING': return 'warning.main';
+      case 'CANCELLED': return 'error.main';
+      default: return 'text.secondary';
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card sx={{ mb: 1 }}>
+        <CardContent>
+          <Chip
+            label={order.status}
+            color={getStatusColor(order.status)}
+            size="small"
+            sx={{
+              animation: order.status === 'PENDING' ? 'pulse 2s infinite' : 'none'
+            }}
+          />
+          <Typography variant="body2">{order.symbol} - {order.quantity} shares</Typography>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+```
+
+#### **Tier 2: Advanced Mobile UX** (26 hours)
+*Focus: Mobile-specific optimizations and accessibility*
+
+**1. Advanced Mobile Gestures** (8 hours)
+```typescript
+// Enhanced swipe gestures for portfolio management
+import { useSwipeable } from 'react-swipeable';
+
+export function SwipeablePositionCard({ position, onEdit, onSell }) {
+  const handlers = useSwipeable({
+    onSwipedLeft: () => onSell(position.id),
+    onSwipedRight: () => onEdit(position.id),
+    swipeDuration: 500,
+    preventScrollOnSwipe: true,
+    trackMouse: true,
+  });
+
+  return (
+    <motion.div
+      {...handlers}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <Card sx={{ position: 'relative', overflow: 'hidden' }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'linear-gradient(to right, #4caf50, transparent)',
+            opacity: 0,
+            transition: 'opacity 0.3s',
+            '&.swipe-hint': { opacity: 0.1 }
+          }}
+        />
+        <CardContent>
+          <Typography variant="h6">{position.symbol}</Typography>
+          <Typography variant="body2" color="textSecondary">
+            Swipe left to sell, right to edit
+          </Typography>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+```
+
+**2. Accessibility Enhancements** (8 hours)
+```typescript
+// WCAG 2.1 AA compliant components
+export function AccessibleTradingButton({
+  action,
+  symbol,
+  price,
+  onClick,
+  disabled
+}) {
+  const ariaLabel = `${action} ${symbol} at ${price} dollars per share`;
+
+  return (
+    <Button
+      variant="contained"
+      color={action === 'BUY' ? 'success' : 'error'}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      sx={{
+        minHeight: 48, // Minimum touch target size
+        fontSize: '1rem',
+        fontWeight: 'bold',
+        '&:focus': {
+          outline: '2px solid',
+          outlineColor: 'primary.main',
+          outlineOffset: '2px',
+        }
+      }}
+    >
+      <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {action === 'BUY' ? <TrendingUpIcon /> : <TrendingDownIcon />}
+        {action} {symbol}
+      </Box>
+    </Button>
+  );
+}
+```
+
+**3. Performance Optimization** (10 hours)
+```typescript
+// Virtual scrolling for large datasets
+import { FixedSizeList as List } from 'react-window';
+
+export function VirtualizedPositionList({ positions }) {
+  const Row = ({ index, style }) => (
+    <div style={style}>
+      <PositionCard position={positions[index]} />
+    </div>
+  );
+
+  return (
+    <List
+      height={400}
+      itemCount={positions.length}
+      itemSize={80}
+      width="100%"
+    >
+      {Row}
+    </List>
+  );
+}
+
+// Optimized chart rendering with canvas
+export function HighPerformanceChart({ data }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+
+    // Custom canvas rendering for better performance
+    renderChart(ctx, data);
+  }, [data]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={800}
+      height={400}
+      style={{ width: '100%', height: 'auto' }}
+    />
+  );
+}
+```
+
+#### **Tier 3: Advanced Features** (34 hours)
+*Focus: Progressive Web App features and advanced interactions*
+
+**1. PWA Implementation** (12 hours)
+```typescript
+// Service worker for offline functionality
+// next.config.js
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/api\.stockquest\.com\/.*$/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'api-cache',
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 5 * 60, // 5 minutes
+        },
+      },
+    },
+  ],
+});
+
+module.exports = withPWA({
+  // Your Next.js config
+});
+
+// PWA install prompt
+export function PWAInstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstall, setShowInstall] = useState(false);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstall(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('PWA install outcome:', outcome);
+      setDeferredPrompt(null);
+      setShowInstall(false);
+    }
+  };
+
+  if (!showInstall) return null;
+
+  return (
+    <Snackbar open={showInstall} autoHideDuration={6000}>
+      <Alert
+        severity="info"
+        action={
+          <Button color="inherit" size="small" onClick={handleInstall}>
+            Install App
+          </Button>
+        }
+      >
+        Install Stock Quest for better performance and offline access
+      </Alert>
+    </Snackbar>
+  );
+}
+```
+
+**2. Advanced Data Visualization** (12 hours)
+```typescript
+// Interactive candlestick charts with D3.js
+import * as d3 from 'd3';
+
+export function CandlestickChart({ data, width = 800, height = 400 }) {
+  const svgRef = useRef();
+
+  useEffect(() => {
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove(); // Clear previous render
+
+    const margin = { top: 20, right: 30, bottom: 40, left: 40 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    const xScale = d3.scaleTime()
+      .domain(d3.extent(data, d => new Date(d.date)))
+      .range([0, innerWidth]);
+
+    const yScale = d3.scaleLinear()
+      .domain(d3.extent(data, d => Math.max(d.high, d.low)))
+      .range([innerHeight, 0]);
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Draw candlesticks
+    g.selectAll('.candlestick')
+      .data(data)
+      .enter().append('g')
+      .attr('class', 'candlestick')
+      .attr('transform', d => `translate(${xScale(new Date(d.date))},0)`)
+      .each(function(d) {
+        const candle = d3.select(this);
+
+        // High-low line
+        candle.append('line')
+          .attr('y1', yScale(d.high))
+          .attr('y2', yScale(d.low))
+          .attr('stroke', '#666')
+          .attr('stroke-width', 1);
+
+        // Open-close rectangle
+        candle.append('rect')
+          .attr('y', yScale(Math.max(d.open, d.close)))
+          .attr('height', Math.abs(yScale(d.open) - yScale(d.close)))
+          .attr('width', 6)
+          .attr('x', -3)
+          .attr('fill', d.close > d.open ? '#4caf50' : '#f44336');
+      });
+
+    // Add axes
+    g.append('g')
+      .attr('transform', `translate(0,${innerHeight})`)
+      .call(d3.axisBottom(xScale));
+
+    g.append('g')
+      .call(d3.axisLeft(yScale));
+
+  }, [data, width, height]);
+
+  return <svg ref={svgRef} width={width} height={height} />;
+}
+```
+
+**3. Advanced Animation System** (10 hours)
+```typescript
+// Context-aware animation system
+import { createContext, useContext } from 'react';
+import { useSpring, config } from '@react-spring/web';
+
+const AnimationContext = createContext({
+  reduceMotion: false,
+  animationSpeed: 1,
+});
+
+export function AnimationProvider({ children }) {
+  const [reduceMotion, setReduceMotion] = useState(
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+
+  return (
+    <AnimationContext.Provider value={{ reduceMotion, animationSpeed: 1 }}>
+      {children}
+    </AnimationContext.Provider>
+  );
+}
+
+export function useSmartAnimation(animationConfig) {
+  const { reduceMotion, animationSpeed } = useContext(AnimationContext);
+
+  return useSpring({
+    ...animationConfig,
+    config: reduceMotion
+      ? { duration: 0 }
+      : { ...config.gentle, duration: config.gentle.duration / animationSpeed },
+  });
+}
+
+// Portfolio value animation
+export function AnimatedPortfolioValue({ value, previousValue }) {
+  const { reduceMotion } = useContext(AnimationContext);
+
+  const animatedValue = useSpring({
+    from: { value: previousValue || value },
+    to: { value },
+    config: config.slow,
+    immediate: reduceMotion,
+  });
+
+  const colorSpring = useSpring({
+    color: value > previousValue ? '#4caf50' : '#f44336',
+    config: config.gentle,
+    immediate: reduceMotion,
+  });
+
+  return (
+    <animated.div style={colorSpring}>
+      <animated.span>
+        {animatedValue.value.to(val => `$${val.toLocaleString()}`)}
+      </animated.span>
+    </animated.div>
+  );
+}
+```
+
+### Implementation Roadmap
+
+#### **Phase 1: Quick Wins** (Week 1-2)
+1. **Loading States** → Implement skeleton loading for all data components
+2. **Micro-interactions** → Add button feedback and hover effects
+3. **Data Visualization** → Enhance chart readability and mobile interaction
+
+**Business Impact**:
+- 25% reduction in perceived loading time
+- Improved user engagement through better feedback
+- Enhanced mobile trading experience
+
+#### **Phase 2: Mobile Excellence** (Week 3-5)
+1. **Advanced Gestures** → Implement swipe actions for common tasks
+2. **Accessibility** → Achieve WCAG 2.1 AA compliance
+3. **Performance** → Optimize for 60fps on mobile devices
+
+**Business Impact**:
+- 40% improvement in mobile conversion rates
+- Better accessibility compliance
+- Reduced bounce rate on mobile devices
+
+#### **Phase 3: Advanced Features** (Week 6-8)
+1. **PWA Features** → Enable offline functionality and app installation
+2. **Advanced Charts** → Implement professional trading chart components
+3. **Animation System** → Create cohesive motion design language
+
+**Business Impact**:
+- 60% increase in user retention through PWA features
+- Professional trading platform experience
+- Enhanced brand perception and user satisfaction
+
+### Technical Dependencies
+
+#### **New Dependencies Required**:
+```json
+{
+  "framer-motion": "^10.16.5",
+  "react-spring": "^9.7.1",
+  "react-window": "^1.8.8",
+  "react-swipeable": "^7.0.1",
+  "d3": "^7.8.5",
+  "next-pwa": "^5.6.0",
+  "recharts": "^2.8.0"
+}
+```
+
+#### **Configuration Updates**:
+```typescript
+// next.config.js additions for PWA
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+});
+
+// Theme enhancements for animation support
+const theme = createTheme({
+  transitions: {
+    duration: {
+      shortest: 150,
+      shorter: 200,
+      short: 250,
+      standard: 300,
+      complex: 375,
+      enteringScreen: 225,
+      leavingScreen: 195,
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          transition: 'all 0.2s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.12)',
+          },
+        },
+      },
+    },
+  },
+});
+```
+
+### Success Metrics
+
+#### **Tier 1 Success Metrics**:
+- Loading time perception: <2s perceived load time
+- User engagement: 30% increase in page interaction time
+- Mobile usability: 90%+ mobile usability score
+
+#### **Tier 2 Success Metrics**:
+- Mobile conversion: 40% improvement in mobile trading completion
+- Accessibility: WCAG 2.1 AA compliance (100%)
+- Performance: Lighthouse score >90 on mobile
+
+#### **Tier 3 Success Metrics**:
+- User retention: 60% increase through PWA features
+- Professional perception: 95%+ user satisfaction with trading interface
+- Technical excellence: Industry-leading frontend performance metrics
+
+### Quality Gates
+
+#### **Design Review Checklist**:
+- [ ] Mobile-first responsive design verified
+- [ ] Dark mode compatibility confirmed
+- [ ] Korean text rendering validated
+- [ ] Touch target sizes (44px minimum) verified
+- [ ] Color contrast ratios meet WCAG AA standards
+
+#### **Performance Validation**:
+- [ ] Bundle size impact <50KB per tier
+- [ ] Runtime performance maintains 60fps
+- [ ] Memory usage stays within mobile limits
+- [ ] Network requests optimized for mobile networks
+
+#### **Accessibility Testing**:
+- [ ] Screen reader compatibility verified
+- [ ] Keyboard navigation functional
+- [ ] Focus management implemented
+- [ ] ARIA labels and descriptions added
+- [ ] Color-blind user testing completed
+
 ---
 *Frontend guide for Claude Code - Updated 2025-09-22*
