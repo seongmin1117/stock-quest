@@ -25,9 +25,10 @@ hs_err_pid*
 # Build directories
 build/
 target/
-# out/ 디렉토리는 빌드 산출물을 위한 것이지만 adapter/out은 소스코드이므로 제외
+# out/ 디렉토리는 빌드 산출물을 위한 것이지만 adapter/out과 application/port/out은 소스코드이므로 제외
 out/
 !backend/src/main/java/com/stockquest/adapter/out/
+!backend/src/main/java/com/stockquest/application/port/out/
 
 # IDE
 .vscode/
