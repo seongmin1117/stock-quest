@@ -3,26 +3,21 @@
  * DCA 시뮬레이션 관련 API 클라이언트 - 최신 OpenAPI 스펙 기반
  */
 
-// Re-export from generated API
-export {
-  simulate,
-  getSimulateMutationOptions,
-  useSimulate,
-  testEndpoint,
-  getTestEndpointQueryOptions,
-  useTestEndpoint,
-} from './generated/dca-controller/dca-controller';
+// TODO: DCA controller not available in generated API yet
+// Placeholder exports to prevent import errors
+export const simulate = () => { throw new Error('DCA endpoints not yet implemented'); };
+export const getSimulateMutationOptions = () => { throw new Error('DCA endpoints not yet implemented'); };
+export const useSimulate = () => { throw new Error('DCA endpoints not yet implemented'); };
+export const testEndpoint = () => { throw new Error('DCA endpoints not yet implemented'); };
+export const getTestEndpointQueryOptions = () => { throw new Error('DCA endpoints not yet implemented'); };
+export const useTestEndpoint = () => { throw new Error('DCA endpoints not yet implemented'); };
 
-// Re-export types
-export type {
-  DCASimulationRequest,
-  Simulate200,
-} from './generated/model';
+// Placeholder types
+export type DCASimulationRequest = any;
+export type Simulate200 = any;
 
 // Enhanced hooks with better caching and error handling
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { simulate as apiSimulate, testEndpoint as apiTestEndpoint } from './generated/dca-controller/dca-controller';
-import type { DCASimulationRequest } from './generated/model';
 
 /**
  * Enhanced DCA Simulation Hook with validation and caching
@@ -30,9 +25,7 @@ import type { DCASimulationRequest } from './generated/model';
 export const useDCASimulation = () => {
   return useMutation({
     mutationFn: (request: DCASimulationRequest) => {
-      // Validation
-      validateDCARequest(request);
-      return apiSimulate(request);
+      throw new Error('DCA endpoints not yet implemented');
     },
     onSuccess: (data) => {
       console.log('DCA 시뮬레이션 완료:', data);
@@ -49,8 +42,9 @@ export const useDCASimulation = () => {
 export const useDCATest = () => {
   return useQuery({
     queryKey: dcaQueryKeys.test(),
-    queryFn: () => apiTestEndpoint(),
+    queryFn: () => { throw new Error('DCA endpoints not yet implemented'); },
     staleTime: 10 * 60 * 1000, // 10분간 캐시
+    enabled: false, // Disable until endpoints are implemented
   });
 };
 
@@ -110,8 +104,7 @@ export class DCAClient {
    * Legacy DCA 시뮬레이션 실행 (호환성을 위해 유지)
    */
   async simulate(request: DCASimulationRequest): Promise<any> {
-    validateDCARequest(request);
-    return apiSimulate(request);
+    throw new Error('DCA endpoints not yet implemented');
   }
 
   /**
@@ -137,15 +130,14 @@ export const dcaUtils = {
    * DCA 시뮬레이션 실행 (함수형 인터페이스)
    */
   simulate: async (request: DCASimulationRequest) => {
-    validateDCARequest(request);
-    return apiSimulate(request);
+    throw new Error('DCA endpoints not yet implemented');
   },
 
   /**
    * DCA 테스트 엔드포인트 호출
    */
   test: async () => {
-    return apiTestEndpoint();
+    throw new Error('DCA endpoints not yet implemented');
   },
 
   /**
