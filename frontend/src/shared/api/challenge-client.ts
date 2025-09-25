@@ -6,61 +6,52 @@
 // Re-export from generated API
 export {
   // Challenge API
-  getChallengeList,
-  getGetChallengeListQueryOptions,
-  useGetChallengeList,
-  getChallengeDetail,
-  getGetChallengeDetailQueryOptions,
-  useGetChallengeDetail,
-  startChallenge,
-  getStartChallengeMutationOptions,
-  useStartChallenge as useGeneratedStartChallenge,
-  getChallengeInstruments,
-  getGetChallengeInstrumentsQueryOptions,
-  useGetChallengeInstruments,
+  getApiChallenges as getChallengeList,
+  getGetApiChallengesQueryOptions as getGetChallengeListQueryOptions,
+  useGetApiChallenges as useGetChallengeList,
+  getApiChallengesChallengeId as getChallengeDetail,
+  getGetApiChallengesChallengeIdQueryOptions as getGetChallengeDetailQueryOptions,
+  useGetApiChallengesChallengeId as useGetChallengeDetail,
+  postApiChallengesChallengeIdStart as startChallenge,
+  usePostApiChallengesChallengeIdStart as useStartChallengeGenerated,
+  // getChallengeInstruments - function not available in current API
 } from './generated/챌린지/챌린지';
 
 // Challenge Session API
 export {
-  getSessionDetail,
-  getGetSessionDetailQueryOptions,
-  useGetSessionDetail,
-  getOrders,
-  getGetOrdersQueryOptions,
-  useGetOrders,
-  placeOrder,
-  getPlaceOrderMutationOptions,
-  usePlaceOrder,
-  closeChallenge,
-  getCloseChallengeMutationOptions,
-  useCloseChallenge,
+  getApiSessionsSessionId as getSessionDetail,
+  getGetApiSessionsSessionIdQueryOptions as getGetSessionDetailQueryOptions,
+  useGetApiSessionsSessionId as useGetSessionDetail,
+  // getOrders, useGetOrders - functions not available in current API
+  // placeOrder, usePlaceOrder, closeChallenge - functions not available in current API
+  // getCloseChallengeMutationOptions, useCloseChallenge - functions not available in current API
 } from './generated/챌린지-세션/챌린지-세션';
 
-// Leaderboard API
-export {
-  getLeaderboard as getChallengeLeaderboard,
-  getGetLeaderboardQueryOptions as getGetChallengeLeaderboardQueryOptions,
-  useGetLeaderboard as useGetChallengeLeaderboard,
-  calculateLeaderboard,
-  getCalculateLeaderboardMutationOptions,
-  useCalculateLeaderboard,
-} from './generated/리더보드/리더보드';
+// Leaderboard API - commenting out unavailable functions
+// export {
+//   getLeaderboard as getChallengeLeaderboard,
+//   getGetLeaderboardQueryOptions as getGetChallengeLeaderboardQueryOptions,
+//   useGetLeaderboard as useGetChallengeLeaderboard,
+//   calculateLeaderboard,
+//   getCalculateLeaderboardMutationOptions,
+//   useCalculateLeaderboard,
+// } from './generated/리더보드/리더보드';
 
-// Community API
-export {
-  getPostList,
-  getGetPostListQueryOptions,
-  useGetPostList,
-  createPost,
-  getCreatePostMutationOptions,
-  useCreatePost,
-  getCommentList,
-  getGetCommentListQueryOptions,
-  useGetCommentList,
-  createComment,
-  getCreateCommentMutationOptions,
-  useCreateComment,
-} from './generated/커뮤니티/커뮤니티';
+// Community API - commenting out unavailable functions
+// export {
+//   getPostList,
+//   getGetPostListQueryOptions,
+//   useGetPostList,
+//   createPost,
+//   getCreatePostMutationOptions,
+//   useCreatePost,
+//   getCommentList,
+//   getGetCommentListQueryOptions,
+//   useGetCommentList,
+//   createComment,
+//   getCreateCommentMutationOptions,
+//   useCreateComment,
+// } from './generated/커뮤니티/커뮤니티';
 
 // Re-export types from generated models
 export type {
@@ -69,9 +60,7 @@ export type {
   ChallengeItem,
   ChallengeItemDifficulty,
   StartChallengeResponse,
-  ChallengeInstrumentsResponse,
   SessionDetailResponse,
-  OrdersResponse,
   PlaceOrderRequest,
   PlaceOrderResponse,
   CloseChallengeResponse,
@@ -121,10 +110,9 @@ export enum ChallengeType {
 // Enhanced hooks with better error handling and caching
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getChallengeList as apiGetChallengeList,
-  getChallengeDetail as apiGetChallengeDetail,
-  startChallenge as apiStartChallenge,
-  getChallengeInstruments as apiGetChallengeInstruments,
+  getApiChallenges as apiGetChallengeList,
+  getApiChallengesChallengeId as apiGetChallengeDetail,
+  postApiChallengesChallengeIdStart as apiStartChallenge,
 } from './generated/챌린지/챌린지';
 
 /**
@@ -170,8 +158,8 @@ export const useStartChallenge = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ challengeId, forceRestart }: { challengeId: number; forceRestart?: boolean }) =>
-      apiStartChallenge(challengeId, forceRestart ? { forceRestart } : undefined),
+    mutationFn: ({ challengeId }: { challengeId: number }) =>
+      apiStartChallenge(challengeId),
     onSuccess: (data, variables) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: challengeQueryKeys.detail(variables.challengeId) });
@@ -184,17 +172,7 @@ export const useStartChallenge = () => {
   });
 };
 
-/**
- * Enhanced Challenge Instruments Hook
- */
-export const useChallengeInstruments = (challengeId: number) => {
-  return useQuery({
-    queryKey: challengeQueryKeys.instruments(challengeId),
-    queryFn: () => apiGetChallengeInstruments(challengeId),
-    enabled: !!challengeId && challengeId > 0,
-    staleTime: 10 * 60 * 1000, // 10분간 캐시 (상품 정보는 자주 변하지 않음)
-  });
-};
+// Challenge instruments not available in current API
 
 /**
  * Challenge Query Keys for better cache management
@@ -238,16 +216,11 @@ export const challengeUtils = {
   /**
    * Legacy challenge start
    */
-  startChallenge: async (challengeId: number, forceRestart?: boolean) => {
-    return apiStartChallenge(challengeId, forceRestart ? { forceRestart } : undefined);
+  startChallenge: async (challengeId: number) => {
+    return apiStartChallenge(challengeId);
   },
 
-  /**
-   * Legacy challenge instruments fetcher
-   */
-  getChallengeInstruments: async (challengeId: number) => {
-    return apiGetChallengeInstruments(challengeId);
-  },
+  // Legacy challenge instruments not available in current API
 };
 
 // Default export for backward compatibility

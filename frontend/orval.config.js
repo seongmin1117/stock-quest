@@ -1,7 +1,7 @@
 module.exports = {
   stockquest: {
     input: {
-      target: './openapi-spec-new.json',
+      target: './openapi-spec.yaml',
     },
     output: {
       mode: 'tags-split',

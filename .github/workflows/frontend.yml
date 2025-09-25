@@ -39,7 +39,12 @@ jobs:
       run: |
         cd frontend
         npm ci
-    
+
+    - name: Generate API client
+      run: |
+        cd frontend
+        npm run generate-api
+
     - name: Run linter
       run: |
         cd frontend
@@ -93,7 +98,12 @@ jobs:
       run: |
         cd frontend
         npm ci
-    
+
+    - name: Generate API client
+      run: |
+        cd frontend
+        npm run generate-api
+
     - name: Install Playwright browsers
       run: |
         cd frontend
@@ -131,7 +141,12 @@ jobs:
       run: |
         cd frontend
         npm ci
-    
+
+    - name: Generate API client
+      run: |
+        cd frontend
+        npm run generate-api
+
     - name: Build application
       run: |
         cd frontend
