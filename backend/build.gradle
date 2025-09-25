@@ -3,7 +3,7 @@ plugins {
     id 'jacoco'
     id 'org.springframework.boot' version '3.5.5'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'org.flywaydb.flyway' version '10.15.0'
+    id 'org.flywaydb.flyway' version '11.13.0'
     id 'com.github.spotbugs' version '6.0.18'
     id 'checkstyle'
     id 'pmd'
