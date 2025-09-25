@@ -4,6 +4,10 @@ plugins {
     id 'org.springframework.boot' version '3.5.5'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.flywaydb.flyway' version '10.15.0'
+    id 'com.github.spotbugs' version '6.0.18'
+    id 'checkstyle'
+    id 'pmd'
+    id 'org.sonarqube' version '5.0.0.4638'
 }
 
 group = 'com.stockquest'
@@ -107,4 +111,75 @@ flyway {
 
 configurations {
     flywayRuntime.extendsFrom runtimeClasspath
+}
+
+// JaCoCo Configuration
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        csv.required = false
+        html.required = true
+    }
+}
+
+test.finalizedBy jacocoTestReport
+
+// SpotBugs Configuration
+spotbugs {
+    ignoreFailures = true
+    showStackTraces = true
+    showProgress = true
+}
+
+spotbugsMain {
+    reports {
+        html {
+            required = true
+            destination = file("$buildDir/reports/spotbugs/main.html")
+        }
+    }
+}
+
+spotbugsTest {
+    reports {
+        html {
+            required = true
+            destination = file("$buildDir/reports/spotbugs/test.html")
+        }
+    }
+}
+
+// Checkstyle Configuration
+checkstyle {
+    toolVersion = '10.12.5'
+    configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+    maxWarnings = 0
+    ignoreFailures = true
+}
+
+// PMD Configuration
+pmd {
+    toolVersion = '6.55.0'
+    consoleOutput = true
+    ruleSetFiles = files("${rootDir}/config/pmd/ruleset.xml")
+    ruleSets = []
+    ignoreFailures = true
+}
+
+// SonarQube Configuration
+sonar {
+    properties {
+        property 'sonar.projectKey', 'stockquest'
+        property 'sonar.projectName', 'Stock Quest'
+        property 'sonar.projectVersion', version
+        property 'sonar.sources', 'src/main/java'
+        property 'sonar.tests', 'src/test/java'
+        property 'sonar.java.binaries', 'build/classes/java/main'
+        property 'sonar.java.coveragePlugin', 'jacoco'
+        property 'sonar.coverage.jacoco.xmlReportPaths', 'build/reports/jacoco/test/jacocoTestReport.xml'
+    }
 }

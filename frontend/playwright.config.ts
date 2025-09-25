@@ -14,7 +14,10 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   
   // 리포터 설정
-  reporter: 'html',
+  reporter: [
+    ['html', { outputFolder: 'playwright-report' }],
+    process.env.CI ? ['list'] : ['line'],
+  ],
   
   // 공통 설정
   use: {
