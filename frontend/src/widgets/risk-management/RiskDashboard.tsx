@@ -50,7 +50,7 @@ import {
   // usePostApiV1RiskAlertsConfigure, // Not available in generated API
   // usePutApiV1RiskLimitsPortfolioId, // Not available in generated API
 } from '@/shared/api/generated/risk-management-controller/risk-management-controller';
-// import type { RiskAlert } from '@/shared/api/generated/model'; // Not available in generated models
+import type { RiskAlert } from '@/shared/api/generated/model';
 
 interface RiskDashboardProps {
   portfolioId?: number;
@@ -86,7 +86,9 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
   // Risk alert configuration mutation
   // Temporarily disabled - API not available in generated client
   const configuringAlert = false;
-  const configureAlert = () => {};
+  const configureAlert = (params: any) => {
+    console.log('Alert configuration temporarily disabled:', params);
+  };
   /*
   const { mutate: configureAlert, isPending: configuringAlert } = usePostApiV1RiskAlertsConfigure({
     mutation: {
@@ -105,7 +107,9 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
   // Risk limits update mutation
   // Temporarily disabled - API not available in generated client
   const updatingLimits = false;
-  const updateRiskLimits = () => {};
+  const updateRiskLimits = (params: any) => {
+    console.log('Risk limits update temporarily disabled:', params);
+  };
   /*
   const { mutate: updateRiskLimits, isPending: updatingLimits } = usePutApiV1RiskLimitsPortfolioId({
     mutation: {

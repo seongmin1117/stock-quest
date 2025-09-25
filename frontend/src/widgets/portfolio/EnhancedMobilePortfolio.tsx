@@ -36,7 +36,7 @@ import { PortfolioSkeleton } from '@/shared/ui/skeleton/SkeletonLoader';
 import { AnimatedPrice } from '@/shared/ui/animations/PriceAnimations';
 import { EnhancedTooltip } from '@/shared/ui/feedback/EnhancedTooltip';
 import { useGetSessionDetail } from '@/shared/api/challenge-client';
-import type { PortfolioItem } from '@/shared/api/generated/model/portfolioItem';
+import type { PortfolioItem } from '@/shared/api/generated/model';
 
 interface EnhancedMobilePortfolioProps {
   sessionId: number;
@@ -182,10 +182,10 @@ export function EnhancedMobilePortfolio({
   }
 
   const currentBalance = sessionData.currentBalance || 0;
-  const initialBalance = sessionData.initialBalance || 0;
-  const profitLoss = currentBalance - initialBalance;
-  const profitLossPercent = sessionData.returnRate || 0;
-  const positions = sessionData.portfolio || [];
+  const initialBalance = sessionData.seedBalance || 0;
+  const profitLoss = sessionData.profitLoss || (currentBalance - initialBalance);
+  const profitLossPercent = sessionData.profitLossPercent || 0;
+  const positions = sessionData.positions || [];
 
   return (
     <Box sx={{ position: 'relative' }}>

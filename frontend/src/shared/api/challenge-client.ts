@@ -22,9 +22,12 @@ export {
   getApiSessionsSessionId as getSessionDetail,
   getGetApiSessionsSessionIdQueryOptions as getGetSessionDetailQueryOptions,
   useGetApiSessionsSessionId as useGetSessionDetail,
-  // getOrders, useGetOrders - functions not available in current API
-  // placeOrder, usePlaceOrder, closeChallenge - functions not available in current API
-  // getCloseChallengeMutationOptions, useCloseChallenge - functions not available in current API
+  postApiSessionsSessionIdOrders as placeOrder,
+  getPostApiSessionsSessionIdOrdersMutationOptions as getPlaceOrderMutationOptions,
+  usePostApiSessionsSessionIdOrders as usePlaceOrder,
+  postApiSessionsSessionIdClose as closeChallenge,
+  getPostApiSessionsSessionIdCloseMutationOptions as getCloseMutationOptions,
+  usePostApiSessionsSessionIdClose as useCloseChallenge,
 } from './generated/챌린지-세션/챌린지-세션';
 
 // Leaderboard API - commenting out unavailable functions

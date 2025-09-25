@@ -55,7 +55,7 @@ describe('API Contract Tests', () => {
         quantity: 10,
         executedPrice: 152.5,
         slippageRate: 1.25,
-        status: 'EXECUTED' as PlaceOrderResponseStatus,
+        status: 'FILLED' as PlaceOrderResponseStatus,
         executedAt: '2024-01-15T10:30:00Z',
         newBalance: 45000,
         message: '주문이 성공적으로 체결되었습니다.',
@@ -68,19 +68,19 @@ describe('API Contract Tests', () => {
       expect(mockResponse.quantity).toBe(10);
       expect(mockResponse.executedPrice).toBe(152.5);
       expect(mockResponse.slippageRate).toBe(1.25);
-      expect(mockResponse.status).toBe('EXECUTED');
+      expect(mockResponse.status).toBe('FILLED');
       expect(mockResponse.executedAt).toBeDefined();
     });
 
     it('should support all OrderStatus enum values', () => {
-      const statuses: PlaceOrderResponseStatus[] = ['PENDING', 'EXECUTED', 'CANCELLED'];
-      
+      const statuses: PlaceOrderResponseStatus[] = ['PENDING', 'FILLED', 'CANCELLED', 'REJECTED'];
+
       statuses.forEach(status => {
         const response: PlaceOrderResponse = {
           orderId: 1,
           status: status,
         };
-        expect(['PENDING', 'EXECUTED', 'CANCELLED']).toContain(response.status);
+        expect(['PENDING', 'FILLED', 'CANCELLED', 'REJECTED']).toContain(response.status);
       });
     });
   });
@@ -154,10 +154,10 @@ describe('API Contract Tests', () => {
     });
 
     it('should have matching OrderStatus values', () => {
-      const statuses: PlaceOrderResponseStatus[] = ['PENDING', 'EXECUTED', 'CANCELLED'];
+      const statuses: PlaceOrderResponseStatus[] = ['PENDING', 'FILLED', 'CANCELLED'];
       
       statuses.forEach(status => {
-        expect(['PENDING', 'EXECUTED', 'CANCELLED']).toContain(status);
+        expect(['PENDING', 'FILLED', 'CANCELLED']).toContain(status);
       });
     });
   });
@@ -179,13 +179,13 @@ describe('API Contract Tests', () => {
     it('should handle optional fields correctly', () => {
       const partialResponse: Partial<PlaceOrderResponse> = {
         orderId: 1,
-        status: 'EXECUTED' as PlaceOrderResponseStatus,
+        status: 'FILLED' as PlaceOrderResponseStatus,
         // 다른 필드들은 선택적이므로 생략 가능
       };
 
       expect(partialResponse.orderId).toBe(1);
-      expect(partialResponse.status).toBe('EXECUTED');
-      expect(partialResponse.instrumentKey).toBeUndefined();
+      expect(partialResponse.status).toBe('FILLED');
+      // instrumentKey는 PlaceOrderResponse에 없으므로 테스트하지 않음
     });
   });
 });

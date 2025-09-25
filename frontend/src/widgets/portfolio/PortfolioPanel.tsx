@@ -18,7 +18,7 @@ import { PortfolioSkeleton } from '@/shared/ui/skeleton/SkeletonLoader';
 import { AnimatedPrice } from '@/shared/ui/animations/PriceAnimations';
 import { EnhancedTooltip } from '@/shared/ui/feedback/EnhancedTooltip';
 import { useGetSessionDetail } from '@/shared/api/challenge-client';
-import type { PortfolioItem } from '@/shared/api/generated/model/portfolioItem';
+import type { PortfolioItem } from '@/shared/api/generated/model';
 
 interface PortfolioPanelProps {
   sessionId: number;
@@ -85,11 +85,11 @@ export function PortfolioPanel({ sessionId }: PortfolioPanelProps) {
   }
 
   const currentBalance = sessionData.currentBalance || 0;
-  const initialBalance = sessionData.initialBalance || 0;
-  const totalValue = currentBalance;
-  const profitLoss = currentBalance - initialBalance;
-  const profitLossPercent = sessionData.returnRate || 0;
-  const positions = sessionData.portfolio || [];
+  const initialBalance = sessionData.seedBalance || 0;
+  const totalValue = sessionData.totalValue || currentBalance;
+  const profitLoss = sessionData.profitLoss || (currentBalance - initialBalance);
+  const profitLossPercent = sessionData.profitLossPercent || 0;
+  const positions = sessionData.positions || [];
 
   return (
     <Box
