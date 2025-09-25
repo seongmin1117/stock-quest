@@ -31,9 +31,7 @@ import type { DCASimulationRequest } from '../../../shared/api/generated/model/d
 
 // TODO: Temporarily commenting out until DCA endpoints are available
 /*
-/**
- * DCA 시뮬레이션 실행 훅 (Feature-specific wrapper)
- */
+// DCA 시뮬레이션 실행 훅 (Feature-specific wrapper)
 export const useDCASimulation = () => {
   return useMutation({
     mutationFn: (request: DCASimulationRequest) => simulate(request),
@@ -46,9 +44,7 @@ export const useDCASimulation = () => {
   });
 };
 
-/**
- * DCA 기능별 쿼리 키
- */
+// DCA 기능별 쿼리 키
 export const dcaQueryKeys = {
   all: ['dca'] as const,
   simulation: (params: DCASimulationRequest) => ['dca', 'simulation', params] as const,

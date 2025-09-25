@@ -39,9 +39,7 @@ import type { BacktestComparisonRequest } from '../../../shared/api/generated/mo
 
 // TODO: Temporarily commenting out until backtesting endpoints are available
 /*
-/**
- * 백테스팅 실행 훅
- */
+// 백테스팅 실행 훅
 export const useBacktestExecution = () => {
   return useMutation({
     mutationFn: (request: BacktestRequest) => runBacktestApi(request),
@@ -54,9 +52,7 @@ export const useBacktestExecution = () => {
   });
 };
 
-/**
- * 백테스팅 비교 훅
- */
+// 백테스팅 비교 훅
 export const useBacktestComparison = () => {
   return useMutation({
     mutationFn: (request: BacktestComparisonRequest) => compareBacktests(request),
@@ -69,9 +65,7 @@ export const useBacktestComparison = () => {
   });
 };
 
-/**
- * Backtesting 기능별 쿼리 키
- */
+// Backtesting 기능별 쿼리 키
 export const backtestingQueryKeys = {
   all: ['backtesting'] as const,
   run: (params: BacktestRequest) => ['backtesting', 'run', params] as const,
