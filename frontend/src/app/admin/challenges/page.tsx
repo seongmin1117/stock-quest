@@ -527,7 +527,7 @@ export default function ChallengesPage() {
         <DialogTitle>챌린지 삭제 확인</DialogTitle>
         <DialogContent>
           <Typography>
-            "{challengeToDelete?.title}" 챌린지를 정말 삭제하시겠습니까?
+            &ldquo;{challengeToDelete?.title}&rdquo; 챌린지를 정말 삭제하시겠습니까?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             이 작업은 되돌릴 수 없습니다.

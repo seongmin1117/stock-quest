@@ -217,7 +217,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
                 <span className="text-sm text-gray-500">활성 필터:</span>
                 {searchParams.query && (
                   <span className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                    검색: "{searchParams.query}"
+                    검색: &ldquo;{searchParams.query}&rdquo;
                     <Link href="/blog/articles" className="ml-2 text-blue-600 hover:text-blue-800">×</Link>
                   </span>
                 )}

@@ -470,6 +470,7 @@ export default function CreateArticlePage() {
                 renderTags={(tagValue, getTagProps) =>
                   tagValue.map((option, index) => (
                     <Chip
+                      key={index}
                       variant="outlined"
                       label={option.name}
                       {...getTagProps({ index })}

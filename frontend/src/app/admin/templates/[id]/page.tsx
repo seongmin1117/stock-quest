@@ -691,7 +691,7 @@ export default function TemplateDetailPage() {
         <DialogTitle>템플릿 삭제 확인</DialogTitle>
         <DialogContent>
           <Typography>
-            "{template.name}" 템플릿을 정말 삭제하시겠습니까?
+            &ldquo;{template.name}&rdquo; 템플릿을 정말 삭제하시겠습니까?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             이 템플릿으로 생성된 챌린지는 영향받지 않지만, 템플릿 자체는 복구할 수 없습니다.
@@ -712,7 +712,7 @@ export default function TemplateDetailPage() {
         <DialogTitle>새 챌린지 생성</DialogTitle>
         <DialogContent>
           <Typography>
-            "{template.name}" 템플릿을 사용하여 새로운 챌린지를 생성하시겠습니까?
+            &ldquo;{template.name}&rdquo; 템플릿을 사용하여 새로운 챌린지를 생성하시겠습니까?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             템플릿의 모든 설정이 적용된 챌린지가 생성됩니다.

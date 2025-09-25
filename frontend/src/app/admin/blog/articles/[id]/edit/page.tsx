@@ -580,6 +580,7 @@ export default function EditArticlePage() {
                 renderTags={(tagValue, getTagProps) =>
                   tagValue.map((option, index) => (
                     <Chip
+                      key={index}
                       variant="outlined"
                       label={option.name}
                       {...getTagProps({ index })}
@@ -644,7 +645,7 @@ export default function EditArticlePage() {
         <DialogTitle>게시글 삭제</DialogTitle>
         <DialogContent>
           <Typography>
-            "{originalArticle.title}" 게시글을 정말 삭제하시겠습니까?
+            &ldquo;{originalArticle.title}&rdquo; 게시글을 정말 삭제하시겠습니까?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             이 작업은 되돌릴 수 없습니다.

@@ -47,7 +47,7 @@ export default function TestCompanyPage() {
             </Typography>
             <Typography variant="body2" component="div">
               <ul>
-                <li>검색창에 한글로 회사명을 입력해보세요 (예: "삼성")</li>
+                <li>검색창에 한글로 회사명을 입력해보세요 (예: &ldquo;삼성&rdquo;)</li>
                 <li>자동완성 드롭다운이 나타나는지 확인하세요</li>
                 <li>회사를 선택했을 때 선택된 값이 표시되는지 확인하세요</li>
                 <li>브라우저 개발자 도구 콘솔에서 API 요청/응답을 확인하세요</li>

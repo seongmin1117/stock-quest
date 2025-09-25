@@ -478,7 +478,7 @@ export default function BlogAdminPage() {
         <DialogTitle>게시글 삭제</DialogTitle>
         <DialogContent>
           <Typography>
-            "{selectedArticle?.title}" 게시글을 정말 삭제하시겠습니까?
+            &ldquo;{selectedArticle?.title}&rdquo; 게시글을 정말 삭제하시겠습니까?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             이 작업은 되돌릴 수 없습니다.

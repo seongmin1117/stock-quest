@@ -654,7 +654,7 @@ export default function TemplatesPage() {
         <DialogTitle>템플릿 삭제 확인</DialogTitle>
         <DialogContent>
           <Typography>
-            "{templateToDelete?.name}" 템플릿을 정말 삭제하시겠습니까?
+            &ldquo;{templateToDelete?.name}&rdquo; 템플릿을 정말 삭제하시겠습니까?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             이 템플릿으로 생성된 챌린지는 영향받지 않지만, 템플릿 자체는 복구할 수 없습니다.
