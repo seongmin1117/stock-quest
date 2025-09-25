@@ -57,13 +57,7 @@ jobs:
         echo "Test report generation skipped - tests need to be fixed first"
       continue-on-error: true
       
-    - name: Upload Code Coverage to Codecov
-      uses: codecov/codecov-action@v5
-      with:
-        file: backend/build/reports/jacoco/test/jacocoTestReport.xml
-        flags: backend
-        name: backend-coverage
-        fail_ci_if_error: false
+    # Codecov removed - paid service
 
   frontend-quality:
     runs-on: ubuntu-latest
@@ -107,13 +101,7 @@ jobs:
         npm run test:coverage || echo "Frontend tests failed - will be fixed later"
       continue-on-error: true
         
-    - name: Upload Frontend Coverage
-      uses: codecov/codecov-action@v5
-      with:
-        file: frontend/coverage/lcov.info
-        flags: frontend
-        name: frontend-coverage
-        fail_ci_if_error: false
+    # Codecov removed - paid service
 
   # Temporarily disabled due to GitHub permissions issues
   # security-scan:
@@ -170,65 +158,4 @@ jobs:
         name: dependency-check-report
         path: reports/
 
-  sonarqube:
-    runs-on: ubuntu-latest
-    if: false  # Disabled until SONAR_TOKEN secret is configured
-    
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_DATABASE: stockquest_test
-          MYSQL_ROOT_PASSWORD: test123
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-    
-    steps:
-    - uses: actions/checkout@v5
-      with:
-        fetch-depth: 0  # Shallow clones should be disabled for better relevancy
-        
-    - name: Set up JDK 21
-      uses: actions/setup-java@v5
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        
-    - name: Cache SonarQube packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.sonar/cache
-        key: ${{ runner.os }}-sonar
-        restore-keys: ${{ runner.os }}-sonar
-        
-    - name: Cache Gradle packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-          
-    - name: Run SonarQube analysis
-      run: |
-        cd backend
-        chmod +x gradlew
-        ./gradlew compileJava
-        echo "Skipping tests due to compilation issues - running SonarQube analysis on main code only"
-        ./gradlew sonar \
-          -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-          -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-          -Dsonar.projectKey=stockquest \
-          -Dsonar.organization=seongmin1117
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SPRING_PROFILES_ACTIVE: test
-        DB_HOST: localhost
-        DB_PORT: 3306
-        DB_NAME: stockquest_test
-        DB_USERNAME: root
-        DB_PASSWORD: test123
+  # SonarQube removed - paid service
