@@ -13,13 +13,11 @@ export {
   useCompareBacktests,
 } from '../../../shared/api/generated/backtesting-controller/backtesting-controller';
 
-// Re-export types
-export type {
-  BacktestRequest,
-  BacktestResponse,
-  BacktestComparisonRequest,
-  BacktestComparisonResult,
-} from '../../../shared/api/generated/model';
+// Re-export types from individual files
+export type { BacktestRequest } from '../../../shared/api/generated/model/backtestRequest';
+export type { BacktestResponse } from '../../../shared/api/generated/model/backtestResponse';
+export type { BacktestComparisonRequest } from '../../../shared/api/generated/model/backtestComparisonRequest';
+export type { BacktestComparisonResult } from '../../../shared/api/generated/model/backtestComparisonResult';
 
 // Feature-specific API hooks and utilities
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -27,10 +25,8 @@ import {
   runBacktest1 as runBacktestApi,
   compareBacktests
 } from '../../../shared/api/generated/backtesting-controller/backtesting-controller';
-import type {
-  BacktestRequest,
-  BacktestComparisonRequest
-} from '../../../shared/api/generated/model';
+import type { BacktestRequest } from '../../../shared/api/generated/model/backtestRequest';
+import type { BacktestComparisonRequest } from '../../../shared/api/generated/model/backtestComparisonRequest';
 
 /**
  * 백테스팅 실행 훅

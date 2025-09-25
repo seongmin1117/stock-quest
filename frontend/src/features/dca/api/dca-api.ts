@@ -12,16 +12,14 @@ export {
   useTestEndpoint,
 } from '../../../shared/api/generated/dca-controller/dca-controller';
 
-// Re-export types
-export type {
-  DCASimulationRequest,
-  Simulate200,
-} from '../../../shared/api/generated/model';
+// Re-export types from individual files
+export type { DCASimulationRequest } from '../../../shared/api/generated/model/dCASimulationRequest';
+export type { Simulate200 } from '../../../shared/api/generated/model/simulate200';
 
 // Feature-specific API hooks and utilities
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { simulate } from '../../../shared/api/generated/dca-controller/dca-controller';
-import type { DCASimulationRequest } from '../../../shared/api/generated/model';
+import type { DCASimulationRequest } from '../../../shared/api/generated/model/dCASimulationRequest';
 
 /**
  * DCA 시뮬레이션 실행 훅 (Feature-specific wrapper)

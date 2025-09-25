@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useGetApiV1ContentCategories } from '@/shared/api/generated/블로그-콘텐츠/블로그-콘텐츠';
-import type { CategoryResponse } from '@/shared/api/generated/model';
+import type { CategoryResponse } from '@/shared/api/generated/model/categoryResponse';
 
 export default function CategoryNavigation() {
   const { data: categories, isLoading: loading, error } = useGetApiV1ContentCategories(

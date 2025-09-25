@@ -49,8 +49,8 @@ import {
   useGetRiskAlerts,
   // usePostApiV1RiskAlertsConfigure, // Not available in generated API
   // usePutApiV1RiskLimitsPortfolioId, // Not available in generated API
-} from '@/shared/api/generated/risk-management-controller/risk-management-controller';
-import type { RiskAlert } from '@/shared/api/generated/model';
+} from '@/shared/api/generated/리스크-관리/리스크-관리';
+import type { RiskAlert } from '@/shared/api/generated/model/riskAlert';
 
 interface RiskDashboardProps {
   portfolioId?: number;

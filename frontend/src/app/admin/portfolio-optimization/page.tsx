@@ -88,14 +88,14 @@ import {
   useOptimizePortfolio,
   useCalculateEfficientFrontier,
   useRunBacktest
-} from '@/shared/api/generated/portfolio-optimization-controller/portfolio-optimization-controller';
+} from '@/features/portfolio-optimization/api/portfolio-optimization-api';
 import type {
   PortfolioOptimizationResponse,
   EfficientFrontierResponse,
   BacktestResponse,
   RebalancingSuggestionsResponse,
   OptimizationHistoryResponse
-} from '@/shared/api/generated/model';
+} from '@/features/portfolio-optimization/api/portfolio-optimization-api';
 
 interface TabPanelProps {
   children?: React.ReactNode;

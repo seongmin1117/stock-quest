@@ -29,7 +29,7 @@ export {
   getVaRHistory,
   getGetVaRHistoryQueryOptions,
   useGetVaRHistory,
-} from '../../../shared/api/generated/risk-management-controller/risk-management-controller';
+} from '../../../shared/api/generated/리스크-관리/리스크-관리';
 
 // Re-export types
 export type {
@@ -57,7 +57,7 @@ import {
   updateAlertStatus,
   resendAlert,
   getVaRHistory
-} from '../../../shared/api/generated/risk-management-controller/risk-management-controller';
+} from '../../../shared/api/generated/리스크-관리/리스크-관리';
 import type {
   VaRCalculationRequest,
   StressTestRequest,

@@ -20,7 +20,7 @@ export {
   filterSignalsByMarketCondition,
   getFilterSignalsByMarketConditionMutationOptions,
   useFilterSignalsByMarketCondition,
-} from '../../../shared/api/generated/ml-signals-controller/ml-signals-controller';
+} from '../../../shared/api/generated/ml-시그널/ml-시그널';
 
 // Re-export types
 export type {
@@ -42,7 +42,7 @@ import {
   updateSignalPerformance,
   generateBatchSignals,
   filterSignalsByMarketCondition
-} from '../../../shared/api/generated/ml-signals-controller/ml-signals-controller';
+} from '../../../shared/api/generated/ml-시그널/ml-시그널';
 import type {
   PerformanceUpdateRequest,
   BatchSignalRequest,

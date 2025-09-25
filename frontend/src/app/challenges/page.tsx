@@ -21,7 +21,7 @@ import challengeApi, {
   ChallengeDifficulty,
   ChallengeType
 } from "@/shared/api/challenge-client";
-import type { Challenge } from "@/shared/api/generated/model";
+import type { Challenge } from "@/shared/api/generated/model/challenge";
 
 /**
  * 챌린지 목록 페이지

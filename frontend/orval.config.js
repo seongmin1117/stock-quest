@@ -18,7 +18,13 @@ module.exports = {
           path: 'src/shared/api/api-client.ts',
           name: 'apiClient',
         },
-        operations: false,
+        operations: {
+          // Only exclude specific problematic actuator cache endpoints
+          excludeFromGeneration: (operationObject, route) => {
+            // Only exclude actuator cache endpoints that cause TypeScript generic errors
+            return route.includes('actuator/caches/');
+          }
+        },
       },
     },
     hooks: {

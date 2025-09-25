@@ -40,7 +40,7 @@ import {
   usePostApiV1MlSignalsGenerateBatch,
 } from '@/shared/api/generated/ml-signals-controller/ml-signals-controller';
 import { useGetChallengeDetail } from '@/shared/api/challenge-client';
-import type { TradingSignalResponse } from '@/shared/api/generated/model';
+import type { TradingSignalResponse } from '@/shared/api/generated/model/tradingSignalResponse';
 
 interface MLSignalsPanelProps {
   challengeId: number;

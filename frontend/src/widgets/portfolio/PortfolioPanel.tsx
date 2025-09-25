@@ -18,7 +18,7 @@ import { PortfolioSkeleton } from '@/shared/ui/skeleton/SkeletonLoader';
 import { AnimatedPrice } from '@/shared/ui/animations/PriceAnimations';
 import { EnhancedTooltip } from '@/shared/ui/feedback/EnhancedTooltip';
 import { useGetSessionDetail } from '@/shared/api/challenge-client';
-import type { PortfolioItem } from '@/shared/api/generated/model';
+import type { PortfolioItem } from '@/shared/api/generated/model/portfolioItem';
 
 interface PortfolioPanelProps {
   sessionId: number;

@@ -74,7 +74,15 @@ export default function MobileChart({ result, selectedCompany, startDate, endDat
     const months = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24 * 30));
     const monthlyGrowth = Math.pow(result.finalPortfolioValue / result.totalInvestmentAmount, 1 / months) - 1;
 
-    const data = [];
+    const data: Array<{
+      date: string;
+      dateFormatted: string;
+      portfolioValue: number;
+      cumulativeInvestment: number;
+      benchmark1: number;
+      benchmark2: number;
+      profit: number;
+    }> = [];
     let cumulativeInvestment = 0;
     let portfolioValue = 0;
     let benchmark1Value = 0;

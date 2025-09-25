@@ -48,8 +48,8 @@ import { TransitionProps } from '@mui/material/transitions';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Company } from '@/shared/api/company-client';
 import type { DCASimulationResponse, InvestmentFrequency } from '@/shared/api/types/dca-types';
-import type { DCASimulationRequest } from '@/shared/api/generated/model';
-import { useSimulate } from '@/shared/api/generated/dca-controller/dca-controller';
+import type { DCASimulationRequest } from '@/features/dca/api/dca-api';
+import { useSimulate } from '@/features/dca/api/dca-api';
 
 // Mobile-specific components
 import MobileStepForm from './components/MobileStepForm';

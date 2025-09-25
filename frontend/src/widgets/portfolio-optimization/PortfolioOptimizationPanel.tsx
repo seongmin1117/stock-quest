@@ -61,7 +61,7 @@ import {
   type RebalancingSuggestionsResponse,
   type OptimizationHistoryResponse,
   type BacktestResponse,
-} from '@/shared/api/generated/model';
+} from '@/features/portfolio-optimization/api/portfolio-optimization-api';
 
 interface PortfolioOptimizationPanelProps {
   portfolioId: number;

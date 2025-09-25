@@ -50,26 +50,20 @@ describe('API Contract Tests', () => {
     it('should match backend PlaceOrderResponse structure', () => {
       const mockResponse: PlaceOrderResponse = {
         orderId: 123,
-        instrumentKey: 'A',
-        side: 'BUY',
-        quantity: 10,
         executedPrice: 152.5,
-        slippageRate: 1.25,
+        slippage: 1.25,
         status: 'FILLED' as PlaceOrderResponseStatus,
         executedAt: '2024-01-15T10:30:00Z',
-        newBalance: 45000,
-        message: '주문이 성공적으로 체결되었습니다.',
+        commission: 2.5,
       };
 
       // 모든 필드가 선택적이므로 undefined 체크
       expect(mockResponse.orderId).toBe(123);
-      expect(mockResponse.instrumentKey).toBe('A');
-      expect(mockResponse.side).toBe('BUY');
-      expect(mockResponse.quantity).toBe(10);
       expect(mockResponse.executedPrice).toBe(152.5);
-      expect(mockResponse.slippageRate).toBe(1.25);
+      expect(mockResponse.slippage).toBe(1.25);
       expect(mockResponse.status).toBe('FILLED');
       expect(mockResponse.executedAt).toBeDefined();
+      expect(mockResponse.commission).toBe(2.5);
     });
 
     it('should support all OrderStatus enum values', () => {

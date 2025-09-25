@@ -20,19 +20,23 @@ export {
   getOptimizationHistory,
   getGetOptimizationHistoryQueryOptions,
   useGetOptimizationHistory,
-} from '../../../shared/api/generated/portfolio-optimization-controller/portfolio-optimization-controller';
+} from '../../../shared/api/generated/포트폴리오-최적화/포트폴리오-최적화';
 
-// Re-export types
-export type {
-  OptimizationRequest,
-  PortfolioOptimizationResponse,
-  EfficientFrontierRequest,
-  EfficientFrontierResponse,
-  BacktestRequest,
-  BacktestResponse,
-  RebalancingSuggestionsResponse,
-  OptimizationHistoryResponse,
-} from '../../../shared/api/generated/model';
+// Re-export types from individual model files
+export type { OptimizationRequest } from '../../../shared/api/generated/model/optimizationRequest';
+export type { PortfolioOptimizationResponse } from '../../../shared/api/generated/model/portfolioOptimizationResponse';
+export type { EfficientFrontierRequest } from '../../../shared/api/generated/model/efficientFrontierRequest';
+export type { EfficientFrontierResponse } from '../../../shared/api/generated/model/efficientFrontierResponse';
+export type { BacktestRequest } from '../../../shared/api/generated/model/backtestRequest';
+export type { BacktestResponse } from '../../../shared/api/generated/model/backtestResponse';
+export type { RebalancingSuggestionsResponse } from '../../../shared/api/generated/model/rebalancingSuggestionsResponse';
+export type { OptimizationHistoryResponse } from '../../../shared/api/generated/model/optimizationHistoryResponse';
+
+// Re-export enums and additional types
+export { OptimizationRequestObjective } from '../../../shared/api/generated/model/optimizationRequestObjective';
+export { OptimizationRequestOptimizationType } from '../../../shared/api/generated/model/optimizationRequestOptimizationType';
+export type { BacktestRequestObjective } from '../../../shared/api/generated/model/backtestRequestObjective';
+export type { BacktestRequestOptimizationType } from '../../../shared/api/generated/model/backtestRequestOptimizationType';
 
 // Feature-specific API hooks and utilities
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -42,7 +46,7 @@ import {
   runBacktest,
   getRebalancingSuggestions,
   getOptimizationHistory
-} from '../../../shared/api/generated/portfolio-optimization-controller/portfolio-optimization-controller';
+} from '../../../shared/api/generated/포트폴리오-최적화/포트폴리오-최적화';
 import type {
   OptimizationRequest,
   EfficientFrontierRequest,
