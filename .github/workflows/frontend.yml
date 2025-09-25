@@ -43,7 +43,7 @@ jobs:
     - name: Run linter
       run: |
         cd frontend
-        npm run lint
+        npm run lint -- --max-warnings 50
     
     - name: Run type check
       run: |
