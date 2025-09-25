@@ -104,7 +104,7 @@ jobs:
     - name: Build application
       run: |
         cd backend
-        ./gradlew build -x test
+        ./gradlew assemble
       
     - name: Upload JAR
       uses: actions/upload-artifact@v4
