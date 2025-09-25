@@ -42,12 +42,12 @@ import {
   Info,
 } from '@mui/icons-material';
 import {
-  usePostApiV1MlPortfolioOptimizationPortfolioIdOptimize,
-  usePostApiV1MlPortfolioOptimizationPortfolioIdEfficientFrontier,
-  useGetApiV1MlPortfolioOptimizationPortfolioIdRebalancingSuggestions,
-  useGetApiV1MlPortfolioOptimizationPortfolioIdHistory,
-  usePostApiV1MlPortfolioOptimizationPortfolioIdBacktest,
-} from '@/shared/api/generated/포트폴리오-최적화/포트폴리오-최적화';
+  useOptimizePortfolio,
+  useCalculateEfficientFrontier,
+  useGetRebalancingSuggestions,
+  useGetOptimizationHistory,
+  useRunBacktest,
+} from '@/shared/api/generated/portfolio-optimization-controller/portfolio-optimization-controller';
 import {
   OptimizationRequestObjective,
   OptimizationRequestOptimizationType,
@@ -133,7 +133,7 @@ export function PortfolioOptimizationPanel({ portfolioId }: PortfolioOptimizatio
 
   // Fetch rebalancing suggestions
   const { data: rebalancingSuggestions, isLoading: rebalancingLoading, refetch: refetchRebalancing } =
-    useGetApiV1MlPortfolioOptimizationPortfolioIdRebalancingSuggestions(portfolioId, {
+    useGetRebalancingSuggestions(portfolioId, {
       query: {
         enabled: !isNaN(portfolioId) && portfolioId > 0,
         refetchInterval: 300000, // Refresh every 5 minutes
@@ -142,7 +142,7 @@ export function PortfolioOptimizationPanel({ portfolioId }: PortfolioOptimizatio
 
   // Fetch optimization history
   const { data: optimizationHistory, isLoading: historyLoading, refetch: refetchHistory } =
-    useGetApiV1MlPortfolioOptimizationPortfolioIdHistory(portfolioId, {}, {
+    useGetOptimizationHistory(portfolioId, {}, {
       query: {
         enabled: !isNaN(portfolioId) && portfolioId > 0,
       }
@@ -150,7 +150,7 @@ export function PortfolioOptimizationPanel({ portfolioId }: PortfolioOptimizatio
 
   // Portfolio optimization mutation
   const { mutate: runOptimization, isPending: optimizationPending } =
-    usePostApiV1MlPortfolioOptimizationPortfolioIdOptimize({
+    useOptimizePortfolio({
       mutation: {
         onSuccess: (data) => {
           setOptimizationResult(data);
@@ -165,7 +165,7 @@ export function PortfolioOptimizationPanel({ portfolioId }: PortfolioOptimizatio
 
   // Efficient frontier mutation
   const { mutate: calculateEfficientFrontier, isPending: frontierPending } =
-    usePostApiV1MlPortfolioOptimizationPortfolioIdEfficientFrontier({
+    useCalculateEfficientFrontier({
       mutation: {
         onSuccess: (data) => {
           setEfficientFrontierResult(data);
@@ -178,7 +178,7 @@ export function PortfolioOptimizationPanel({ portfolioId }: PortfolioOptimizatio
 
   // Backtest mutation
   const { mutate: runBacktest, isPending: backtestPending } =
-    usePostApiV1MlPortfolioOptimizationPortfolioIdBacktest({
+    useRunBacktest({
       mutation: {
         onSuccess: (data) => {
           setBacktestResult(data);

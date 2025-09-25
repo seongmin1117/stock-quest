@@ -1,19 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { useGetApiV1ContentArticlesRecent } from '@/shared/api/generated/블로그-콘텐츠/블로그-콘텐츠';
-import type { ArticleResponse } from '@/shared/api/generated/model';
+// import { useGetApiV1ContentArticlesRecent } from '@/shared/api/generated/블로그-콘텐츠/블로그-콘텐츠';
+// import type { ArticleResponse } from '@/shared/api/generated/model';
 
 export default function RecentArticles() {
-  const { data: articles, isLoading: loading, error } = useGetApiV1ContentArticlesRecent(
-    { limit: 10 },
-    {
-      query: {
-        staleTime: 1000 * 60 * 2, // 2 minutes
-        gcTime: 1000 * 60 * 5, // 5 minutes
-      }
-    }
-  );
+  // Temporarily disabled - blog API not implemented in backend
+  const articles = [];
+  const loading = false;
+  const error = null;
+
+  // const { data: articles, isLoading: loading, error } = useGetApiV1ContentArticlesRecent(
+  //   { limit: 10 },
+  //   {
+  //     query: {
+  //       staleTime: 1000 * 60 * 2, // 2 minutes
+  //       gcTime: 1000 * 60 * 5, // 5 minutes
+  //     }
+  //   }
+  // );
 
   if (loading) {
     return (

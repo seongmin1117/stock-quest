@@ -67,7 +67,7 @@ export type {
   ChallengeListResponse,
   ChallengeDetailResponse,
   ChallengeItem,
-  ChallengeItemDifficultyLevel,
+  ChallengeItemDifficulty,
   StartChallengeResponse,
   ChallengeInstrumentsResponse,
   SessionDetailResponse,

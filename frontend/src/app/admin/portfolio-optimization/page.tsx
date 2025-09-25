@@ -83,12 +83,12 @@ import {
   RadialBar,
 } from 'recharts';
 import {
-  useGetApiV1MlPortfolioOptimizationPortfolioIdRebalancingSuggestions,
-  useGetApiV1MlPortfolioOptimizationPortfolioIdHistory,
-  usePostApiV1MlPortfolioOptimizationPortfolioIdOptimize,
-  usePostApiV1MlPortfolioOptimizationPortfolioIdEfficientFrontier,
-  usePostApiV1MlPortfolioOptimizationPortfolioIdBacktest
-} from '@/shared/api/generated/포트폴리오-최적화/포트폴리오-최적화';
+  useGetRebalancingSuggestions,
+  useGetOptimizationHistory,
+  useOptimizePortfolio,
+  useCalculateEfficientFrontier,
+  useRunBacktest
+} from '@/shared/api/generated/portfolio-optimization-controller/portfolio-optimization-controller';
 import type {
   PortfolioOptimizationResponse,
   EfficientFrontierResponse,
@@ -136,15 +136,15 @@ const PortfolioOptimizationPage = () => {
 
   // API calls for portfolio optimization data
   const { data: rebalancingData, isLoading: rebalancingLoading, error: rebalancingError } =
-    useGetApiV1MlPortfolioOptimizationPortfolioIdRebalancingSuggestions(portfolioId);
+    useGetRebalancingSuggestions(portfolioId);
 
   const { data: optimizationHistory, isLoading: historyLoading, error: historyError } =
-    useGetApiV1MlPortfolioOptimizationPortfolioIdHistory(portfolioId);
+    useGetOptimizationHistory(portfolioId);
 
   // Mutations for interactive features
-  const optimizeMutation = usePostApiV1MlPortfolioOptimizationPortfolioIdOptimize();
-  const efficientFrontierMutation = usePostApiV1MlPortfolioOptimizationPortfolioIdEfficientFrontier();
-  const backtestMutation = usePostApiV1MlPortfolioOptimizationPortfolioIdBacktest();
+  const optimizeMutation = useOptimizePortfolio();
+  const efficientFrontierMutation = useCalculateEfficientFrontier();
+  const backtestMutation = useRunBacktest();
 
   // Loading state for overall page
   const isLoading = rebalancingLoading || historyLoading;
@@ -622,11 +622,11 @@ const PortfolioOptimizationPage = () => {
                 >
                   {optimizeMutation.isPending ? '최적화 중...' : '최적화 실행'}
                 </Button>
-                {optimizeMutation.error && (
+                {optimizeMutation.error ? (
                   <Alert severity="error" sx={{ mt: 2 }}>
-                    최적화 실행 중 오류가 발생했습니다.
+                    최적화 실행 중 오류가 발생했습니다: {String(optimizeMutation.error)}
                   </Alert>
-                )}
+                ) : null}
               </Paper>
 
               {/* 최적화 결과 비교 */}

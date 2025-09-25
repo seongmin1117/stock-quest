@@ -38,17 +38,21 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { Company } from '@/shared/api/company-client';
-import type { DCASimulationResponse } from '@/shared/api/types/dca-types';
+import type { DCASimulationResponse, InvestmentFrequency } from '@/shared/api/types/dca-types';
 
 interface MobileChartProps {
   result: DCASimulationResponse;
-  selectedCompany: Company | null;
+  selectedCompany: any; // Company type from API
+  startDate: string;
+  endDate: string;
+  frequency: InvestmentFrequency;
+  monthlyInvestmentAmount: number;
 }
 
 type ChartType = 'line' | 'area' | 'comparison';
 type TimeRange = 'all' | '1y' | '6m' | '3m';
 
-export default function MobileChart({ result, selectedCompany }: MobileChartProps) {
+export default function MobileChart({ result, selectedCompany, startDate, endDate, frequency, monthlyInvestmentAmount }: MobileChartProps) {
   const theme = useTheme();
   const [chartType, setChartType] = useState<ChartType>('area');
   const [timeRange, setTimeRange] = useState<TimeRange>('all');
@@ -67,7 +71,7 @@ export default function MobileChart({ result, selectedCompany }: MobileChartProp
 
   // Generate mock chart data (replace with actual data from result.investmentRecords)
   const generateChartData = () => {
-    const months = Math.ceil((new Date(result.endDate).getTime() - new Date(result.startDate).getTime()) / (1000 * 60 * 60 * 24 * 30));
+    const months = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24 * 30));
     const monthlyGrowth = Math.pow(result.finalPortfolioValue / result.totalInvestmentAmount, 1 / months) - 1;
 
     const data = [];
@@ -77,11 +81,11 @@ export default function MobileChart({ result, selectedCompany }: MobileChartProp
     let benchmark2Value = 0;
 
     for (let i = 0; i <= months; i++) {
-      const date = new Date(result.startDate);
+      const date = new Date(startDate);
       date.setMonth(date.getMonth() + i);
 
       if (i > 0) {
-        cumulativeInvestment += result.monthlyInvestmentAmount;
+        cumulativeInvestment += monthlyInvestmentAmount;
         portfolioValue = cumulativeInvestment * (1 + monthlyGrowth * i + (Math.random() - 0.5) * 0.1);
 
         // Mock benchmark data

@@ -47,12 +47,9 @@ import {
 import { TransitionProps } from '@mui/material/transitions';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Company } from '@/shared/api/company-client';
-import type {
-  DCASimulationRequest,
-  DCASimulationResponse,
-  InvestmentFrequency
-} from '@/shared/api/types/dca-types';
-import { useDCASimulation } from '@/shared/api/dca-client';
+import type { DCASimulationResponse, InvestmentFrequency } from '@/shared/api/types/dca-types';
+import type { DCASimulationRequest } from '@/shared/api/generated/model';
+import { useSimulate } from '@/shared/api/generated/dca-controller/dca-controller';
 
 // Mobile-specific components
 import MobileStepForm from './components/MobileStepForm';
@@ -85,7 +82,7 @@ export default function MobileDCASimulation({ onClose, isOpen }: MobileDCASimula
   const theme = useTheme();
 
   // DCA Simulation API hook
-  const dcaSimulation = useDCASimulation();
+  const dcaSimulation = useSimulate();
 
   // Form state
   const [activeStep, setActiveStep] = useState(0);
@@ -152,7 +149,8 @@ export default function MobileDCASimulation({ onClose, isOpen }: MobileDCASimula
       };
 
       // Call real DCA API
-      const result = await dcaSimulation.mutateAsync(request);
+      const apiResult = await dcaSimulation.mutateAsync({ data: request });
+      const result = apiResult as unknown as DCASimulationResponse;
 
       setSimulationResult(result);
       setShowResults(true);

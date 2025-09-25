@@ -8,8 +8,8 @@ import {
   PlaceOrderRequest,
   PlaceOrderRequestSide,
   PlaceOrderRequestOrderType,
-  OrderResponse,
-  OrderResponseStatus,
+  PlaceOrderResponse,
+  PlaceOrderResponseStatus,
   AuthResponse,
   ErrorResponse,
 } from '../generated/model';
@@ -46,24 +46,23 @@ describe('API Contract Tests', () => {
     });
   });
 
-  describe('OrderResponse 타입 계약', () => {
+  describe('PlaceOrderResponse 타입 계약', () => {
     it('should match backend PlaceOrderResponse structure', () => {
-      const mockResponse: OrderResponse = {
-        id: 123,
+      const mockResponse: PlaceOrderResponse = {
+        orderId: 123,
         instrumentKey: 'A',
         side: 'BUY',
         quantity: 10,
         executedPrice: 152.5,
         slippageRate: 1.25,
-        status: 'EXECUTED' as OrderResponseStatus,
+        status: 'EXECUTED' as PlaceOrderResponseStatus,
         executedAt: '2024-01-15T10:30:00Z',
-        orderedAt: '2024-01-15T10:29:58Z',
-        orderType: 'MARKET',
-        limitPrice: undefined,
+        newBalance: 45000,
+        message: '주문이 성공적으로 체결되었습니다.',
       };
 
       // 모든 필드가 선택적이므로 undefined 체크
-      expect(mockResponse.id).toBe(123);
+      expect(mockResponse.orderId).toBe(123);
       expect(mockResponse.instrumentKey).toBe('A');
       expect(mockResponse.side).toBe('BUY');
       expect(mockResponse.quantity).toBe(10);
@@ -71,15 +70,14 @@ describe('API Contract Tests', () => {
       expect(mockResponse.slippageRate).toBe(1.25);
       expect(mockResponse.status).toBe('EXECUTED');
       expect(mockResponse.executedAt).toBeDefined();
-      expect(mockResponse.orderedAt).toBeDefined();
     });
 
     it('should support all OrderStatus enum values', () => {
-      const statuses: OrderResponseStatus[] = ['PENDING', 'EXECUTED', 'CANCELLED'];
+      const statuses: PlaceOrderResponseStatus[] = ['PENDING', 'EXECUTED', 'CANCELLED'];
       
       statuses.forEach(status => {
-        const response: OrderResponse = {
-          id: 1,
+        const response: PlaceOrderResponse = {
+          orderId: 1,
           status: status,
         };
         expect(['PENDING', 'EXECUTED', 'CANCELLED']).toContain(response.status);
@@ -156,7 +154,7 @@ describe('API Contract Tests', () => {
     });
 
     it('should have matching OrderStatus values', () => {
-      const statuses: OrderResponseStatus[] = ['PENDING', 'EXECUTED', 'CANCELLED'];
+      const statuses: PlaceOrderResponseStatus[] = ['PENDING', 'EXECUTED', 'CANCELLED'];
       
       statuses.forEach(status => {
         expect(['PENDING', 'EXECUTED', 'CANCELLED']).toContain(status);
@@ -179,13 +177,13 @@ describe('API Contract Tests', () => {
     });
 
     it('should handle optional fields correctly', () => {
-      const partialResponse: Partial<OrderResponse> = {
-        id: 1,
-        status: 'EXECUTED' as OrderResponseStatus,
+      const partialResponse: Partial<PlaceOrderResponse> = {
+        orderId: 1,
+        status: 'EXECUTED' as PlaceOrderResponseStatus,
         // 다른 필드들은 선택적이므로 생략 가능
       };
 
-      expect(partialResponse.id).toBe(1);
+      expect(partialResponse.orderId).toBe(1);
       expect(partialResponse.status).toBe('EXECUTED');
       expect(partialResponse.instrumentKey).toBeUndefined();
     });
@@ -213,8 +211,8 @@ export function validateApiResponse<T>(response: unknown, expectedFields: (keyof
  * 
  * const apiResponse = await placeOrder(orderRequest);
  * 
- * if (validateApiResponse<OrderResponse>(apiResponse, ['id', 'status', 'executedAt'])) {
- *   // 이제 apiResponse는 OrderResponse 타입으로 안전하게 사용 가능
+ * if (validateApiResponse<PlaceOrderResponse>(apiResponse, ['id', 'status', 'executedAt'])) {
+ *   // 이제 apiResponse는 PlaceOrderResponse 타입으로 안전하게 사용 가능
  *   console.log(apiResponse.status);
  * }
  */

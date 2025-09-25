@@ -38,7 +38,7 @@ import {
 import {
   useGetApiV1MlSignalsActive,
   usePostApiV1MlSignalsGenerateBatch,
-} from '@/shared/api/generated/ml-시그널/ml-시그널';
+} from '@/shared/api/generated/ml-signals-controller/ml-signals-controller';
 import { useGetChallengeDetail } from '@/shared/api/challenge-client';
 import type { TradingSignalResponse } from '@/shared/api/generated/model';
 

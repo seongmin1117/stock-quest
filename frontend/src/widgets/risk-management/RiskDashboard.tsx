@@ -45,12 +45,12 @@ import {
   Close,
 } from '@mui/icons-material';
 import {
-  useGetApiV1RiskDashboard,
-  useGetApiV1RiskAlerts,
-  usePostApiV1RiskAlertsConfigure,
-  usePutApiV1RiskLimitsPortfolioId,
-} from '@/shared/api/generated/리스크-관리/리스크-관리';
-import type { RiskAlert } from '@/shared/api/generated/model';
+  useGetRiskDashboard,
+  useGetRiskAlerts,
+  // usePostApiV1RiskAlertsConfigure, // Not available in generated API
+  // usePutApiV1RiskLimitsPortfolioId, // Not available in generated API
+} from '@/shared/api/generated/risk-management-controller/risk-management-controller';
+// import type { RiskAlert } from '@/shared/api/generated/model'; // Not available in generated models
 
 interface RiskDashboardProps {
   portfolioId?: number;
@@ -70,20 +70,24 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
   const [concentrationLimit, setConcentrationLimit] = React.useState<string>('');
 
   // Fetch risk dashboard data
-  const { data: dashboardData, isLoading: dashboardLoading, refetch: refetchDashboard } = useGetApiV1RiskDashboard({
+  const { data: dashboardData, isLoading: dashboardLoading, refetch: refetchDashboard } = useGetRiskDashboard({
     query: {
       refetchInterval: 60000, // Refresh every minute
     }
   });
 
   // Fetch risk alerts
-  const { data: alertsData, isLoading: alertsLoading, refetch: refetchAlerts } = useGetApiV1RiskAlerts({}, {
+  const { data: alertsData, isLoading: alertsLoading, refetch: refetchAlerts } = useGetRiskAlerts({}, {
     query: {
       refetchInterval: 30000, // Refresh every 30 seconds
     }
   });
 
   // Risk alert configuration mutation
+  // Temporarily disabled - API not available in generated client
+  const configuringAlert = false;
+  const configureAlert = () => {};
+  /*
   const { mutate: configureAlert, isPending: configuringAlert } = usePostApiV1RiskAlertsConfigure({
     mutation: {
       onSuccess: () => {
@@ -96,8 +100,13 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
       },
     },
   });
+  */
 
   // Risk limits update mutation
+  // Temporarily disabled - API not available in generated client
+  const updatingLimits = false;
+  const updateRiskLimits = () => {};
+  /*
   const { mutate: updateRiskLimits, isPending: updatingLimits } = usePutApiV1RiskLimitsPortfolioId({
     mutation: {
       onSuccess: () => {
@@ -111,6 +120,7 @@ export function RiskDashboard({ portfolioId }: RiskDashboardProps) {
       },
     },
   });
+  */
 
   const handleRefresh = () => {
     setRefreshing(true);
